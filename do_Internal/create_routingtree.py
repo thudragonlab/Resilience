@@ -5,7 +5,7 @@
 生成国家内部routingTree
 
 '''
-from ast import Lambda
+from glob import glob
 import os
 import json
 import copy
@@ -15,8 +15,13 @@ from mpi4py import MPI
 from scipy import sparse
 import scipy.io
 import itertools
+import multiprocessing
+# from multiprocessing.pool import ThreadPool
 # from itertools import izip
+import threading
 izip=zip
+# relas = {}
+
 
 
 def dataConverter(inFile, outFile):
@@ -35,8 +40,9 @@ def dataConverter(inFile, outFile):
                         nodeList.append(int(data[0]))
                     if (int(data[1]) not in nodeList):
                         nodeList.append(int(data[1]))
-                except:
-                    print(data)
+                except Exception as e:
+                    print(e)
+                    raise e
                     exit()
                 if (data[2] == "0\n" or data[2] == "0"):
                     outString += "\t" + "p2p\n"  ## add endline here for saving
@@ -125,6 +131,7 @@ def graphGenerator(inFile, outFile):
 
 
 def speedyGET(args):
+    # thread_pool = ThreadPool(processes=multiprocessing.cpu_count() * 5)
     def checkPreviousLevelsAlt(BFS, node, level):
         '''
         check if node is in BFS at given level or any previous level
@@ -358,20 +365,27 @@ def speedyGET(args):
 
     ### Primary Loop, executed distrubitively in parallel
     
-    # for index in range(int(firstIndex), int(lastIndex) + 1):
-    #    file_name = os.listdir(str(args[3]))
-    #    destinationNode = nodeList[index]
+    threads = []
+    for index in range(int(firstIndex), int(lastIndex) + 1):
+       file_name = os.listdir(str(args[3]))
+       destinationNode = nodeList[index]
+       try:
+            t = threading.Thread(target=makeRoutingTree,args=(destinationNode,))
+            t.start()
+            threads.append(t)
+            # thread_pool.apply_async(target = makeRoutingTree,)
+       except Exception as e:
+            print('Exception',e)
+    for tt in threads:
+        tt.join()
+    # thread_pool.close()
+    # thread_pool.join()
     #    routingTree = makeRoutingTree(destinationNode)  ### Calculate the routing tree for this node
     
-
-    with open('/home/peizd01/for_dragon/ccExternal/globalCountryLabel/add_hidden_link/cal_rtree_code_v2.json') as ff:
-        asns = json.load(ff)
-        asns_list = list(map(lambda x : int(x),asns))
-
-        for index in asns_list:
-            # file_name = os.listdir(str(args[3]))
-            destinationNode = index
-            routingTree = makeRoutingTree(destinationNode)  ### Calculate the routing tree for this node
+    # for index in [36344,21326,19368,6621,33004]:
+    #     # file_name = os.listdir(str(args[3]))
+    #     destinationNode = index
+    #     routingTree = makeRoutingTree(destinationNode)  ### Calculate the routing tree for this node
         
 
     # with open('/data/lyj/shiyan_database/ccExternal/globalCountryLabel/add_hidden_link/cal_rtree_code_v2.json', 'r') as f:
@@ -398,6 +412,7 @@ def create_rela_file(relas, relaFile):
     从国家的as，以及as关系文件，提取出国家内部拓扑的relas [provider、customer、peer]
     '''
     sum = 0
+    # print('relaFile',relas)
     with open(relaFile, 'w') as f:
         for c in relas:
             sum += 1
@@ -409,9 +424,7 @@ def create_rela_file(relas, relaFile):
     print(sum)
 
 def run_routingTree(dsn_file, relaFile):
-    print('!!!')
     dataConverter(relaFile, 'bgp-sas.npz')
-    print('!!!??')
     maxNum = graphGenerator('bgp-sas.npz', 'routingTree.mtx')
     speedyGET(['','routingTree.mtx', 'v', dsn_file, 'routingTree.mtx.nodeList', str(maxNum)])
 
@@ -421,14 +434,15 @@ def rTree(relas, dsn_file):
     relaFile = os.path.join(dsn_file, 'as-rel.txt')
     #if len(relas)==0:
     #    return
-    # create_rela_file(relas, relaFile)
-    run_routingTree(dsn_file, as_rela_file)
+    create_rela_file(relas, relaFile)
+    run_routingTree(dsn_file, relaFile)
     
-def create_relas(file, if_del_stub_as=False):
+def create_relas(file, as_rela_file,if_del_stub_as=False,):
     '''
     从国家的as，以及as关系文件，提取出国家内部拓扑的relas [provider、customer、peer]
     '''
-    global relas
+    # global relas
+    relas = {}
     with open(as_rela_file, 'r') as f:
         as_rela = json.load(f)
         # print(as_rela.keys())
@@ -436,6 +450,7 @@ def create_relas(file, if_del_stub_as=False):
         cclist = json.load(f)
     for c in cclist:
         relas[c] =[[],[],[]]
+        
     for c in relas:
         if c in as_rela:
             relas[c][2] += [i for i in as_rela[c][0] if i in cclist]
@@ -460,38 +475,67 @@ def create_relas(file, if_del_stub_as=False):
                 for i in relas[c][2]:
                     relas[i][2].remove(c)
                 del relas[c]
+    return relas
 
 
 
 
-def monitor_routingTree(file,dsn_path):
-    global relas
-    # country_name = os.listdir(dsn_path)
-    dsn_path = os.path.join(dsn_path, 'test_for_external')
-    # if country not in country_name:
-    #     os.popen('mkdir '+dsn_path)
-    # print(country+' begin')
-    # create_relas(file)
+def monitor_routingTree(file,dsn_path,country,as_rela_file):
+    # global relas
+    country_name = os.listdir(dsn_path)
+    dsn_path = os.path.join(dsn_path, country)
+    if country not in country_name:
+        os.popen('mkdir '+dsn_path)
+    print(country+' begin')
+    relas = create_relas(file,as_rela_file)
+    relas_is_empty = True
+    for i in relas:
+        for ii in relas[i]:
+            if len(ii) != 0:
+                relas_is_empty = False
+                break
+        if not relas_is_empty:
+            break
+
+    if relas_is_empty:
+        print('%s end ,relas is empty' % country)
+        return
+    print('finish',country)
     # if country=='PT':
     #     print(relas)
-    # if len(relas)<10: return
+    if len(relas)<10: return
     rTree(relas, dsn_path)
-    # print(country+' end')
+    print(country+' end')
 
 
 
-def main():
-    global relas
-    with open(old_rank_file, 'r') as f: temp = json.load(f)
+def main(_as_rela_file,_dst_dir_path,_type,cc_list,asn_data,cc2as_path):
+    # global relas
+    # global as_rela_file
+    process_pool = multiprocessing.Pool(processes=int(multiprocessing.cpu_count()/2))
+    # old_rank_file = '/home/peizd01/for_dragon/public/rank_2.json'
+    p1 = cc2as_path
+    p2 = os.path.join(_dst_dir_path,_type,'rtree')
+    as_rela_file = _as_rela_file
+    # with open(old_rank_file, 'r') as f: temp = json.load(f)
     if not os.path.exists(p2): os.makedirs(p2)
-    cces = list(temp.keys())
-    cces.reverse()
-    # for cc in cces:
-    #     # if cc == 'US':
-    #     #     continue
-    #     # if cc in ['BR', 'US', 'RU']: continue
-    #     relas = {}
-    monitor_routingTree('/home/peizd01/for_dragon/ccExternal/globalCountryLabel/add_hidden_link/as_rela_code.txt', p2)
+    # cces = list(temp.keys())
+    # cces.reverse()
+    # print(cces)
+    cces = cc_list
+    for cc in cces:
+        # if cc == 'US':
+        #     continue
+        if cc not in ['BR', 'US', 'RU']: continue
+        # print(cc)
+        # relas = {}
+        # try:
+        #     process_pool.apply_async(monitor_routingTree,(os.path.join(p1,cc+'.json'), p2, cc,))
+        # except Exception as e:
+        #     print(e)
+        monitor_routingTree(os.path.join(p1,cc+'.json'), p2, cc,as_rela_file)
+    process_pool.close()
+    process_pool.join()
 
 
 
@@ -501,13 +545,12 @@ def main():
 # p1是存储每个国家的AS
 # p2是结果输出路径，生成每个AS的routingTree 
 # as_rela_file存储全球的as关系
-old_prefix = '/home/peizd01/for_dragon/pzd_External/'
-prefix = '/home/peizd01/for_dragon/pzd_External/'
-old_rank_file = os.path.join(old_prefix,'public/rank_2.json')
-p1 = os.path.join(prefix,'public/cc2as/')
-p2 = os.path.join(prefix,'globalCountryLabel/add_hidden_link/rtree/')
-# as_rela_file = '/home/peizd01/for_dragon/new_data_pzd/as_rela_code-as_rela_from_toposcope_hidden.json'
-as_rela_file = '/home/peizd01/for_dragon/ccExternal/globalCountryLabel/add_hidden_link/as_rela_code.txt'
-relas = {}
-main()
+# dst_dir_path = '/home/peizd01/for_dragon/pzd_python/do_Internal/output'
+# # old_prefix = dst_dir_path
+# prefix = dst_dir_path
+# p2 = os.path.join(prefix,'asRank/rtree/')
+
+# as_rela_file = '/home/peizd01/for_dragon/pzd_python/do_Internal/source/20220801.as-rel-as_rela_asRank.json'
+
+# main()
 # [36344,21326,19368,6621,33004]
