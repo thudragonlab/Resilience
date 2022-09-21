@@ -292,7 +292,7 @@ def speedyGET(args):
             print('exist')
             return
         routingTree = sparse.dok_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
-        print('numNodes',numNodes)
+        # print('numNodes',numNodes)
         # print('routingTree',routingTree)
         stepOneRT, stepOneNodes, lvls = customerToProviderBFS(destinationNode, routingTree, fullGraph)
         # print('stepOneNodes',stepOneNodes)

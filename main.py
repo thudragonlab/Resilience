@@ -8,8 +8,8 @@ from do_Internal.monitor_random_cut import monitor_country_internal as monitorCo
 # from do_Internal.monitor_random_cut_full_tree_1000_times import monitor_country_internal as monitorCountryInternal
 
 from do_Internal.anova import do_extract_connect_list,do_groud_truth_based_anova,do_country_internal_rank,do_groud_truth_based_var
-from do_Internal.make_as_importance_weight import main as make_as_importance
-from do_Internal.make_cc2as import make_cc2as as make_cc2as
+from make_as_importance_weight import main as make_as_importance
+from make_cc2as import make_cc2as as make_cc2as
 import json
 from datetime import datetime
 
