@@ -1,0 +1,10 @@
+{
+    "root":"/home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut",
+    "types":{
+        "asRank":true,
+        "problink":true,
+        "toposcope":true,
+        "toposcope_hidden":true
+    },
+    "cc_list":["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR", "RO", "NZ", "CZ", "BD", "SE", "UA", "SG", "HK", "ES", "AT", "JP", "IN", "ID", "CH", "PL", "NL", "IT", "FR", "CA", "ZA", "AU", "GB", "DE", "US", "RU", "BR"]
+}

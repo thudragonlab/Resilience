@@ -1,0 +1,671 @@
+load config.json 0:00:00.000168 
+load asns.json 0:00:00.058451  
+make_as_importance  0:02:37.550961  
+transformToJSON  0:00:00.056481  
+createRoutingTree  0:00:44.981044  
+monitorCountryInternal  0:00:09.123255  
+do_extract_connect_list  0:00:01.936508  
+do_groud_truth_based_anova  0:00:14.474734  
+do_groud_truth_based_var  0:00:01.518784  
+
+-------------------------2022-09-14 01:19:39.025085-------------------------load config.json 0:00:00.000139 
+load asns.json 0:00:00.057045  
+make_as_importance  0:02:39.021946  
+transformToJSON  0:00:00.712307  
+
+-------------------------2022-09-14 02:58:05.939451-------------------------
+load config.json 0:00:00.000153 
+load asns.json 0:00:00.062236  
+make_as_importance  0:02:33.890298  
+transformToJSON  0:00:00.764374  
+createRoutingTree  0:08:23.345201  
+monitorCountryInternal  0:10:37.979419  
+do_extract_connect_list  0:00:32.917240  
+do_groud_truth_based_anova  0:03:19.194674  
+do_groud_truth_based_var  0:00:23.363481  
+transformToJSON  0:00:00.730057  
+createRoutingTree  0:06:25.113916  
+monitorCountryInternal  0:09:45.961257  
+do_extract_connect_list  0:00:32.492479  
+do_groud_truth_based_anova  0:03:12.022599  
+do_groud_truth_based_var  0:00:21.851641  
+transformToJSON  0:00:00.772471  
+createRoutingTree  0:16:27.179028  
+monitorCountryInternal  0:18:01.299851  
+do_extract_connect_list  0:00:35.205119  
+do_groud_truth_based_anova  0:04:06.998518  
+do_groud_truth_based_var  0:00:36.512556  
+transformToJSON  0:00:00.072827  
+createRoutingTree  0:01:36.947244  
+monitorCountryInternal  0:00:31.562576  
+do_extract_connect_list  0:00:03.612588  
+do_groud_truth_based_anova  0:00:19.091538  
+do_groud_truth_based_var  0:00:01.623098  
+
+-------------------------2022-09-14 06:33:28.762123-------------------------
+load config.json 0:00:00.000235 
+load asns.json 0:00:00.178528  
+make_as_importance  0:03:27.566078  
+transformToJSON  0:00:02.142832  
+createRoutingTree  0:03:18.929064  
+monitorCountryInternal  0:00:13.157723  
+do_extract_connect_list  0:00:56.281978  
+do_groud_truth_based_anova  0:00:29.703344  
+do_groud_truth_based_var  0:00:25.450342  
+transformToJSON  0:00:01.423068  
+createRoutingTree  0:02:28.433521  
+monitorCountryInternal  0:00:18.354172  
+do_extract_connect_list  0:00:38.384657  
+do_groud_truth_based_anova  0:00:26.005046  
+do_groud_truth_based_var  0:00:22.468191  
+transformToJSON  0:00:01.018343  
+createRoutingTree  0:03:20.054780  
+monitorCountryInternal  0:00:17.664544  
+do_extract_connect_list  0:01:11.302450  
+do_groud_truth_based_anova  0:00:36.256628  
+do_groud_truth_based_var  0:00:28.220542  
+transformToJSON  0:00:00.060067  
+createRoutingTree  0:00:54.986921  
+monitorCountryInternal  0:00:17.274244  
+do_extract_connect_list  0:00:05.100165  
+do_groud_truth_based_anova  0:00:02.262100  
+do_groud_truth_based_var  0:00:01.788110  
+
+-------------------------2022-09-14 07:34:49.855674-------------------------
+load config.json 0:00:00.000190 
+
+-------------------------2022-09-14 07:40:08.623614-------------------------
+load config.json 0:00:00.000217 
+
+-------------------------2022-09-14 07:50:08.575247-------------------------
+load config.json 0:00:00.000277 
+load asns.json 0:00:00.110665  
+make_as_importance  0:03:43.736713  
+transformToJSON  0:00:01.075349  
+createRoutingTree  14:07:33.826233  
+
+-------------------------2022-09-15 04:55:16.399901-------------------------
+load config.json 0:00:00.000185 
+load asns.json 0:00:00.059652  
+make_as_importance  0:02:41.748946  
+transformToJSON  0:00:00.705272  
+createRoutingTree  0:07:15.731208  
+monitorCountryInternal  0:11:53.135777  
+do_extract_connect_list  0:00:29.246718  
+do_groud_truth_based_anova  0:03:00.003630  
+do_groud_truth_based_var  0:00:21.034954  
+transformToJSON  0:00:00.646179  
+
+-------------------------2022-09-15 05:24:39.081974-------------------------
+load config.json 0:00:00.000147 
+load asns.json 0:00:00.055656  
+make_as_importance  0:01:14.791014  
+transformToJSON  0:00:00.706462  
+
+-------------------------2022-09-15 05:27:53.164985-------------------------
+load config.json 0:00:00.000175 
+load asns.json 0:00:00.060788  
+make_as_importance  0:01:15.616877  
+transformToJSON  0:00:00.717443  
+
+-------------------------2022-09-15 05:46:19.823415-------------------------
+load config.json 0:00:00.000174 
+load asns.json 0:00:00.055921  
+make_as_importance  0:01:14.733210  
+transformToJSON  0:00:00.704368  
+
+-------------------------2022-09-15 05:58:26.371716-------------------------
+load config.json 0:00:00.000144 
+load asns.json 0:00:00.054319  
+make_as_importance  0:01:15.182250  
+transformToJSON  0:00:00.714601  
+createRoutingTree  0:02:51.599983  
+monitorCountryInternal  0:05:04.258485  
+do_extract_connect_list  0:00:01.358082  
+
+-------------------------2022-09-15 07:34:28.669982-------------------------
+load config.json 0:00:00.000149 
+
+-------------------------2022-09-15 07:35:36.486302-------------------------
+load config.json 0:00:00.000183 
+load asns.json 0:00:00.059996  
+make_as_importance  0:02:32.152634  
+transformToJSON  0:00:00.700658  
+createRoutingTree  0:03:19.403567  
+monitorCountryInternal  0:03:16.188403  
+do_extract_connect_list  0:00:15.249341  
+do_groud_truth_based_anova  0:01:49.066865  
+do_groud_truth_based_var  0:00:11.485401  
+transformToJSON  0:00:00.620546  
+createRoutingTree  0:03:03.523715  
+monitorCountryInternal  0:02:43.779412  
+do_extract_connect_list  0:00:13.633566  
+do_groud_truth_based_anova  0:01:40.681758  
+do_groud_truth_based_var  0:00:10.102568  
+transformToJSON  0:00:00.664162  
+createRoutingTree  0:03:26.997804  
+monitorCountryInternal  0:03:38.459095  
+do_extract_connect_list  0:00:16.616707  
+do_groud_truth_based_anova  0:01:55.547031  
+do_groud_truth_based_var  0:00:11.876040  
+transformToJSON  0:00:00.736746  
+createRoutingTree  0:03:37.048315  
+monitorCountryInternal  0:03:47.538651  
+do_extract_connect_list  0:00:17.192256  
+do_groud_truth_based_anova  0:01:57.440461  
+do_groud_truth_based_var  0:00:12.166565  
+
+-------------------------2022-09-15 08:29:55.496285-------------------------
+load config.json 0:00:00.000189 
+load asns.json 0:00:00.061164  
+make_as_importance  0:02:43.308684  
+transformToJSON  0:00:00.715801  
+
+-------------------------2022-09-15 08:38:47.075844-------------------------
+load config.json 0:00:00.000194 
+load asns.json 0:00:00.063021  
+make_as_importance  0:02:39.387801  
+transformToJSON  0:00:00.719973  
+
+-------------------------2022-09-15 08:42:47.236259-------------------------
+load config.json 0:00:00.000187 
+load asns.json 0:00:00.061093  
+make_as_importance  0:02:37.882756  
+transformToJSON  0:00:00.709226  
+
+-------------------------2022-09-15 08:53:59.619547-------------------------
+load config.json 0:00:00.000197 
+load asns.json 0:00:00.056862  
+make_as_importance  0:02:36.419176  
+transformToJSON  0:00:00.724578  
+
+-------------------------2022-09-16 08:14:27.234946-------------------------
+load config.json 0:00:00.015461 
+
+-------------------------2022-09-16 08:22:50.079246-------------------------
+load config.json 0:00:00.000150 
+
+-------------------------2022-09-16 08:26:33.209832-------------------------
+load config.json 0:00:00.000171 
+load asns.json 0:00:00.063052  
+make_as_importance  0:00:40.639419  
+transformToJSON  0:00:00.710131  
+createRoutingTree  0:00:23.714225  
+monitorCountryInternal  0:01:16.819326  
+do_extract_connect_list  0:00:01.526843  
+do_groud_truth_based_anova  0:00:01.742472  
+do_groud_truth_based_var  0:00:00.752742  
+transformToJSON  0:00:00.647485  
+createRoutingTree  0:00:13.663978  
+monitorCountryInternal  0:00:18.039991  
+do_extract_connect_list  0:00:00.507426  
+do_groud_truth_based_anova  0:00:28.183969  
+do_groud_truth_based_var  0:00:00.271811  
+transformToJSON  0:00:00.644447  
+createRoutingTree  0:00:25.262785  
+monitorCountryInternal  0:01:22.436842  
+do_extract_connect_list  0:00:01.043253  
+do_groud_truth_based_anova  0:00:01.195925  
+do_groud_truth_based_var  0:00:00.498055  
+transformToJSON  0:00:00.708851  
+createRoutingTree  0:00:24.461438  
+monitorCountryInternal  0:01:24.585080  
+do_extract_connect_list  0:00:00.991785  
+do_groud_truth_based_anova  0:00:01.158110  
+do_groud_truth_based_var  0:00:00.491727  
+
+-------------------------2022-09-16 08:38:27.621899-------------------------
+load config.json 0:00:00.000181 
+load asns.json 0:00:00.061830  
+make_as_importance  0:02:36.256085  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.759583  
+createRoutingTree  0:58:10.223104  
+monitorCountryInternal  4:39:37.582642  
+do_extract_connect_list  0:02:25.916779  
+do_groud_truth_based_anova  0:33:45.384229  
+do_groud_truth_based_var  0:01:34.258384  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.649492  
+createRoutingTree  0:54:41.971268  
+monitorCountryInternal  3:22:51.396261  
+do_extract_connect_list  0:01:46.681146  
+do_groud_truth_based_anova  0:22:29.142546  
+do_groud_truth_based_var  0:00:59.077386  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.679229  
+createRoutingTree  1:02:53.128753  
+monitorCountryInternal  5:30:10.330935  
+do_extract_connect_list  0:02:36.872043  
+do_groud_truth_based_anova  0:35:30.799614  
+do_groud_truth_based_var  0:01:39.607450  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.736048  
+createRoutingTree  1:06:57.491522  
+monitorCountryInternal  5:38:17.594386  
+do_extract_connect_list  0:02:38.117230  
+do_groud_truth_based_anova  0:35:23.982690  
+do_groud_truth_based_var  0:01:37.908026  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-17 13:59:59.505371-------------------------
+load config.json 0:00:00.000173 
+load asns.json 0:00:00.062831  
+make_as_importance  0:02:36.541271  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.780100  
+createRoutingTree  0:01:07.823988  
+monitorCountryInternal  0:00:07.755465  
+do_extract_connect_list  0:02:24.695131  
+do_groud_truth_based_anova  0:01:44.289444  
+do_groud_truth_based_var  0:01:23.036786  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.647223  
+createRoutingTree  0:01:02.192604  
+monitorCountryInternal  0:00:11.624289  
+do_extract_connect_list  0:01:45.811313  
+do_groud_truth_based_anova  0:01:07.271347  
+do_groud_truth_based_var  0:00:58.988048  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.669031  
+createRoutingTree  0:01:08.044434  
+monitorCountryInternal  0:00:13.550445  
+do_extract_connect_list  0:02:36.523970  
+do_groud_truth_based_anova  0:01:50.869058  
+do_groud_truth_based_var  0:01:31.135911  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.742420  
+createRoutingTree  0:01:09.848773  
+monitorCountryInternal  0:00:11.817248  
+do_extract_connect_list  0:02:36.015009  
+do_groud_truth_based_anova  0:01:51.275311  
+do_groud_truth_based_var  0:01:31.632503  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-19 01:10:14.237474-------------------------
+load config.json 0:00:00.000157 
+load asns.json 0:00:00.055893  
+make_as_importance  0:02:34.252264  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.720872  
+createRoutingTree  0:03:15.944878  
+monitorCountryInternal  0:15:15.917311  
+do_extract_connect_list  0:00:07.678297  
+do_groud_truth_based_anova  0:01:01.847255  
+do_groud_truth_based_var  0:00:04.252634  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.624319  
+createRoutingTree  0:02:59.054285  
+monitorCountryInternal  0:11:23.314090  
+do_extract_connect_list  0:00:06.070841  
+do_groud_truth_based_anova  0:00:55.706484  
+do_groud_truth_based_var  0:00:03.183511  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.716928  
+createRoutingTree  0:03:24.898197  
+monitorCountryInternal  0:17:43.030074  
+do_extract_connect_list  0:00:08.068165  
+do_groud_truth_based_anova  0:01:05.210737  
+do_groud_truth_based_var  0:00:04.505045  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.736789  
+createRoutingTree  0:03:39.731659  
+monitorCountryInternal  0:18:20.253486  
+do_extract_connect_list  0:00:08.322059  
+do_groud_truth_based_anova  0:01:06.115011  
+do_groud_truth_based_var  0:00:04.864644  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-19 02:52:40.045900-------------------------
+load config.json 0:00:00.000189 
+load asns.json 0:00:00.063152  
+make_as_importance  0:02:40.219247  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.708961  
+
+-------------------------2022-09-19 02:55:50.711046-------------------------
+load config.json 0:00:00.000172 
+load asns.json 0:00:00.064578  
+make_as_importance  0:02:34.359994  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.705533  
+
+-------------------------2022-09-19 03:02:13.951564-------------------------
+load config.json 0:00:00.000167 
+load asns.json 0:00:00.063564  
+make_as_importance  0:02:38.550528  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.707810  
+
+-------------------------2022-09-19 03:05:40.302866-------------------------
+load config.json 0:00:00.000169 
+load asns.json 0:00:00.061252  
+make_as_importance  0:02:37.586459  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.727612  
+
+-------------------------2022-09-19 03:12:59.561283-------------------------
+load config.json 0:00:00.000196 
+load asns.json 0:00:00.064131  
+
+-------------------------2022-09-19 03:13:29.785269-------------------------
+load config.json 0:00:00.000145 
+load asns.json 0:00:00.056342  
+
+-------------------------2022-09-19 03:14:41.730006-------------------------
+load config.json 0:00:00.000170 
+load asns.json 0:00:00.069993  
+
+-------------------------2022-09-19 03:15:02.551334-------------------------
+load config.json 0:00:00.000189 
+load asns.json 0:00:00.061388  
+make_as_importance  0:02:40.191232  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.711467  
+createRoutingTree  0:03:28.867866  
+monitorCountryInternal  0:15:21.848312  
+do_extract_connect_list  0:00:07.594603  
+do_groud_truth_based_anova  0:00:53.042397  
+do_groud_truth_based_var  0:00:04.082514  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.623236  
+createRoutingTree  0:03:01.727346  
+monitorCountryInternal  0:11:15.439215  
+do_extract_connect_list  0:00:05.768797  
+do_groud_truth_based_anova  0:00:47.014576  
+do_groud_truth_based_var  0:00:02.886400  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.626982  
+createRoutingTree  0:03:28.299645  
+monitorCountryInternal  0:18:03.617332  
+do_extract_connect_list  0:00:07.705848  
+do_groud_truth_based_anova  0:00:55.742275  
+do_groud_truth_based_var  0:00:04.208520  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.725216  
+createRoutingTree  0:03:42.041058  
+monitorCountryInternal  0:18:14.435525  
+do_extract_connect_list  0:00:07.964022  
+do_groud_truth_based_anova  0:00:55.382353  
+do_groud_truth_based_var  0:00:04.349813  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-19 05:46:59.143210-------------------------
+load config.json 0:00:00.000150 
+load asns.json 0:00:00.056677  
+
+-------------------------2022-09-19 05:47:34.470320-------------------------
+load config.json 0:00:00.000175 
+load asns.json 0:00:00.058130  
+make_as_importance  0:02:35.885800  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.730976  
+createRoutingTree  0:03:26.025916  
+monitorCountryInternal  0:03:23.146701  
+do_extract_connect_list  0:00:04.370030  
+do_groud_truth_based_anova  0:00:44.335399  
+do_groud_truth_based_var  0:00:02.685890  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.652227  
+createRoutingTree  0:03:04.126673  
+monitorCountryInternal  0:02:43.911344  
+do_extract_connect_list  0:00:03.514720  
+do_groud_truth_based_anova  0:00:40.814652  
+do_groud_truth_based_var  0:00:01.852823  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.672713  
+createRoutingTree  0:03:33.209065  
+monitorCountryInternal  0:03:43.560911  
+do_extract_connect_list  0:00:04.668151  
+do_groud_truth_based_anova  0:00:49.647423  
+do_groud_truth_based_var  0:00:02.771088  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.736326  
+createRoutingTree  0:03:52.601901  
+monitorCountryInternal  0:03:43.629703  
+do_extract_connect_list  0:00:04.707204  
+do_groud_truth_based_anova  0:00:47.499062  
+do_groud_truth_based_var  0:00:02.774578  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-20 01:10:52.063759-------------------------
+/home/peizd01/for_dragon/pzd_test_rank_top_10_1
+load config.json 0:00:00.000155 
+load asns.json 0:00:00.057334  
+make_as_importance  0:02:33.442458  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.708210  
+createRoutingTree  0:03:18.498163  
+monitorCountryInternal  0:03:15.406491  
+do_extract_connect_list  0:00:04.250910  
+do_groud_truth_based_anova  0:00:52.258711  
+do_groud_truth_based_var  0:00:02.350010  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.653087  
+createRoutingTree  0:03:00.535269  
+monitorCountryInternal  0:02:38.104542  
+do_extract_connect_list  0:00:03.885426  
+do_groud_truth_based_anova  0:00:49.395216  
+do_groud_truth_based_var  0:00:02.543137  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.640148  
+createRoutingTree  0:03:26.021784  
+monitorCountryInternal  0:03:38.172485  
+do_extract_connect_list  0:00:04.623273  
+do_groud_truth_based_anova  0:00:55.890291  
+do_groud_truth_based_var  0:00:03.013579  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.753413  
+createRoutingTree  0:03:34.118499  
+monitorCountryInternal  0:03:46.271979  
+do_extract_connect_list  0:00:04.823542  
+do_groud_truth_based_anova  0:00:55.520333  
+do_groud_truth_based_var  0:00:03.066945  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-20 02:43:30.703419-------------------------
+/home/peizd01/for_dragon/pzd_test_rank_top_10_2
+load config.json 0:00:00.000183 
+load asns.json 0:00:00.061517  
+make_as_importance  0:02:34.533917  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.706952  
+createRoutingTree  0:05:58.552374  
+monitorCountryInternal  0:03:36.618619  
+do_extract_connect_list  0:00:04.437148  
+do_groud_truth_based_anova  0:00:51.970178  
+do_groud_truth_based_var  0:00:02.411056  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.684622  
+createRoutingTree  0:03:04.407123  
+monitorCountryInternal  0:02:45.599018  
+do_extract_connect_list  0:00:03.823024  
+do_groud_truth_based_anova  0:00:49.095302  
+do_groud_truth_based_var  0:00:02.023988  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.674085  
+createRoutingTree  0:03:29.605728  
+monitorCountryInternal  0:03:50.164151  
+do_extract_connect_list  0:00:04.621254  
+do_groud_truth_based_anova  0:00:54.099506  
+do_groud_truth_based_var  0:00:02.905735  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.783428  
+createRoutingTree  0:03:37.755326  
+monitorCountryInternal  0:03:57.695187  
+do_extract_connect_list  0:00:04.806543  
+do_groud_truth_based_anova  0:00:55.703852  
+do_groud_truth_based_var  0:00:03.125851  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-20 05:33:22.871234-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000165 
+load asns.json 0:00:00.061155  
+make_as_importance  0:00:09.499490  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.712085  
+createRoutingTree  0:00:01.561800  
+monitorCountryInternal  0:00:00.350242  
+do_extract_connect_list  0:00:00.034398  
+do_groud_truth_based_anova  0:00:03.132440  
+do_groud_truth_based_var  0:00:00.021595  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 05:35:17.091497-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000166 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.719496  
+
+-------------------------2022-09-20 05:35:36.513926-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000168 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.722047  
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 05:36:43.060563-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000163 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.718351  
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 05:37:21.498553-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000166 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.713141  
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 05:43:38.949745-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000167 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.716671  
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 06:39:01.593537-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000167 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.729012  
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 07:40:29.869725-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000211 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.720267  
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 07:45:26.763584-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000189 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.715487  
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 08:00:52.820503-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000151 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.699754  
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 08:04:51.146069-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000153 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.744692  
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 08:13:51.027456-------------------------
+/home/peizd01/for_dragon/pzd_test4
+load config.json 0:00:00.000154 
+------------------- asRank start -------------------
+transformToJSON  0:00:00.703676  
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-20 08:32:26.627399-------------------------
+/home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut
+load config.json 0:00:00.000162 
+load asns.json 0:00:00.060971  
+make_as_importance  0:02:34.257044  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.700543  
+
+-------------------------2022-09-20 08:36:26.318060-------------------------
+/home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut
+load config.json 0:00:00.000161 
+load asns.json 0:00:00.062565  
+make_as_importance  0:02:36.486917  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.712739  
+createRoutingTree  1:04:24.894360  
+monitorCountryInternal  0:11:55.103217  
+do_extract_connect_list  0:00:04.983565  
+do_groud_truth_based_anova  0:00:25.391839  
+do_groud_truth_based_var  0:00:02.582696  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-21 00:20:36.993459-------------------------
+/home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut
+load config.json 0:00:00.000155 
+load asns.json 0:00:00.060616  
+make_as_importance  0:02:35.854341  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.706065  
+
+-------------------------2022-09-21 00:37:30.502491-------------------------
+/home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut
+load config.json 0:00:00.000164 
+load asns.json 0:00:00.063025  
