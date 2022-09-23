@@ -9,18 +9,21 @@ import multiprocessing
 def get_radio(as_list,path):
     inner_rank_map = {}
     sum_rank = 0
+    user_weight_list = []
     with open(os.path.join(path,'input','as_user_ratio.json'), 'r') as user_file:
         data = json.load(user_file)
         rank_index = 0
         for i in data:
             if i[1] in as_list:
-                as_num = i[1][2:]
-                if as_num not in inner_rank_map:
-                    inner_rank_map[as_num] = 0
-                # print(i[4])
-                rank_index += 1
-                sum_rank += 1 / int(rank_index)
-                inner_rank_map[as_num] += (1 / int(rank_index))
+                user_weight_list.append([i[1], i[4]])
+        user_weight_list.sort(key=lambda x: x[1])
+        for i in user_weight_list:
+            if i[0][2:] not in inner_rank_map:
+                inner_rank_map[i[0][2:]] = 0
+            # print(i[1])
+            rank_index += 1
+            sum_rank += 1 / int(rank_index)
+            inner_rank_map[i[0][2:]] += (1 / int(rank_index))
 
         for _as in inner_rank_map:
             # print(_as, inner_rank_map[_as] / sum_rank)
@@ -32,18 +35,23 @@ def get_radio_domain(as_list_domain,csv_data):
     as_domain_map = {}
     sum_rank_domain = 0
     rank_index = 0
+    as_weight_list = []
     for c in csv_data:
-        as_num = c[2]
-        if as_num == '':
+        weight = c[4]
+        # weight = c[9]
+        if c[2] == '':
             continue
-        if as_num not in as_list_domain:
+        if c[2] not in as_list_domain:
             continue
-
-        if as_num not in as_domain_map:
-            as_domain_map[as_num] = 0
+        # print(c[2], weight)
+        as_weight_list.append([c[2], weight])
+    as_weight_list.sort(key=lambda x: x[1])
+    for c in as_weight_list:
+        if c[0] not in as_domain_map:
+            as_domain_map[c[0]] = 0
         rank_index += 1
         sum_rank_domain += (1 / rank_index)
-        as_domain_map[as_num] += (1 / rank_index)
+        as_domain_map[c[0]] += (1 / rank_index)
 
     for _key in as_domain_map:
         as_domain_map[_key] = as_domain_map[_key] / sum_rank_domain
@@ -51,7 +59,7 @@ def get_radio_domain(as_list_domain,csv_data):
 
 
 def do_something(ccc,path,csv_data):
-    cc2as_path2 = '/home/peizd01/for_dragon/public/cc2as'
+    cc2as_path2 = os.path.join(path,'output/cc2as')
     as_map = {}
     result = []
     output_path = os.path.join(path,'output/weight_data')

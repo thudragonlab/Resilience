@@ -669,3 +669,365 @@ transformToJSON  0:00:00.706065
 /home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut
 load config.json 0:00:00.000164 
 load asns.json 0:00:00.063025  
+
+-------------------------2022-09-21 00:49:35.794852-------------------------
+/home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut
+load config.json 0:00:00.000164 
+load asns.json 0:00:00.062591  
+make_as_importance  0:02:34.401997  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.748813  
+createRoutingTree  0:59:39.796637  
+
+-------------------------2022-09-21 02:59:35.635787-------------------------
+/home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut
+load config.json 0:00:00.000174 
+load asns.json 0:00:00.060696  
+
+-------------------------2022-09-21 04:26:02.317638-------------------------
+/home/peizd01/for_dragon/pzd_test_random_100_as_top_10_cut_asRank
+load config.json 0:00:00.000157 
+load asns.json 0:00:00.062337  
+make_as_importance  0:02:37.637025  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.712281  
+monitorCountryInternal  0:12:34.625831  
+do_extract_connect_list  0:00:08.194228  
+do_groud_truth_based_anova  0:01:04.204563  
+do_groud_truth_based_var  0:00:04.633349  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-21 04:48:02.692904-------------------------
+/home/peizd01/for_dragon/pzd_test_only_CN_all_rtree_asRank
+load config.json 0:00:00.000156 
+load asns.json 0:00:00.063829  
+make_as_importance  0:00:08.851884  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.714044  
+createRoutingTree  0:00:31.942863  
+monitorCountryInternal  0:00:02.630508  
+do_extract_connect_list  0:00:00.128253  
+do_groud_truth_based_anova  0:00:02.197926  
+do_groud_truth_based_var  0:00:00.044629  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-21 05:01:59.398765-------------------------
+/home/peizd01/for_dragon/pzd_test_only_CN_all_rtree_asRank
+load config.json 0:00:00.000154 
+load asns.json 0:00:00.062991  
+make_as_importance  0:00:09.529806  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.712683  
+createRoutingTree  0:02:29.479226  
+monitorCountryInternal  0:00:03.212135  
+do_extract_connect_list  0:00:00.106834  
+do_groud_truth_based_anova  0:00:02.056809  
+do_groud_truth_based_var  0:00:00.050219  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+------------------- toposcope start -------------------
+------------------- toposcope_hidden start -------------------
+
+-------------------------2022-09-21 03:03:33.365343-------------------------
+/home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut
+load config.json 0:00:00.000171 
+load asns.json 0:00:00.061485  
+make_as_importance  0:02:37.093240  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.703747  
+createRoutingTree  0:58:33.073495  
+monitorCountryInternal  0:11:56.674143  
+do_extract_connect_list  0:00:05.823103  
+do_groud_truth_based_anova  0:00:32.141693  
+do_groud_truth_based_var  0:00:03.014754  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.651870  
+createRoutingTree  0:45:28.248464  
+monitorCountryInternal  0:06:01.425467  
+do_extract_connect_list  0:00:03.559856  
+do_groud_truth_based_anova  0:00:22.535941  
+do_groud_truth_based_var  0:00:01.884000  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.657785  
+createRoutingTree  0:54:07.796703  
+monitorCountryInternal  0:09:52.617073  
+do_extract_connect_list  0:00:04.750721  
+do_groud_truth_based_anova  0:00:24.582650  
+do_groud_truth_based_var  0:00:02.428839  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.722864  
+createRoutingTree  0:59:27.081336  
+monitorCountryInternal  0:10:18.109514  
+do_extract_connect_list  0:00:04.594499  
+do_groud_truth_based_anova  0:00:25.130456  
+do_groud_truth_based_var  0:00:02.462378  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-21 08:41:02.791440-------------------------
+/home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut_2
+load config.json 0:00:00.000140 
+load asns.json 0:00:00.054879  
+make_as_importance  0:02:36.363400  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.725168  
+createRoutingTree  1:02:08.605156  
+monitorCountryInternal  0:11:38.808444  
+do_extract_connect_list  0:00:05.385412  
+do_groud_truth_based_anova  0:00:26.754841  
+do_groud_truth_based_var  0:00:02.704885  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.759189  
+createRoutingTree  0:39:50.824441  
+monitorCountryInternal  0:06:20.217388  
+do_extract_connect_list  0:00:03.515436  
+do_groud_truth_based_anova  0:00:23.145370  
+do_groud_truth_based_var  0:00:02.095407  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.712841  
+createRoutingTree  0:55:46.194296  
+monitorCountryInternal  0:10:05.012799  
+do_extract_connect_list  0:00:04.868450  
+do_groud_truth_based_anova  0:00:25.250801  
+do_groud_truth_based_var  0:00:02.465740  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.730400  
+createRoutingTree  0:57:05.952584  
+monitorCountryInternal  0:11:23.121103  
+do_extract_connect_list  0:00:05.100524  
+do_groud_truth_based_anova  0:00:26.613507  
+do_groud_truth_based_var  0:00:02.476455  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-22 00:03:33.679764-------------------------
+/home/peizd01/for_dragon/pzd_test_random_100_as_top_6_cut_3
+load config.json 0:00:00.000170 
+load asns.json 0:00:00.061666  
+make_as_importance  0:02:37.552269  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.704157  
+createRoutingTree  1:03:50.001515  
+monitorCountryInternal  0:11:27.231638  
+do_extract_connect_list  0:00:05.024714  
+do_groud_truth_based_anova  0:00:25.153804  
+do_groud_truth_based_var  0:00:02.544678  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.616911  
+createRoutingTree  0:50:40.971162  
+monitorCountryInternal  0:08:16.873910  
+do_extract_connect_list  0:00:05.250740  
+do_groud_truth_based_anova  0:00:24.457987  
+do_groud_truth_based_var  0:00:02.293149  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.854164  
+createRoutingTree  0:57:17.811932  
+monitorCountryInternal  0:10:12.768893  
+do_extract_connect_list  0:00:05.091831  
+do_groud_truth_based_anova  0:00:25.827290  
+do_groud_truth_based_var  0:00:02.499698  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.806953  
+createRoutingTree  1:03:35.893171  
+monitorCountryInternal  0:10:44.226648  
+do_extract_connect_list  0:00:05.039606  
+do_groud_truth_based_anova  0:00:25.843164  
+do_groud_truth_based_var  0:00:02.576772  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-22 03:12:55.905501-------------------------
+/home/peizd01/for_dragon/pzd_test_cone_sort_by_cone_top_100_6_cut
+load config.json 0:00:00.000147 
+load asns.json 0:00:02.504488  
+make_as_importance  0:02:36.224087  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.711771  
+createRoutingTree  1:02:30.926452  
+monitorCountryInternal  0:11:59.607806  
+do_extract_connect_list  0:00:05.358884  
+do_groud_truth_based_anova  0:00:27.805881  
+do_groud_truth_based_var  0:00:02.914250  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.662327  
+createRoutingTree  0:39:57.525156  
+monitorCountryInternal  0:06:19.013399  
+do_extract_connect_list  0:00:03.703315  
+do_groud_truth_based_anova  0:00:24.170872  
+do_groud_truth_based_var  0:00:02.095308  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.698067  
+createRoutingTree  0:52:56.040088  
+monitorCountryInternal  0:10:01.724865  
+do_extract_connect_list  0:00:04.829053  
+do_groud_truth_based_anova  0:00:26.356686  
+do_groud_truth_based_var  0:00:02.423764  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.788101  
+createRoutingTree  0:54:48.306074  
+monitorCountryInternal  0:10:13.318405  
+do_extract_connect_list  0:00:05.065812  
+do_groud_truth_based_anova  0:00:26.212134  
+do_groud_truth_based_var  0:00:02.582195  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-22 08:51:17.583470-------------------------
+/home/peizd01/for_dragon/pzd_test_cone_top_50_cut_10_3
+load config.json 0:00:00.000133 
+load asns.json 0:00:02.437540  
+make_as_importance  0:02:37.818080  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.749705  
+createRoutingTree  1:04:18.908304  
+monitorCountryInternal  0:16:49.191056  
+do_extract_connect_list  0:00:09.315513  
+do_groud_truth_based_anova  0:01:14.585705  
+do_groud_truth_based_var  0:00:05.253785  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.701370  
+createRoutingTree  0:43:51.963779  
+monitorCountryInternal  0:08:23.176659  
+do_extract_connect_list  0:00:06.100729  
+do_groud_truth_based_anova  0:01:03.725297  
+do_groud_truth_based_var  0:00:03.830190  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.745732  
+createRoutingTree  0:57:40.679219  
+monitorCountryInternal  0:13:35.364937  
+do_extract_connect_list  0:00:08.159067  
+do_groud_truth_based_anova  0:01:10.945121  
+do_groud_truth_based_var  0:00:04.200422  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.767715  
+
+-------------------------2022-09-22 08:48:36.027685-------------------------
+/home/peizd01/for_dragon/pzd_test_cone_top_50_cut_10
+load config.json 0:00:00.000144 
+load asns.json 0:00:02.435320  
+make_as_importance  0:02:36.275083  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.821834  
+createRoutingTree  1:02:48.173461  
+monitorCountryInternal  0:16:30.293939  
+do_extract_connect_list  0:00:09.367921  
+do_groud_truth_based_anova  0:01:16.881978  
+do_groud_truth_based_var  0:00:05.754629  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.775980  
+createRoutingTree  0:41:11.252645  
+monitorCountryInternal  0:06:55.510560  
+do_extract_connect_list  0:00:05.899729  
+do_groud_truth_based_anova  0:01:04.127468  
+do_groud_truth_based_var  0:00:03.688843  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.759447  
+createRoutingTree  0:56:56.743422  
+monitorCountryInternal  0:11:49.041481  
+do_extract_connect_list  0:00:09.055365  
+do_groud_truth_based_anova  0:01:16.898541  
+do_groud_truth_based_var  0:00:05.540529  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.963054  
+createRoutingTree  0:59:23.639782  
+monitorCountryInternal  0:10:52.906582  
+do_extract_connect_list  0:00:08.343290  
+do_groud_truth_based_anova  0:01:09.125873  
+do_groud_truth_based_var  0:00:04.798138  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-22 08:50:33.724628-------------------------
+/home/peizd01/for_dragon/pzd_test_cone_top_50_cut_10_2
+load config.json 0:00:00.000161 
+load asns.json 0:00:02.477054  
+make_as_importance  0:02:36.553499  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.708355  
+createRoutingTree  1:07:19.023398  
+monitorCountryInternal  0:16:14.968783  
+do_extract_connect_list  0:00:08.717349  
+do_groud_truth_based_anova  0:01:10.068694  
+do_groud_truth_based_var  0:00:04.766856  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.624146  
+createRoutingTree  0:44:10.155600  
+monitorCountryInternal  0:07:59.975235  
+do_extract_connect_list  0:00:06.040390  
+do_groud_truth_based_anova  0:00:59.793344  
+do_groud_truth_based_var  0:00:03.569398  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.690762  
+createRoutingTree  1:00:47.887001  
+monitorCountryInternal  0:12:21.138683  
+do_extract_connect_list  0:00:07.908976  
+do_groud_truth_based_anova  0:01:07.994281  
+do_groud_truth_based_var  0:00:04.715127  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.736809  
+createRoutingTree  0:58:57.578849  
+monitorCountryInternal  0:10:52.509022  
+do_extract_connect_list  0:00:08.198283  
+do_groud_truth_based_anova  0:01:09.456442  
+do_groud_truth_based_var  0:00:04.185465  
+------------------- toposcope_hidden end ------------------- 
+
+-------------------------2022-09-23 00:22:46.119789-------------------------
+/home/peizd01/for_dragon/pzd_test_cone_top_50_cut_10_3
+load config.json 0:00:00.000143 
+load asns.json 0:00:02.396787  
+make_as_importance  0:02:34.301630  
+------------------- asRank start -------------------
+transformToJSON  0:00:00.700654  
+createRoutingTree  0:02:05.186704  
+monitorCountryInternal  0:00:10.293172  
+do_extract_connect_list  0:00:09.535478  
+do_groud_truth_based_anova  0:00:03.689246  
+do_groud_truth_based_var  0:00:04.299226  
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+transformToJSON  0:00:00.704330  
+createRoutingTree  0:01:41.440430  
+monitorCountryInternal  0:00:10.333764  
+do_extract_connect_list  0:00:07.147432  
+do_groud_truth_based_anova  0:00:02.516028  
+do_groud_truth_based_var  0:00:03.092245  
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+transformToJSON  0:00:00.712860  
+createRoutingTree  0:01:57.699133  
+monitorCountryInternal  0:00:10.379436  
+do_extract_connect_list  0:00:09.944397  
+do_groud_truth_based_anova  0:00:03.407738  
+do_groud_truth_based_var  0:00:04.019811  
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+transformToJSON  0:00:00.811962  
+createRoutingTree  0:54:48.263045  
+monitorCountryInternal  0:10:54.437049  
+do_extract_connect_list  0:00:08.284814  
+do_groud_truth_based_anova  0:01:09.020460  
+do_groud_truth_based_var  0:00:04.234064  
+------------------- toposcope_hidden end ------------------- 

@@ -397,9 +397,9 @@ def speedyGET(args):
     # print(nodeList)
     # nodeList.sort(key=sort_by_cone,reverse=True)
     # print('len(nodeList)',len(nodeList))
-    # lastIndex = len(nodeList)
-    if len(nodeList) > 100:
-        lastIndex = 100
+    lastIndex = len(nodeList)
+    # if len(nodeList) > 100:
+    #     lastIndex = 100
     old_index_list = []
     def get_random_index():
         random_index = randint(0,len(nodeList) - 1)
@@ -410,10 +410,10 @@ def speedyGET(args):
     # lastIndex = len(nodeList)
     
     for index in range(int(0), int(lastIndex)):
-       random_index = get_random_index()
+    #    random_index = get_random_index()
     #    print('random_index,len(nodeList) %s %s' % (random_index,len(nodeList)))
        file_name = os.listdir(str(args[3]))
-       destinationNode = nodeList[random_index]
+       destinationNode = nodeList[index]
     #    destinationNode = 39642
        try:
             t = threading.Thread(target=makeRoutingTree,args=(destinationNode,))

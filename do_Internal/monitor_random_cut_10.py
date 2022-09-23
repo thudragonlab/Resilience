@@ -238,7 +238,7 @@ def monitor_country_internal(prefix,_type,asn_data):
         fes = []
         file_name = os.listdir(path+cc+'/')
         print(file)
-        for f in file[:6]:
+        for f in file[:10]:
             #if f[0][:-4]+'.addDel.txt' in file_name: 
             #    print('exist')
             #    continue

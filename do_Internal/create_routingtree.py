@@ -18,12 +18,22 @@ import itertools
 import multiprocessing
 # from multiprocessing.pool import ThreadPool
 # from itertools import izip
+from random import randint
 import threading
 izip=zip
 # relas = {}
+asn_data_global = {}
 
 
+'''
+把inFile里面的所有AS号写入到outFile中
 
+infile数据格式 as1|as2|0
+outFile里面的格式 as1\tas2\tp2p
+
+生成.nodeList文件
+格式as1\nas2\as3...
+'''
 def dataConverter(inFile, outFile):
     of = open(outFile, 'w')
 
@@ -31,6 +41,7 @@ def dataConverter(inFile, outFile):
         line = fp.readline()
         cnt = 1
         nodeList = []
+        # 
         while line:
             if (line[0] != '#'):
                 data = line.split('|')
@@ -167,7 +178,7 @@ def speedyGET(args):
             for vertex in vertices:
                 # print(vertex)
                 # print(fullGraph)
-                for node, relationship in izip(fullGraph[vertex].nonzero()[1], fullGraph[vertex].data):
+                for node, relationship in zip(fullGraph[vertex].nonzero()[1], fullGraph[vertex].data):
                     if (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0) and (
                             (not levels[node] <= level) or (levels[node] == -1)):
                         routingTree[node, vertex] = 1
@@ -209,7 +220,7 @@ def speedyGET(args):
             # print "---level---: ",level
             vertices = pair[1]
             for vertex in vertices:
-                for node, relationship in izip(fullGraph[vertex].nonzero()[1], fullGraph[vertex].data):
+                for node, relationship in zip(fullGraph[vertex].nonzero()[1], fullGraph[vertex].data):
                     if (relationship == 1) and (old[node] == 0):
                         routingTree[node, vertex] = 1
                         if newBFS[-1][0] == level:
@@ -247,7 +258,7 @@ def speedyGET(args):
             level = pair[0]
             vertices = pair[1]
             for vertex in vertices:
-                for node, relationship in izip(fullGraph[vertex].nonzero()[1], fullGraph[vertex].data):
+                for node, relationship in zip(fullGraph[vertex].nonzero()[1], fullGraph[vertex].data):
                     if (relationship == 2) and (routingTree[vertex, node] == 0 and routingTree[node, vertex] == 0) and \
                             old[node] == 0 and ((not (levels[node] <= level)) or (levels[node] == -1)):
                         routingTree[node, vertex] = 1
@@ -281,7 +292,10 @@ def speedyGET(args):
             print('exist')
             return
         routingTree = sparse.dok_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
+        # print('numNodes',numNodes)
+        # print('routingTree',routingTree)
         stepOneRT, stepOneNodes, lvls = customerToProviderBFS(destinationNode, routingTree, fullGraph)
+        # print('stepOneNodes',stepOneNodes)
         stepTwoRT, stepTwoNodes, lvlsTwo = peerToPeer(stepOneRT, stepOneNodes, fullGraph, lvls)
         stepThreeRT = providerToCustomer(stepTwoRT, stepTwoNodes, fullGraph, lvlsTwo)
         saveAsNPZ(os.path.join(str(args[3]), "dcomplete" + str(destinationNode)), stepThreeRT)
@@ -338,6 +352,7 @@ def speedyGET(args):
     if (rank == 0):
         nodeListFile = str(args[4])
         nodeList = []
+        print('nodeListFile',nodeListFile)
         with open(nodeListFile) as fp:
             line = fp.readline()
             while line:
@@ -349,7 +364,6 @@ def speedyGET(args):
             print("Max ASNode ID: " + str(max(nodeList)))
     else:
         nodeList = None
-
     nodeList = comm.bcast(nodeList, root=0)
     numNodes = int(args[5])  # max(nodeList)
     firstIndex, lastIndex = getRankBounds(nodeList)
@@ -407,10 +421,10 @@ def speedyGET(args):
         print("All Routing Trees Completed. Elapsed Time: " + str((timer['end'] - timer['start'])))
 
 
-def create_rela_file(relas, relaFile):
-    '''
+'''
     从国家的as，以及as关系文件，提取出国家内部拓扑的relas [provider、customer、peer]
     '''
+def create_rela_file(relas, relaFile):
     sum = 0
     # print('relaFile',relas)
     with open(relaFile, 'w') as f:
@@ -423,28 +437,32 @@ def create_rela_file(relas, relaFile):
                     f.write(str(c)+'|'+str(b)+'|0\n')
     print(sum)
 
-def run_routingTree(dsn_file, relaFile):
-    dataConverter(relaFile, 'bgp-sas.npz')
-    maxNum = graphGenerator('bgp-sas.npz', 'routingTree.mtx')
-    speedyGET(['','routingTree.mtx', 'v', dsn_file, 'routingTree.mtx.nodeList', str(maxNum)])
+def run_routingTree(dsn_file, relaFile,rtree_dsn_path):
+    dataConverter(relaFile, os.path.join(rtree_dsn_path,'bgp-sas.npz'))
+    maxNum = graphGenerator(os.path.join(rtree_dsn_path,'bgp-sas.npz'), os.path.join(rtree_dsn_path,'routingTree.mtx'))
+    speedyGET(['',os.path.join(rtree_dsn_path,'routingTree.mtx'), 'v', dsn_file, os.path.join(rtree_dsn_path,'routingTree.mtx.nodeList'), str(maxNum)])
 
 
-def rTree(relas, dsn_file):
+'''生成一个国家内的排名前10的AS的路由树'''
+def rTree(relas, dsn_file,rtree_dsn_path):
     
     relaFile = os.path.join(dsn_file, 'as-rel.txt')
     #if len(relas)==0:
     #    return
     create_rela_file(relas, relaFile)
-    run_routingTree(dsn_file, relaFile)
+    run_routingTree(dsn_file, relaFile,rtree_dsn_path)
     
-def create_relas(file, as_rela_file,if_del_stub_as=False,):
-    '''
+
+
+'''
     从国家的as，以及as关系文件，提取出国家内部拓扑的relas [provider、customer、peer]
     '''
+def create_relas(file, as_rela_file,if_del_stub_as=False,):
     # global relas
     relas = {}
     with open(as_rela_file, 'r') as f:
         as_rela = json.load(f)
+        print('len(as_rela.keys())',len(as_rela.keys()))
         # print(as_rela.keys())
     with open(file, 'r') as f:
         cclist = json.load(f)
@@ -479,11 +497,19 @@ def create_relas(file, as_rela_file,if_del_stub_as=False,):
 
 
 
+'''
+file cc2as里面的数据
+dsnpath 输出路径
+country 国家代码
+as_rela_file 国家对应的topo关系文件
 
-def monitor_routingTree(file,dsn_path,country,as_rela_file):
+目的 生成对应国家排名前10的路由树文件
+'''
+def monitor_routingTree(file,rtree_dsn_path,country,as_rela_file):
     # global relas
-    country_name = os.listdir(dsn_path)
-    dsn_path = os.path.join(dsn_path, country)
+    
+    country_name = os.listdir(rtree_dsn_path)
+    dsn_path = os.path.join(rtree_dsn_path, country)
     if country not in country_name:
         os.popen('mkdir '+dsn_path)
     print(country+' begin')
@@ -500,11 +526,9 @@ def monitor_routingTree(file,dsn_path,country,as_rela_file):
     if relas_is_empty:
         print('%s end ,relas is empty' % country)
         return
-    print('finish',country)
-    # if country=='PT':
-    #     print(relas)
+    # print('finish',country)
     if len(relas)<10: return
-    rTree(relas, dsn_path)
+    rTree(relas, dsn_path,rtree_dsn_path)
     print(country+' end')
 
 
@@ -512,7 +536,9 @@ def monitor_routingTree(file,dsn_path,country,as_rela_file):
 def main(_as_rela_file,_dst_dir_path,_type,cc_list,asn_data,cc2as_path):
     # global relas
     # global as_rela_file
-    process_pool = multiprocessing.Pool(processes=int(multiprocessing.cpu_count()/2))
+    global asn_data_global
+    asn_data_global = asn_data
+    # process_pool = multiprocessing.Pool(processes=int(multiprocessing.cpu_count()/2))
     # old_rank_file = '/home/peizd01/for_dragon/public/rank_2.json'
     p1 = cc2as_path
     p2 = os.path.join(_dst_dir_path,_type,'rtree')
@@ -524,9 +550,9 @@ def main(_as_rela_file,_dst_dir_path,_type,cc_list,asn_data,cc2as_path):
     # print(cces)
     cces = cc_list
     for cc in cces:
-        # if cc == 'US':
+        # if cc != 'US':
         #     continue
-        if cc not in ['BR', 'US', 'RU']: continue
+        # if cc not in ['BR', 'US', 'RU']: continue
         # print(cc)
         # relas = {}
         # try:
@@ -534,8 +560,8 @@ def main(_as_rela_file,_dst_dir_path,_type,cc_list,asn_data,cc2as_path):
         # except Exception as e:
         #     print(e)
         monitor_routingTree(os.path.join(p1,cc+'.json'), p2, cc,as_rela_file)
-    process_pool.close()
-    process_pool.join()
+    # process_pool.close()
+    # process_pool.join()
 
 
 
