@@ -182,7 +182,10 @@ def groud_truth_based_anova(path, dsn_path, value):
                 if N<0: continue
                 if N<20: continue
                 for i in r[_as]['connect']:
-                    _l+=[_i[value_dict[value]]/N for _i in i]
+                    if value == 'basic':
+                        _l+=[_i[value_dict[value]]/N for _i in i]
+                    else:
+                        _l+=[_i[value_dict[value]] for _i in i]
             asname = file.split('.')[0]
             if len(_l)>0:
                 l[_cc+'-'+asname] = _l
@@ -272,8 +275,8 @@ def judge_var(target_list, result):
         return
     for ii in target_list:
         F = np.var(source_list['list']) / np.var(ii['list'])
-        p = 1 - stats.f.cdf(F, 60, 60)
-        # stat, p = stats.levene(source_list['list'], ii['list'])
+        # p = 1 - stats.f.cdf(F, 60, 60)
+        stat, p = stats.levene(source_list['list'], ii['list'])
         if ii['key'] == source_list['key']:
             continue
         if p > 0.05:
@@ -283,6 +286,12 @@ def judge_var(target_list, result):
 
 
 def groud_truth_based_var(path, _type):
+
+    def basic_value_map(x):
+        if _type == 'basic':
+            return x[value_dict[_type]]/N
+        else:
+            return x[value_dict[_type]]
     var_result = {}
     result = []
     value_dict = {'basic': 0, 'user': 1, 'domain': 2}
@@ -306,7 +315,7 @@ def groud_truth_based_var(path, _type):
                             if len(i) == 0:
                                 continue
                             var_result['%s-%s' % (cc, as_file_name[:-5])] = {
-                                'list': list(map(lambda x: x[value_dict[_type]], i)),
+                                'list': list(map(basic_value_map, i)),
                                 'key': '%s-%s' % (cc, as_file_name[:-5])
                             }
     var_list = list(var_result.values())

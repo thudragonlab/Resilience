@@ -12,6 +12,8 @@ from do_Internal.monitor_random_cut_10 import monitor_country_internal as monito
 # from do_Internal.monitor_random_cut_full_tree_1000_times import monitor_country_internal as monitorCountryInternal
 
 from do_Internal.anova import do_extract_connect_list,do_groud_truth_based_anova,do_country_internal_rank,do_groud_truth_based_var
+
+from do_Internal.find_optimize_link import find_optimize_link
 from make_as_importance_weight import main as make_as_importance
 from make_cc2as import make_cc2as as make_cc2as
 from make_asn_cone_file import make_asn_cone_file as make_asn_cone_file
@@ -64,8 +66,8 @@ if __name__ == '__main__':
         cc2as_path = make_cc2as(os.path.join(root_path,'input'),dst_dir_path)
         print(cc2as_path)
         start_time = datetime.now()
-        asns_path = make_asn_cone_file(os.path.join(root_path,'input'),dst_dir_path)
-        with open(asns_path,'r') as asn_f:
+        cone_path = make_asn_cone_file(os.path.join(root_path,'input'),dst_dir_path)
+        with open(cone_path,'r') as asn_f:
             asn_data = json.load(asn_f)
         time_stamp.write('load asns.json %s  \n' % (datetime.now() - start_time))
         start_time = datetime.now()
@@ -99,6 +101,7 @@ if __name__ == '__main__':
             do_groud_truth_based_var(dst_dir_path,_type)
             time_stamp.write('do_groud_truth_based_var  %s  \n' % (datetime.now() - start_time))
             time_stamp.write('------------------- %s end ------------------- \n' % _type)
+            find_optimize_link(type_map[_type]['txt_path'],os.path.join(dst_dir_path,_type),cone_path,cc_list,weight_data_path)
         do_country_internal_rank(dst_dir_path,cc_list,topo_list)
         
 
