@@ -1,5 +1,8 @@
 #!usr/bin/env python
 # _*_ coding:utf8 _*_
+from functools import wraps
+import multiprocessing
+from multiprocessing.pool import ThreadPool
 import os
 import json
 import numpy as np
@@ -69,17 +72,22 @@ class monitor_cut():
 
 
 class monitor_break():
+
+    def __init__(self) -> None:
+        self.sample_result = []
+
     def main_2(self, rtree_path, dsn_path):
         del_file = [file for file in os.listdir(rtree_path) if file.find('addDel')!=-1]
-        sample_result = []
+        
         '''
         sample_result
         找每个路由树里面破坏影响节点最多的链接
-        {
-            破坏节点数量:{
+        数组下标是破坏节点数量
+        [
+            {
                 具体破坏的节点:受影响的节点数量max
             }
-        }
+        ]
         '''
         for df in del_file:
             with open(os.path.join(rtree_path, df)) as fp:
@@ -88,43 +96,78 @@ class monitor_break():
                     if line[0]!='#':
                         break_node = line.split('|')[0]
                         break_node_num = len(break_node.split(' '))
-                        if break_node_num>len(sample_result):
-                            sample_result.append({})
-                        if break_node not in sample_result[break_node_num-1]:
-                            sample_result[break_node_num-1][break_node] = 0
-                        sample_result[break_node_num-1][break_node] = max(\
-                            sample_result[break_node_num-1][break_node],\
+                        if break_node_num>len(self.sample_result):
+                            self.sample_result.append({})
+                        if break_node not in self.sample_result[break_node_num-1]:
+                            self.sample_result[break_node_num-1][break_node] = 0
+                        self.sample_result[break_node_num-1][break_node] = max(\
+                            self.sample_result[break_node_num-1][break_node],\
                                 len(line.split('|')[1].split(' ')))
                     line = fp.readline().strip()
         
         '''
         按破坏受影响的数量倒序，取TOP ${sample_num}
         '''
-        # for i in range(len(sample_result)):
-        #     sample_result[i] = sorted(
-        #         sample_result[i].items(), key=lambda d: d[1], reverse=True)
-        #     sample_result[i] = sample_result[i]
+        for i in range(len(self.sample_result)):
+            self.sample_result[i] = sorted(
+                self.sample_result[i].items(), key=lambda d: d[1], reverse=True)
+            self.sample_result[i] = self.sample_result[i][:100]
+            # self.sample_result[i] = list(self.sample_result[i].items())
         rtree_file = [file for file in os.listdir(rtree_path) if file[-3:]=='npz' and file[0]=='d']
-        break_result = {}
+        
 
         '''
         从路由树里面剪掉sample_result里面的节点，被剪掉的节点存于.break_link.json
         '''
-        for i in range(len(sample_result)):
-            for break_link in sample_result[i]:
-                break_link = break_link[0]
-                break_result[break_link] = []
-                break_link_list = break_link.split(' ')
-                for rf in rtree_file:
-                    _as1 = rf.split('.')[0]
-                    if _as1[0]=='d': _as1 = _as1[9:]
-                    mc = monitor_cut(os.path.join(rtree_path, rf))
-                    res = mc.monitor_cut_node(break_link_list)
-                    for _as2 in res:
-                        if [_as2, _as1] not in break_result[break_link]:
-                            break_result[break_link].append([_as1, _as2])
-                break_result[break_link] = list(break_result[break_link])
+
+        
+        
+        break_result = {}
+        pool = multiprocessing.Pool(processes=len(self.sample_result))
+        results = []
+        for i in range(len(self.sample_result)):
+            
+            result = pool.apply_async(func=self.cal_break_link,args=(i,rtree_file,rtree_path,))
+            results.append(result)
+        pool.close()
+        pool.join()
+        for i in results:
+            real_result = i.get()
+            for k in real_result:
+                print(real_result)
+                break_result[k] = real_result[k]
         print(dsn_path+'.break_link.json    created')
         with open(dsn_path+'.break_link.json', 'w') as f:
             json.dump(break_result, f)
+    
         return break_result
+
+    def cal_break_link(self,index,rtree_file,rtree_path):
+        break_result = {}
+        def cut_as(rf1,break_link_inner):
+            _as1 = rf1.split('.')[0]
+            if _as1[0]=='d': _as1 = _as1[9:]
+            mc = monitor_cut(os.path.join(rtree_path, rf1))
+            res = mc.monitor_cut_node(break_link_list)
+            for _as2 in res:
+                if [_as2, _as1] not in break_result[break_link_inner]:
+                    break_result[break_link_inner].append([_as1, _as2])
+            print('finish %s %s' % (rf1,break_link_inner))
+
+        for break_link in self.sample_result[index]:
+            break_link = break_link[0]
+            break_result[break_link] = []
+            break_link_list = break_link.split(' ')
+            thread_pool = ThreadPool(processes=multiprocessing.cpu_count() * 10)
+            for rf in rtree_file:
+                try:
+                    thread_pool.apply_async(func=cut_as,args=(rf,break_link,))
+                except Exception as e:
+                    print(e)
+                    raise e
+            thread_pool.close()
+            thread_pool.join()
+            
+            break_result[break_link] = list(break_result[break_link])
+        return break_result
+        

@@ -16,12 +16,17 @@ from scipy import sparse
 import scipy.io
 import itertools
 import multiprocessing
-# from multiprocessing.pool import ThreadPool
+from multiprocessing.pool import ThreadPool
 # from itertools import izip
 from random import randint
-import threading
-izip=zip
-# relas = {}
+# from do_Internal.create_rtree_model.sort_by_cone_top_100 import filter_rtree
+from do_Internal.create_rtree_model.sort_by_cone_top_50 import filter_rtree
+from util import record_launch_time
+# from do_Internal.create_rtree_model.sort_by_cone_top_10 import filter_rtree
+# from do_Internal.create_rtree_model.random_100 import filter_rtree
+# from do_Internal.create_rtree_model.all_tree import filter_rtree
+# from do_Internal.create_rtree_model.default import filter_rtree
+
 asn_data_global = {}
 
 
@@ -135,7 +140,7 @@ def graphGenerator(inFile, outFile):
         start = time.time()
         test = scipy.io.mmread(outName).tolil()  # 5.4MB to save sparse matrix
         end = time.time()
-        print(end - start, " seconds to load")  # 2.3 seconds
+        # print(end - start, " seconds to load")  # 2.3 seconds
         return numNodes
 
     return fileToSparse(inFile, outFile)
@@ -280,7 +285,7 @@ def speedyGET(args):
         shape = matrixCOO.shape
         np.savez(fileName, row=row, col=col, data=data, shape=shape)
 
-    def makeRoutingTree(destinationNode):
+    def makeRoutingTree(destinationNode,routingTree,fullGraph):
         '''
         input:
             destination AS
@@ -291,7 +296,6 @@ def speedyGET(args):
         if "dcomplete" + str(destinationNode) + '.npz' in file_name:
             print('exist')
             return
-        routingTree = sparse.dok_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
         # print('numNodes',numNodes)
         # print('routingTree',routingTree)
         stepOneRT, stepOneNodes, lvls = customerToProviderBFS(destinationNode, routingTree, fullGraph)
@@ -308,32 +312,32 @@ def speedyGET(args):
     ###   nodeListFile, a file holding list of ASNode IDs
     ### Output:
     ###   bounds, a dictionary describing the bounds of the rank
-    def getRankBounds(nodeList):
-        comm = MPI.COMM_WORLD
-        rank = comm.Get_rank()
-        numRanks = comm.Get_size()
+    # def getRankBounds(nodeList):
+    #     comm = MPI.COMM_WORLD
+    #     rank = comm.Get_rank()
+    #     numRanks = comm.Get_size()
 
-        dataSize = len(nodeList)
+    #     dataSize = len(nodeList)
 
-        if (verbose):
-            print("Node Count: " + str(dataSize))
+    #     if (verbose):
+    #         print("Node Count: " + str(dataSize))
 
-        dataSizePerRank = dataSize / numRanks
-        leftOver = dataSize % numRanks
-        startIndex = dataSizePerRank * rank
-        lastIndex = (dataSizePerRank * (rank + 1)) - 1
-        if (rank < leftOver):
-            dataSizePerRank += 1
-            if (rank != 0):
-                startIndex += 1
-                lastIndex += 2
-            else:
-                lastIndex += 1
-        else:
-            startIndex += leftOver
-            lastIndex += leftOver
+    #     dataSizePerRank = dataSize / numRanks
+    #     leftOver = dataSize % numRanks
+    #     startIndex = dataSizePerRank * rank
+    #     lastIndex = (dataSizePerRank * (rank + 1)) - 1
+    #     if (rank < leftOver):
+    #         dataSizePerRank += 1
+    #         if (rank != 0):
+    #             startIndex += 1
+    #             lastIndex += 2
+    #         else:
+    #             lastIndex += 1
+    #     else:
+    #         startIndex += leftOver
+    #         lastIndex += leftOver
 
-        return startIndex, lastIndex
+    #     return startIndex, lastIndex
 
     # Interpret User Input
     verbose = False
@@ -343,7 +347,7 @@ def speedyGET(args):
 
     ### initialization phase ###
     fullGraph = scipy.io.mmread(str(args[1])).tocsr()  # read the graph on all ranks
-    print(args)
+    # print(args)
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     numRanks = comm.Get_size()
@@ -366,11 +370,12 @@ def speedyGET(args):
         nodeList = None
     nodeList = comm.bcast(nodeList, root=0)
     numNodes = int(args[5])  # max(nodeList)
-    firstIndex, lastIndex = getRankBounds(nodeList)
+    routingTree = sparse.dok_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
+    # firstIndex, lastIndex = getRankBounds(nodeList)
     file_name = os.listdir(str(args[3]))
-    if (verbose):  ### Printing MPI Status for debugging purposes
-        print("MPI STATUS... rank " + str(rank) + " reporting... working on nodes " + str(firstIndex) + " to " + str(
-            lastIndex))
+    # if (verbose):  ### Printing MPI Status for debugging purposes
+    #     print("MPI STATUS... rank " + str(rank) + " reporting... working on nodes " + str(firstIndex) + " to " + str(
+    #         lastIndex))
 
     comm.Barrier()  ## Synchronize here, then continue ##
 
@@ -379,21 +384,25 @@ def speedyGET(args):
 
     ### Primary Loop, executed distrubitively in parallel
     
-    threads = []
-    for index in range(int(firstIndex), int(lastIndex) + 1):
+    nodeList = filter_rtree(nodeList,asn_data_global)
+    thread_pool = ThreadPool(processes=multiprocessing.cpu_count() * 10)
+    for destinationNode in nodeList:
+    #    random_index = get_random_index()
+    #    print('random_index,len(nodeList) %s %s' % (random_index,len(nodeList)))
        file_name = os.listdir(str(args[3]))
-       destinationNode = nodeList[index]
+    #    destinationNode = nodeList[index]
+    #    destinationNode = 39642
        try:
-            t = threading.Thread(target=makeRoutingTree,args=(destinationNode,))
-            t.start()
-            threads.append(t)
-            # thread_pool.apply_async(target = makeRoutingTree,)
+            # t = threading.Thread(target=makeRoutingTree,args=(destinationNode,routingTree,fullGraph,))
+            # t.start()
+            # threads.append(t)
+            thread_pool.apply_async(makeRoutingTree,(destinationNode,routingTree,fullGraph,))
        except Exception as e:
             print('Exception',e)
-    for tt in threads:
-        tt.join()
-    # thread_pool.close()
-    # thread_pool.join()
+    # for tt in threads:
+    #     tt.join()
+    thread_pool.close()
+    thread_pool.join()
     #    routingTree = makeRoutingTree(destinationNode)  ### Calculate the routing tree for this node
     
     # for index in [36344,21326,19368,6621,33004]:
@@ -437,20 +446,20 @@ def create_rela_file(relas, relaFile):
                     f.write(str(c)+'|'+str(b)+'|0\n')
     print(sum)
 
-def run_routingTree(dsn_file, relaFile,rtree_dsn_path):
-    dataConverter(relaFile, os.path.join(rtree_dsn_path,'bgp-sas.npz'))
-    maxNum = graphGenerator(os.path.join(rtree_dsn_path,'bgp-sas.npz'), os.path.join(rtree_dsn_path,'routingTree.mtx'))
-    speedyGET(['',os.path.join(rtree_dsn_path,'routingTree.mtx'), 'v', dsn_file, os.path.join(rtree_dsn_path,'routingTree.mtx.nodeList'), str(maxNum)])
+def run_routingTree(dsn_file, relaFile,_dst_dir_path,cc):
+    dataConverter(relaFile, os.path.join(_dst_dir_path,'temp','%s_bgp-sas.npz' % cc))
+    maxNum = graphGenerator(os.path.join(_dst_dir_path,'temp','%s_bgp-sas.npz' % cc), os.path.join(_dst_dir_path,'temp','%s_routingTree.mtx' % cc))
+    speedyGET(['',os.path.join(_dst_dir_path,'temp','%s_routingTree.mtx' % cc), 'v', dsn_file, os.path.join(_dst_dir_path,'temp','%s_routingTree.mtx.nodeList' % cc), str(maxNum)])
 
 
 '''生成一个国家内的排名前10的AS的路由树'''
-def rTree(relas, dsn_file,rtree_dsn_path):
+def rTree(relas, dsn_file,_dst_dir_path,cc):
     
     relaFile = os.path.join(dsn_file, 'as-rel.txt')
     #if len(relas)==0:
     #    return
     create_rela_file(relas, relaFile)
-    run_routingTree(dsn_file, relaFile,rtree_dsn_path)
+    run_routingTree(dsn_file, relaFile,_dst_dir_path,cc)
     
 
 
@@ -462,7 +471,7 @@ def create_relas(file, as_rela_file,if_del_stub_as=False,):
     relas = {}
     with open(as_rela_file, 'r') as f:
         as_rela = json.load(f)
-        print('len(as_rela.keys())',len(as_rela.keys()))
+        # print('len(as_rela.keys())',len(as_rela.keys()))
         # print(as_rela.keys())
     with open(file, 'r') as f:
         cclist = json.load(f)
@@ -505,13 +514,14 @@ as_rela_file 国家对应的topo关系文件
 
 目的 生成对应国家排名前10的路由树文件
 '''
-def monitor_routingTree(file,rtree_dsn_path,country,as_rela_file):
+def monitor_routingTree(file,dsn_path,country,as_rela_file,_dst_dir_path):
     # global relas
-    
-    country_name = os.listdir(rtree_dsn_path)
-    dsn_path = os.path.join(rtree_dsn_path, country)
+    # print(file,dsn_path,country,as_rela_file,_dst_dir_path)
+    country_name = os.listdir(dsn_path)
+    dsn_path = os.path.join(dsn_path, country)
     if country not in country_name:
-        os.popen('mkdir '+dsn_path)
+        os.makedirs(dsn_path,exist_ok=True)
+        # os.popen('mkdir '+dsn_path)
     print(country+' begin')
     relas = create_relas(file,as_rela_file)
     relas_is_empty = True
@@ -528,21 +538,23 @@ def monitor_routingTree(file,rtree_dsn_path,country,as_rela_file):
         return
     # print('finish',country)
     if len(relas)<10: return
-    rTree(relas, dsn_path,rtree_dsn_path)
+    rTree(relas, dsn_path,_dst_dir_path,country)
     print(country+' end')
 
 
-
-def main(_as_rela_file,_dst_dir_path,_type,cc_list,asn_data,cc2as_path):
+@record_launch_time
+def create_rtree(_as_rela_file,_dst_dir_path,_type,cc_list,asn_data,cc2as_path):
+    
     # global relas
     # global as_rela_file
     global asn_data_global
     asn_data_global = asn_data
-    # process_pool = multiprocessing.Pool(processes=int(multiprocessing.cpu_count()/2))
+    process_pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     # old_rank_file = '/home/peizd01/for_dragon/public/rank_2.json'
     p1 = cc2as_path
     p2 = os.path.join(_dst_dir_path,_type,'rtree')
     as_rela_file = _as_rela_file
+    # print(_as_rela_file,_dst_dir_path,_type,cc_list)
     # with open(old_rank_file, 'r') as f: temp = json.load(f)
     if not os.path.exists(p2): os.makedirs(p2)
     # cces = list(temp.keys())
@@ -555,13 +567,15 @@ def main(_as_rela_file,_dst_dir_path,_type,cc_list,asn_data,cc2as_path):
         # if cc not in ['BR', 'US', 'RU']: continue
         # print(cc)
         # relas = {}
-        # try:
-        #     process_pool.apply_async(monitor_routingTree,(os.path.join(p1,cc+'.json'), p2, cc,))
-        # except Exception as e:
-        #     print(e)
-        monitor_routingTree(os.path.join(p1,cc+'.json'), p2, cc,as_rela_file)
-    # process_pool.close()
-    # process_pool.join()
+        try:
+            process_pool.apply_async(monitor_routingTree,(os.path.join(p1,cc+'.json'), p2, cc,as_rela_file,_dst_dir_path))
+        except Exception as e:
+            print(e)
+            raise e
+            
+        # monitor_routingTree(os.path.join(p1,cc+'.json'), p2, cc,as_rela_file,_dst_dir_path)
+    process_pool.close()
+    process_pool.join()
 
 
 

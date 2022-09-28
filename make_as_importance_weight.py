@@ -2,6 +2,7 @@ import json
 import os
 import csv
 import multiprocessing
+from util import mkdir
 
 
 
@@ -63,8 +64,7 @@ def do_something(ccc,path,csv_data):
     as_map = {}
     result = []
     output_path = os.path.join(path,'output/weight_data')
-    if not os.path.exists(output_path):
-        os.mkdir(output_path)
+    mkdir(output_path)
     try:
         with open(os.path.join(cc2as_path2, '%s.json' % ccc), 'r') as cc_file:
             cc_as_list = json.load(cc_file)

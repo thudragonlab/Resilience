@@ -1,10 +1,10 @@
 {
-    "root":"/home/peizd01/for_dragon/pzd_test_cone_top_50_cut_10_3_new_as_important_5",
+    "root":"/home/peizd01/for_dragon/pzd_test5",
     "types":{
         "asRank":true,
-        "problink":true,
-        "toposcope":true,
-        "toposcope_hidden":true
+        "problink":false,
+        "toposcope":false,
+        "toposcope_hidden":false
     },
-    "cc_list":["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR", "RO", "NZ", "CZ", "BD", "SE", "UA", "SG", "HK", "ES", "AT", "JP", "IN", "ID", "CH", "PL", "NL", "IT", "FR", "CA", "ZA", "AU", "GB", "DE", "US", "RU", "BR"]
+    "cc_list":["LV", "HU", "CL"]
 }

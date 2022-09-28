@@ -1,5 +1,6 @@
 #!usr/bin/env python
 # _*_ coding:utf8 _*_
+import multiprocessing
 from typing import no_type_check_decorator
 import numpy as np
 import json
@@ -9,7 +10,8 @@ from collections import Counter
 import time
 from multiprocessing import Pool
 import copy
-from util import mkdir
+from do_Internal.use_monitor_data_as_weakPoint import make_weak_point
+from util import mkdir, record_launch_time
 
 as_rel = {}
 as_customer = {}
@@ -138,13 +140,13 @@ class FindOptimizeLink():
     '''
 
     # def __init__(self, rtpath, break_link, week_point, raw_graph, node_index, dsn_path) -> None:
-    def __init__(self, rtpath, break_link, week_point, dsn_path,file_names) -> None:
+    def __init__(self, rtpath, break_link, week_point, dsn_path) -> None:
         '''
         rtpath: 存放npz的路径
         break_link: [[begin_as, end_as],...]
         '''
         self.rtpath = rtpath
-        self.file_name = file_names
+        self.file_name = os.listdir(self.rtpath)
         self.break_link = break_link
         self.week_point = week_point
         # self.raw_graph = raw_graph
@@ -471,7 +473,6 @@ def find_optimize_link_pool(_dsn_path, cname):
     mkdir(dsn_path)
         
         # os.popen('mkdir '+dsn_floyed_path)
-    # print(cname in ['BR', 'US', 'RU'])
     if cname in ['BR', 'US', 'RU']:
         return
 
@@ -489,14 +490,14 @@ def find_optimize_link_pool(_dsn_path, cname):
         mb = monitor_break()
         # week_point_and_break_link = mb.main_2(os.path.join(
         #     rtree_path, cname), os.path.join(dsn_path, cname), sample_num_dict[sample_num][0], sample_num_dict[sample_num][1])
-        week_point_and_break_link = mb.main_2(os.path.join(
-            rtree_path, cname), os.path.join(dsn_path, cname))
+        week_point_and_break_link = make_weak_point(rtree_path,cname,dsn_path)
+        # mb.main_2(os.path.join(
+        #     rtree_path, cname), os.path.join(dsn_path, cname))
         
     # week_point_and_break_link = sorted(week_point_and_break_link.items(), key=lambda d: len(d[1]), reverse=True)
     week_point_and_break_link = list(week_point_and_break_link.items())
     Res = {}
     range_num = min(50, len(week_point_and_break_link))
-    file_names =  os.listdir(os.path.join(rtree_path, cname))
     for i in range(range_num):
     # for i in range(len(week_point_and_break_link)):
         if isinstance(week_point_and_break_link[i][0], int):
@@ -513,7 +514,7 @@ def find_optimize_link_pool(_dsn_path, cname):
             print('第 %s组 %s len => %s' %( str(i),cname, len(break_link)))
 
         fol = FindOptimizeLink(os.path.join(rtree_path, cname),
-                                    break_link, week_point, os.path.join(dsn_path, cname+'_'+str(i)),file_names)
+                                    break_link, week_point, os.path.join(dsn_path, cname+'_'+str(i)))
         fol.break_link_begin_rtree_frequency()
         fol.break_link_end_rtree_frequency()
         res = fol.find_opt_link()
@@ -540,6 +541,7 @@ as_importance_path = ''
 # cost
 a, b, c = 0, 0, 50
 
+@record_launch_time
 def find_optimize_link(txt_path,_dsn_path,cone_path,cc_list,_as_importance_path):
     global as_importance_path
     as_importance_path = _as_importance_path
@@ -579,6 +581,9 @@ def find_optimize_link(txt_path,_dsn_path,cone_path,cc_list,_as_importance_path)
                     as_peer[data[1]][1], value)]
 
             line = fp.readline().strip()
+    pool = Pool(multiprocessing.cpu_count())
     for cname in cc_list:
-        find_optimize_link_pool(_dsn_path,cname)
+        pool.apply_async(find_optimize_link_pool,(_dsn_path,cname,))
+    pool.close()
+    pool.join()
     

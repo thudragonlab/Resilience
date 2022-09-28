@@ -1,5 +1,8 @@
 import json
 import os
+from util import record_launch_time
+
+@record_launch_time
 def as_rela_txt(dsn_path,txt_path):
     '''
     处理AS关系数据
