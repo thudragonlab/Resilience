@@ -1,5 +1,6 @@
 #!usr/bin/env python
 # _*_ coding:utf8 _*_
+import multiprocessing
 import os
 import json
 import csv
@@ -8,8 +9,9 @@ import numpy as np
 from scipy import stats
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from statsmodels.stats.multicomp import MultiComparison
-
+from multiprocessing.pool import ThreadPool
 from pyecharts.globals import WarningType
+from util import mkdir
 WarningType.ShowWarning = False
 
 
@@ -93,52 +95,61 @@ def anova_sort(dsn_path,VALUE, num):
         json.dump(sorted_country, f)
     
 
-def country_internal_rank(cc_list, old_graph_path, sort_dsn_path,country_name,rank_dsn_path,num):
+def country_internal_rank(cc_list, topo_list,output_path,RESULT_SUFFIX, type_path,_type,country_name,num):
+    rank_dir_path = os.path.join(output_path, 'public','optimize')
+    mkdir(rank_dir_path)
+
+    rank_dsn_path = os.path.join(rank_dir_path,'%s_rank.%s.%s.json' % (_type,country_name,str(num)))
     rank = {k:[] for k in cc_list}
+    
     for value2 in ['basic', 'user', 'domain']:
-        path = os.path.join(sort_dsn_path, value2+'_'+country_name, 'sorted_country_'+value2+'.'+str(num)+'.json')
-        with open(path, 'r') as f:
-            reader = json.load(f)
-        res = {}
-        for index in range(len(reader)):
-            for _v in reader[index]:
-                _cc, _as = _v.split('-')
-                if not _as[0].isdigit(): _as = _as[9:]
-                if _cc not in res: res[_cc] = {}
-                res[_cc][_as] = index+1
-        for _cc in res:
-            if _cc not in rank: continue
-            file_name = os.listdir(os.path.join(old_graph_path, _cc))
-            file_name =[i for i in file_name if i.find('.graph')!=-1]
-            npz_file_name = [i for i in os.listdir(os.path.join(old_graph_path, _cc)) if i[-1]=='z']
-            if len(file_name)==0:
-                temp = 0
-                for _as in res[_cc]:
-                    temp+=res[_cc][_as]
-                temp = temp/len(res[_cc])
-            else:
-                ans = {}
-                for _as in res[_cc]:
-                    if 'dcomplete'+_as+'.npz.graph.json' in file_name:
-                        with open(os.path.join(old_graph_path, _cc,'dcomplete'+_as+'.npz.graph.json'), 'r') as f:
-                            n = json.load(f)
-                        ans[_as] = len(set(list(n.keys())))
-                    elif 'dcomplete'+_as+'.npz' in npz_file_name:
-                        m = np.load(os.path.join(old_graph_path, _cc,'dcomplete'+_as+'.npz'))
-                        ans[_as] = len(set(m['row']))
-                    else:
-                        ans[_as]=0
-                temp = 0
-                for _as in res[_cc]:
-                    if ans[_as] == 0: continue
-                    temp += res[_cc][_as]*ans[_as]
-                if sum(list(ans.values()))==0:
+        for m in topo_list:
+            old_graph_path = os.path.join(output_path, m, 'rtree')
+            sort_dsn_path = os.path.join(output_path, m, RESULT_SUFFIX,type_path)
+            
+            path = os.path.join(sort_dsn_path, value2+'_'+country_name, 'sorted_country_'+value2+'.'+str(num)+'.json')
+            with open(path, 'r') as f:
+                reader = json.load(f)
+            res = {}
+            for index in range(len(reader)):
+                for _v in reader[index]:
+                    _cc, _as = _v.split('-')
+                    if not _as[0].isdigit(): _as = _as[9:]
+                    if _cc not in res: res[_cc] = {}
+                    res[_cc][_as] = index+1
+            for _cc in res:
+                if _cc not in rank: continue
+                file_name = os.listdir(os.path.join(old_graph_path, _cc))
+                file_name =[i for i in file_name if i.find('.graph')!=-1]
+                npz_file_name = [i for i in os.listdir(os.path.join(old_graph_path, _cc)) if i[-1]=='z']
+                if len(file_name)==0:
                     temp = 0
+                    for _as in res[_cc]:
+                        temp+=res[_cc][_as]
+                    temp = temp/len(res[_cc])
                 else:
-                    temp /= sum(list(ans.values()))
-            if _cc in rank:
-                if temp<1: temp = 1
-                rank[_cc].append(temp)
+                    ans = {}
+                    for _as in res[_cc]:
+                        if 'dcomplete'+_as+'.npz.graph.json' in file_name:
+                            with open(os.path.join(old_graph_path, _cc,'dcomplete'+_as+'.npz.graph.json'), 'r') as f:
+                                n = json.load(f)
+                            ans[_as] = len(set(list(n.keys())))
+                        elif 'dcomplete'+_as+'.npz' in npz_file_name:
+                            m = np.load(os.path.join(old_graph_path, _cc,'dcomplete'+_as+'.npz'))
+                            ans[_as] = len(set(m['row']))
+                        else:
+                            ans[_as]=0
+                    temp = 0
+                    for _as in res[_cc]:
+                        if ans[_as] == 0: continue
+                        temp += res[_cc][_as]*ans[_as]
+                    if sum(list(ans.values()))==0:
+                        temp = 0
+                    else:
+                        temp /= sum(list(ans.values()))
+                if _cc in rank:
+                    if temp<1: temp = 1
+                    rank[_cc].append(temp)
 
     with open(rank_dsn_path, 'w') as f:
         json.dump(rank, f)
@@ -149,9 +160,11 @@ def groud_truth_based_anova_for_single_country(single_country_path, single_count
     file_name = os.listdir(old_connect_path)
     l = {}
     value_dict = {'basic':0, 'user':1, 'domain':2}
-    for _cc in file_name:
-        if _cc==single_country_name: continue
-        if _cc.find('.json')!=-1 or _cc[0]=='.': continue
+    cc_name = os.listdir(single_country_path)
+    if not len(cc_name): print(single_country_name, value, num, single_country_path, ' file len==0 error!!!')
+    def groud_truth_based_anova_for_single_country_old_thread(_cc):
+        if _cc==single_country_name: return
+        if _cc.find('.json')!=-1 or _cc[0]=='.': return
         cc_name = os.listdir(os.path.join(old_connect_path, _cc))
         for file in cc_name:
             if file.find('.json')==-1 or file[0]=='.': 
@@ -161,22 +174,21 @@ def groud_truth_based_anova_for_single_country(single_country_path, single_count
                 with open(os.path.join(old_connect_path, _cc, file), 'r') as f:
                     r = json.load(f)
             except:
-                print(os.path.join(old_connect_path, _cc, file)+' read error')
-                print(os.path.join(dsn_path, 'sorted_country_'+value+'.'+num+'.json'))
                 exit()
             for _as in r:
                 N = r[_as]['asNum']
                 if N<0: continue
                 if N<20: continue
                 for i in r[_as]['connect']:
-                    _l+=[_i[value_dict[value]]/N for _i in i]
+                    if value == 'basic':
+                        _l+=[_i[value_dict[value]]/N for _i in i]
+                    else:
+                        _l+=[_i[value_dict[value]] for _i in i]
             asname = file.split('.')[0]
             if len(_l)>0:
                 l[_cc+'-'+asname] = _l
-    cc_name = os.listdir(single_country_path)
-    if not len(cc_name): print(single_country_name, value, num, \
-                            single_country_path, ' file len==0 error!!!')
-    for file in cc_name:
+    
+    def groud_truth_based_anova_for_single_country_new_thread(file):
         _l = []
         with open(os.path.join(single_country_path, file), 'r') as f:
             r = json.load(f)
@@ -184,26 +196,33 @@ def groud_truth_based_anova_for_single_country(single_country_path, single_count
             N = r[_as]['asNum']
             if N<20: continue
             for i in r[_as]['connect']:
-                _l+=[_i[value_dict[value]]/N for _i in i]
+                if value == 'basic':
+                    _l+=[_i[value_dict[value]]/N for _i in i]
+                else:
+                    _l+=[_i[value_dict[value]] for _i in i]
         asname = file.split('.')[0]
         if len(_l)>0:
             l[single_country_name+'-'+asname] = _l
             print(single_country_name, value, num, file+' added')
-        else: print(single_country_name, value, num, file+' len==0 not added')
+        else: 
+            print(single_country_name, value, num, file+' len==0 not added')
+
+    thread_pool  =ThreadPool(multiprocessing.cpu_count() * 10)
+
+    for _cc in file_name:
+        thread_pool.apply(groud_truth_based_anova_for_single_country_old_thread,(_cc,))
+    
+    for file in cc_name:
+        thread_pool.apply_async(groud_truth_based_anova_for_single_country_new_thread,(file,))
+    
+    thread_pool.close()
+    thread_pool.join()
+
     anova(l, dsn_path, value, num)
     anova_sort(dsn_path, value, num)
 
 
 def internal_survival(rank_file, begin_index, end_index):
-
-    VALUE = ['_b', '_u', '_d']
-    # PATH = ['Asrank', 'Problink', 'Toposcope', 'hToposcope']
-    PATH = ['1', '2', '3', '4']
-    yaxis = []
-    for v in VALUE:
-        for p in PATH:
-            yaxis.append(p+v)
-    
     with open(rank_file, 'r') as f:
         r = json.load(f)
     for k in r:
@@ -212,6 +231,8 @@ def internal_survival(rank_file, begin_index, end_index):
     for _k in k:
         if len(r[_k])==0: del r[_k]
     r = list(r.items())
+    # rank_file数据格式 asrank_basic asrank_user asrank_domain problink_basic problink_user problink_domain toposcope_basic toposcope_user toposcope_domain toposcope-h_basic toposcope-h_user toposcope-h_domain
+    # locate 映射 basic->[asRank problink，toposcope toposcope-h] user->[asRank problink，toposcope toposcope-h] domain->[asRank problink，toposcope toposcope-h]
     locate = [0,3,6,9,1,4,7,10,2,5,8,11]
     ccres = []
     for i in range(len(r)): ccres.append([])

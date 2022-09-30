@@ -2444,3 +2444,17 @@ do_extract_connect_list                            0:00:19.289173
 do_groud_truth_based_anova                            0:01:55.573310  
 do_groud_truth_based_var                            0:01:14.452797  
 find_optimize_link                            0:09:59.778970  
+
+-------------------------2022-09-27 09:09:15.826925-------------------------
+/home/peizd01/for_dragon/pzd_levene_cone_top_50_cut_10
+load config.json 0:00:00.000152 
+make_as_importance  0:02:59.057659  
+load asns.json 0:00:00.054748  
+------------------- asRank start -------------------
+------------------- asRank end ------------------- 
+------------------- problink start -------------------
+------------------- problink end ------------------- 
+------------------- toposcope start -------------------
+------------------- toposcope end ------------------- 
+------------------- toposcope_hidden start -------------------
+------------------- toposcope_hidden end ------------------- 

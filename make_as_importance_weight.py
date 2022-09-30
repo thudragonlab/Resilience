@@ -2,16 +2,16 @@ import json
 import os
 import csv
 import multiprocessing
-from util import mkdir
+from typing import Dict, List
+from util import mkdir, record_launch_time
 
 
-
-
-def get_radio(as_list,path):
+def get_radio(as_list, path):
     inner_rank_map = {}
     sum_rank = 0
     user_weight_list = []
-    with open(os.path.join(path,'input','as_user_ratio.json'), 'r') as user_file:
+    with open(os.path.join(path, 'input', 'as_user_ratio.json'),
+              'r') as user_file:
         data = json.load(user_file)
         rank_index = 0
         for i in data:
@@ -32,7 +32,7 @@ def get_radio(as_list,path):
         return inner_rank_map
 
 
-def get_radio_domain(as_list_domain,csv_data):
+def get_radio_domain(as_list_domain, csv_data):
     as_domain_map = {}
     sum_rank_domain = 0
     rank_index = 0
@@ -59,17 +59,18 @@ def get_radio_domain(as_list_domain,csv_data):
     return as_domain_map
 
 
-def do_something(ccc,path,csv_data):
-    cc2as_path2 = os.path.join(path,'output/cc2as')
-    as_map = {}
+def do_something(ccc, path, csv_data):
+    cc2as_path2 = os.path.join(path, 'output/cc2as')
+    as_map: Dict[str, List[int]] = {}
     result = []
-    output_path = os.path.join(path,'output/weight_data')
+    output_path = os.path.join(path, 'output/weight_data')
     mkdir(output_path)
     try:
         with open(os.path.join(cc2as_path2, '%s.json' % ccc), 'r') as cc_file:
             cc_as_list = json.load(cc_file)
-            user_rank_map = get_radio(list(map(lambda x: 'AS%s' % x, cc_as_list)),path)
-            domain_rank_map = get_radio_domain(cc_as_list,csv_data)
+            user_rank_map = get_radio(
+                list(map(lambda x: 'AS%s' % x, cc_as_list)), path)
+            domain_rank_map = get_radio_domain(cc_as_list, csv_data)
         for _as in user_rank_map:
             if _as not in as_map:
                 as_map[_as] = [0, 0]
@@ -81,25 +82,28 @@ def do_something(ccc,path,csv_data):
             as_map[_as][1] = domain_rank_map[_as]
 
         for _as in as_map:
-            result.append([_as]+as_map[_as])
-        with open(os.path.join(output_path,'%s.json' % ccc), 'w') as f:
+            result.append([_as] + as_map[_as])
+        with open(os.path.join(output_path, '%s.json' % ccc), 'w') as f:
             json.dump(result, f)
     except Exception as e:
         print(e)
 
 
-def main(path,cc_list):
-    csv_data = []
-    with open(os.path.join(path,'input','normprefixrank_list-alexa_family-4_limit-all.csv'), 'r') as csv_file:
+@record_launch_time
+def make_as_importance(path, cc_list) -> str:
+    csv_data: List[str] = []
+    with open(
+            os.path.join(path, 'input',
+                         'normprefixrank_list-alexa_family-4_limit-all.csv'),
+            'r') as csv_file:
         for i in csv.reader(csv_file):
             csv_data.append(i)
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     for cc in cc_list:
         try:
-            pool.apply_async(do_something, (cc,path,csv_data))
+            pool.apply_async(do_something, (cc, path, csv_data))
         except Exception as e:
             print(e)
     pool.close()
     pool.join()
-    return os.path.join(path,'output/weight_data')
-
+    return os.path.join(path, 'output/weight_data')
