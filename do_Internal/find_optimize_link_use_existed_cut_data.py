@@ -125,8 +125,7 @@ class cut_week_point():
         begin_index = 0
         while _as in self.row[begin_index:]:
             index = self.row.index(_as, begin_index)
-            s.add(state_num[as_rel[str(self.col[index]) + ' ' +
-                                   str(self.row[index])]])
+            s.add(state_num[as_rel[str(self.col[index]) + ' ' + str(self.row[index])]])
             begin_index = index + 1
         if len(s) == 0:
             print(self.file_name, _as, _as in self.row, _as in self.col)
@@ -165,13 +164,9 @@ class FindOptimizeLink():
             if begin_as in hash_dict:
                 continue
             if str(begin_as) + '.npz' in self.file_name:
-                cwp = cut_week_point(
-                    os.path.join(self.rtpath,
-                                 str(begin_as) + '.npz'))
+                cwp = cut_week_point(os.path.join(self.rtpath, str(begin_as) + '.npz'))
             elif 'dcomplete' + str(begin_as) + '.npz' in self.file_name:
-                cwp = cut_week_point(
-                    os.path.join(self.rtpath,
-                                 'dcomplete' + str(begin_as) + '.npz'))
+                cwp = cut_week_point(os.path.join(self.rtpath, 'dcomplete' + str(begin_as) + '.npz'))
             else:
                 continue
 
@@ -220,13 +215,9 @@ class FindOptimizeLink():
             if end_as in hash_dict:
                 continue
             if str(end_as) + '.npz' in self.file_name:
-                cwp = cut_week_point(
-                    os.path.join(self.rtpath,
-                                 str(end_as) + '.npz'))
+                cwp = cut_week_point(os.path.join(self.rtpath, str(end_as) + '.npz'))
             elif 'dcomplete' + str(end_as) + '.npz' in self.file_name:
-                cwp = cut_week_point(
-                    os.path.join(self.rtpath,
-                                 'dcomplete' + str(end_as) + '.npz'))
+                cwp = cut_week_point(os.path.join(self.rtpath, 'dcomplete' + str(end_as) + '.npz'))
             else:
                 print(str(end_as) + '.npz not exist in ')
                 # print(self.rtpath)
@@ -324,8 +315,7 @@ class FindOptimizeLink():
                 if _as2 not in numberAsns:
                     numberAsns[_as2] = 1
                 if relation == 'p2p':
-                    if 0.5 <= float(numberAsns[_as]) / float(
-                            numberAsns[_as2]) <= 2:
+                    if 0.5 <= float(numberAsns[_as]) / float(numberAsns[_as2]) <= 2:
                         cost = min(cost, a)
                     else:
                         if _as in as_peer and numberAsns[_as2] <= as_peer[_as][0]*1.2 and \
@@ -334,11 +324,9 @@ class FindOptimizeLink():
                         elif _as2 in as_peer and numberAsns[_as] <= as_peer[_as2][0]*1.2 and \
                             numberAsns[_as] >= as_peer[_as2][1]*0.8:
                             cost = min(cost, b)
-                elif relation == 'p2c' and numberAsns[
-                        _as] >= numberAsns[_as2] * 0.95:
+                elif relation == 'p2c' and numberAsns[_as] >= numberAsns[_as2] * 0.95:
                     cost = min(cost, c)
-                elif relation == 'c2p' and numberAsns[
-                        _as2] >= numberAsns[_as] * 0.95:
+                elif relation == 'c2p' and numberAsns[_as2] >= numberAsns[_as] * 0.95:
                     cost = min(cost, c)
             return cost
 
@@ -354,19 +342,13 @@ class FindOptimizeLink():
 
         country_name = os.path.basename(self.dsn_path).split('_')[0]
         if NODE_VALUE != 'basic':
-            with open(os.path.join(as_importance_path, country_name + '.json'),
-                      'r') as f:
+            with open(os.path.join(as_importance_path, country_name + '.json'), 'r') as f:
                 as_importance_weight = json.load(f)
-            as_importance_weight = {
-                line[0]: [line[1], line[2]]
-                for line in as_importance_weight
-            }
+            as_importance_weight = {line[0]: [line[1], line[2]] for line in as_importance_weight}
             if NODE_VALUE == 'user':
-                as_importance_weight_min = min(
-                    [as_importance_weight[k][0] for k in as_importance_weight])
+                as_importance_weight_min = min([as_importance_weight[k][0] for k in as_importance_weight])
             else:
-                as_importance_weight_min = min(
-                    [as_importance_weight[k][1] for k in as_importance_weight])
+                as_importance_weight_min = min([as_importance_weight[k][1] for k in as_importance_weight])
         else:
             as_importance_weight_min = 0.5
 
@@ -376,12 +358,9 @@ class FindOptimizeLink():
             return False
 
         res = []
-        res.append(
-            ['', '', self.week_point,
-             copy.deepcopy(self.break_link), 0, 0])
+        res.append(['', '', self.week_point, copy.deepcopy(self.break_link), 0, 0])
         while self.break_link:
-            max_benefit_all, opt_left_as, opt_right_as, opt_begin_state, opt_end_state = float(
-                "-inf"), '', '', '', ''
+            max_benefit_all, opt_left_as, opt_right_as, opt_begin_state, opt_end_state = float("-inf"), '', '', '', ''
             for begin_state in state:
                 for end_state in state[begin_state]:
                     benefit, left_as, right_as = 0, '', ''
@@ -391,8 +370,7 @@ class FindOptimizeLink():
                         if str(begin_as) not in self.begin_hash_dict:
                             continue
                         v = cal_node_value(begin_as)
-                        nodes = self.begin_hash_dict[str(
-                            begin_as)][begin_state]
+                        nodes = self.begin_hash_dict[str(begin_as)][begin_state]
                         for _nodes in nodes:
                             if _nodes not in count_dict:
                                 count_dict[_nodes] = 0
@@ -412,39 +390,33 @@ class FindOptimizeLink():
 
                     count_dict = {}
                     for begin_as, end_as in self.break_link:
-                        if left_as in self.begin_hash_dict[str(
-                                begin_as)][begin_state]:
+                        if left_as in self.begin_hash_dict[str(begin_as)][begin_state]:
                             # print(begin_as, end_as)
                             # print(self.end_hash_dict)
                             if str(end_as) not in self.end_hash_dict:
                                 continue
-                            for _as in set(self.end_hash_dict[str(end_as)]
-                                           [end_state]):
+                            for _as in set(self.end_hash_dict[str(end_as)][end_state]):
                                 if _as == left_as:
                                     continue
                                 if _as not in count_dict:
                                     count_dict[_as] = 0
-                                count_dict[_as] += (cal_node_value(begin_as) +
-                                                    cal_node_value(end_as))
+                                count_dict[_as] += (cal_node_value(begin_as) + cal_node_value(end_as))
 
                     right_max_benefit, right_as = float('-inf'), ''
                     for _as in count_dict:
                         cost = cal_cost(left_as, _as, begin_state, end_state)
                         if right_max_benefit <= count_dict[_as] - cost:
-                            right_max_benefit, right_as = count_dict[
-                                _as] - cost, _as
+                            right_max_benefit, right_as = count_dict[_as] - cost, _as
 
                     cost = cal_cost(left_as, right_as, begin_state, end_state)
                     n = len(self.break_link)
                     for i in range(n):
                         begin_as, end_as = self.break_link[i]
-                        if str(begin_as) not in self.begin_hash_dict or str(
-                                end_as) not in self.end_hash_dict:
+                        if str(begin_as) not in self.begin_hash_dict or str(end_as) not in self.end_hash_dict:
                             continue
                         if left_as in self.begin_hash_dict[str(begin_as)][begin_state] and \
                                 right_as in self.end_hash_dict[str(end_as)][end_state]:
-                            benefit += (cal_node_value(begin_as) +
-                                        cal_node_value(end_as))
+                            benefit += (cal_node_value(begin_as) + cal_node_value(end_as))
 
                     benefit -= cost
 
@@ -458,8 +430,7 @@ class FindOptimizeLink():
             opt_re_link = []
             for i in range(n - 1, -1, -1):
                 begin_as, end_as = self.break_link[i]
-                if str(begin_as) not in self.begin_hash_dict or str(
-                        end_as) not in self.end_hash_dict:
+                if str(begin_as) not in self.begin_hash_dict or str(end_as) not in self.end_hash_dict:
                     continue
                 if opt_left_as in self.begin_hash_dict[str(begin_as)][opt_begin_state] and \
                         opt_right_as in self.end_hash_dict[str(end_as)][opt_end_state]:
@@ -467,13 +438,10 @@ class FindOptimizeLink():
                     del self.break_link[i]
                 elif opt_right_as in self.begin_hash_dict[str(begin_as)][opt_end_state] and \
                         opt_left_as in self.end_hash_dict[str(end_as)][opt_begin_state]:
-                    opt_re_link.append(
-                        [self.break_link[i][1], self.break_link[i][0]])
+                    opt_re_link.append([self.break_link[i][1], self.break_link[i][0]])
                     del self.break_link[i]
 
-            res.append([[opt_left_as, opt_right_as],
-                        [opt_begin_state, opt_end_state, opt_cost],
-                        opt_re_link, n,
+            res.append([[opt_left_as, opt_right_as], [opt_begin_state, opt_end_state, opt_cost], opt_re_link, n,
                         len(self.break_link)])
         return res
 
@@ -495,27 +463,20 @@ def find_optimize_link_pool(_dsn_path, cname):
         return
 
     if not os.path.exists(os.path.join(rtree_path, cname, 'as-rel.txt')):
-        print(
-            os.path.join(rtree_path, cname, 'as-rel.txt') +
-            ' as-rel not exist')
+        print(os.path.join(rtree_path, cname, 'as-rel.txt') + ' as-rel not exist')
         return
-    if os.path.exists(os.path.join(dsn_path,
-                                   cname + '.opt_add_link_rich.json')):
+    if os.path.exists(os.path.join(dsn_path, cname + '.opt_add_link_rich.json')):
         print(os.path.join(dsn_path, cname + '.opt_add_link_rich.json'))
         print(cname + ' exist')
         return
-    if os.path.exists(
-            os.path.join(old_break_dsn_path, cname) + '.break_link.json'):
-        with open(
-                os.path.join(old_break_dsn_path, cname) + '.break_link.json',
-                'r') as f:
+    if os.path.exists(os.path.join(old_break_dsn_path, cname) + '.break_link.json'):
+        with open(os.path.join(old_break_dsn_path, cname) + '.break_link.json', 'r') as f:
             week_point_and_break_link = json.load(f)
     else:
         mb = monitor_break()
         # week_point_and_break_link = mb.main_2(os.path.join(
         #     rtree_path, cname), os.path.join(dsn_path, cname), sample_num_dict[sample_num][0], sample_num_dict[sample_num][1])
-        week_point_and_break_link = make_weak_point(rtree_path, cname,
-                                                    dsn_path)
+        week_point_and_break_link = make_weak_point(rtree_path, cname, dsn_path)
         # mb.main_2(os.path.join(
         #     rtree_path, cname), os.path.join(dsn_path, cname))
 
@@ -528,8 +489,7 @@ def find_optimize_link_pool(_dsn_path, cname):
         if isinstance(week_point_and_break_link[i][0], int):
             week_point = [int(week_point_and_break_link[i][0])]
         elif isinstance(week_point_and_break_link[i][0], str):
-            week_point = list(
-                map(int, week_point_and_break_link[i][0].split(' ')))
+            week_point = list(map(int, week_point_and_break_link[i][0].split(' ')))
         else:
             week_point = list(week_point_and_break_link[i][0])
         break_link = week_point_and_break_link[i][1]
@@ -538,23 +498,18 @@ def find_optimize_link_pool(_dsn_path, cname):
         else:
             print('第 %s组 %s len => %s' % (str(i), cname, len(break_link)))
 
-        fol = FindOptimizeLink(os.path.join(rtree_path, cname), break_link,
-                               week_point,
+        fol = FindOptimizeLink(os.path.join(rtree_path, cname), break_link, week_point,
                                os.path.join(dsn_path, cname + '_' + str(i)))
         fol.break_link_begin_rtree_frequency()
         fol.break_link_end_rtree_frequency()
         res = fol.find_opt_link()
-        with open(
-                os.path.join(dsn_path,
-                             cname + '.' + str(i) + '.opt_add_link_rich.json'),
-                'w') as f:
+        with open(os.path.join(dsn_path, cname + '.' + str(i) + '.opt_add_link_rich.json'), 'w') as f:
             json.dump(res, f)
         for line in res:
             if str(line[0]) + ' ' + str(line[1]) not in Res:
                 Res[str(line[0]) + ' ' + str(line[1])] = []
             Res[str(line[0]) + ' ' + str(line[1])] += line[2]
-    with open(os.path.join(dsn_path, cname + '.opt_add_link_rich.json'),
-              'w') as f:
+    with open(os.path.join(dsn_path, cname + '.opt_add_link_rich.json'), 'w') as f:
         json.dump(Res, f)
 
 
@@ -572,8 +527,7 @@ a, b, c = 0, 0, 50
 
 
 @record_launch_time
-def find_optimize_link(txt_path, _dsn_path, cone_path, cc_list,
-                       _as_importance_path):
+def find_optimize_link(txt_path, _dsn_path, cone_path, cc_list, _as_importance_path):
     global as_importance_path
     as_importance_path = _as_importance_path
     # input = []
@@ -603,15 +557,9 @@ def find_optimize_link(txt_path, _dsn_path, cone_path, cc_list,
                 if data[1] not in as_peer:
                     as_peer[data[1]] = [float('-inf'), float('inf')]
                 value = numberAsns[data[1]] if data[1] in numberAsns else 1
-                as_peer[data[0]] = [
-                    max(as_peer[data[0]][0], value),
-                    min(as_peer[data[0]][1], value)
-                ]
+                as_peer[data[0]] = [max(as_peer[data[0]][0], value), min(as_peer[data[0]][1], value)]
                 value = numberAsns[data[0]] if data[0] in numberAsns else 1
-                as_peer[data[1]] = [
-                    max(as_peer[data[1]][0], value),
-                    min(as_peer[data[1]][1], value)
-                ]
+                as_peer[data[1]] = [max(as_peer[data[1]][0], value), min(as_peer[data[1]][1], value)]
 
             line = fp.readline().strip()
     pool = Pool(multiprocessing.cpu_count())

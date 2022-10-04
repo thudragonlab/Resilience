@@ -19,6 +19,10 @@ from util import mkdir, record_launch_time, record_launch_time_and_param
 3、量化并排序 (internal_security.py)
 '''
 
+SUFFIX = 'optimize_link'
+RESULT_SUFFIX = SUFFIX + '/new_optimize_result'
+SORT_DSN_PATH_SUFFIX = RESULT_SUFFIX + '/anova'
+
 
 def add_link_to_npz(add_link_file, old_npz_file, relas_file, dsn_npz_file,
                     add_link_relas_file, add_link_num):
@@ -166,8 +170,8 @@ class monitor_cut():
         self.res = {}
 
         # 创建图
-        print(self.file_name + ' graph create')
         self.from_npz_create_graph()
+        print(self.file_name + ' graph created')
         with open(self.tempgraphname, 'w') as f:
             json.dump(self.graph, f)
 
@@ -249,7 +253,7 @@ class iSecutiry():
         self.connect_dsn_path = connect_dsn_path
         self.sort_dsn_path = sort_dsn_path
 
-    def extract_connect_list(self, Num, begin_num=1):
+    def extract_connect_list(self, begin_num=1):
 
         def basic_user_domain(line):
             as_list = line.split(' ')
@@ -277,7 +281,8 @@ class iSecutiry():
             for line in _as_importance:
                 as_importance[line[0]] = line[1:]
 
-            for num in range(begin_num, Num):
+            # for num in range(begin_num, Num):
+            for num in Num_list:
                 file_path = os.path.join(self.path, cc, 'all', str(num))
                 if not os.path.exists(file_path):
                     print(file_path + ' del file not exist')
@@ -301,8 +306,9 @@ class iSecutiry():
                 if not len(file_name):
                     print(num)
                     break
-                res = {}
+                
                 for file in file_name:
+                    res = {}
                     asname = file.split('.')[0]
                     if os.path.exists(
                             os.path.join(self.connect_dsn_path, cc, str(num),
@@ -369,25 +375,23 @@ def record_result(topo_list, output_path, type_path, _type):
         if _cc in ['BR', 'US', 'RU']:
             continue
         change_res[_cc] = {}
-        for num in range(1, Num):
+        # for num in range(1, Num):
+        for num in Num_list:
             change_res[_cc][str(num)] = {}
             country_internal_rank(cc_list, topo_list, output_path,
                                   RESULT_SUFFIX, type_path, _type, _cc,
                                   str(num))
 
-            # for m in topo_list:
-            #     result_dsn_path = os.path.join(output_path, m, SUFFIX,'new_optimize_result')
-            #     rank_dsn_path = os.path.join(result_dsn_path, 'rank/')
-            #     mkdir(rank_dsn_path)
-            #     for value in ['basic', 'user', 'domain']:
+    #         for m in topo_list:
+    #             result_dsn_path = os.path.join(output_path,'public')
+    #             rank_dsn_path = os.path.join(result_dsn_path, 'optimize/')
+    #             mkdir(rank_dsn_path)
+    #             for value in ['basic', 'user', 'domain']:
 
-            #         if not os.path.exists(os.path.join(output_path, m, RESULT_SUFFIX,type_path, value+'_'+_cc, 'sorted_country_'+value+'.'+str(num)+'.json')):
-            #             print(m, _cc, '%s/sorted_country_%s'%(type_path,value) + '.'+str(num)+'.json', ' not exist')
+    #                 if not os.path.exists(os.path.join(output_path, m, RESULT_SUFFIX,type_path, value+'_'+_cc, 'sorted_country_'+value+'.'+str(num)+'.json')):
+    #                     print(m, _cc, '%s/sorted_country_%s'%(type_path,value) + '.'+str(num)+'.json', ' not exist')
 
-            #     country_internal_rank(cc_list,
-            #                           os.path.join(output_path, m, 'rtree'),
-            #                           os.path.join(output_path, m, RESULT_SUFFIX,'anova'), _cc,
-            #                           os.path.join(rank_dsn_path, '%s_rank.%s.%s.json' % (_type,_cc,str(num))), str(num))
+    #             country_internal_rank(cc_list, topo_list,output_path,RESULT_SUFFIX, type_path,_type,_cc,num)
 
     #             ccres = internal_survival(os.path.join(
     #                 rank_dsn_path, '%s_rank.%s.%s.json' % (_type,_cc,str(num))), 0, 2)
@@ -406,7 +410,7 @@ def record_result(topo_list, output_path, type_path, _type):
 
 
 @record_launch_time_and_param(2, 1)
-def add_npz_and_monitor_cut_pool(output_path, m, cname, Num):
+def add_npz_and_monitor_cut_pool(output_path, m, cname):
     dst_path = os.path.join(output_path, m)
     new_path = os.path.join(dst_path, SUFFIX, 'new_optimize')
     floyed_path = os.path.join(dst_path, SUFFIX, 'floyed')
@@ -449,7 +453,8 @@ def add_npz_and_monitor_cut_pool(output_path, m, cname, Num):
     for file in os.listdir(os.path.join(rtree_path, cname)):
         if file.find('addDel') == -1:
             continue
-        for _add_link_num in range(1, Num):
+        # for _add_link_num in range(1, Num):
+        for _add_link_num in Num_list:
             thread_pool_inner.apply_async(add_npz_and_monitor_cut_thread, (
                 file,
                 _add_link_num,
@@ -589,14 +594,7 @@ def cal_var_change_for_single_country(new_count_num_path, old_count_num_path,
         json.dump(result, sorted_var_f)
 
 
-SUFFIX = 'optimize_link'
-RESULT_SUFFIX = SUFFIX + '/new_optimize_result'
-SORT_DSN_PATH_SUFFIX = RESULT_SUFFIX + '/anova'
 
-Num = 6
-cc_list = []
-as_importance_path = None
-old_rank_file = None
 
 
 @record_launch_time
@@ -619,7 +617,6 @@ def part1(topo_list, _cc_list, output_path, _as_importance_path):
                 output_path,
                 m,
                 cname,
-                Num,
             ))
     pool.close()
     pool.join()
@@ -641,7 +638,7 @@ def part2(output_path, topo_list):
         mkdir(sort_dsn_path)
 
         iS = iSecutiry(new_path, connect_dsn_path, sort_dsn_path)
-        iS.extract_connect_list(Num)
+        iS.extract_connect_list()
 
     for m in topo_list:
         thread_pool.apply_async(make_dir_thread, (m, ))
@@ -659,7 +656,8 @@ def part3(topo_list, output_path):
             # print(m)
             connect_dsn_path = os.path.join(output_path, m, SUFFIX,
                                             'new_optimize_result', 'count_num')
-            for num in range(1, Num):
+            # for num in range(1, Num):
+            for num in Num_list:
                 if not os.path.exists(
                         os.path.join(connect_dsn_path, _cc, str(num))):
                     print(
@@ -691,16 +689,27 @@ def part3(topo_list, output_path):
     pool.join()
 
 
+
+
+# Num = 6
+cc_list = []
+as_importance_path = None
+old_rank_file = None
+
 @record_launch_time
-def train_routing_tree(topo_list, _cc_list, output_path, _as_importance_path):
+def train_routing_tree(topo_list, _cc_list, output_path, _as_importance_path,optimize_link_list):
     global as_importance_path
     global cc_list
     global old_rank_file
+    global Num
+    global Num_list
+    Num = 6
+    Num_list = optimize_link_list
     cc_list = _cc_list
     as_importance_path = _as_importance_path
     old_rank_file = os.path.join(output_path, 'public', 'med_rank.json')
-    # part1(topo_list,_cc_list,output_path,_as_importance_path)
-    # part2(output_path,topo_list)
+    part1(topo_list,_cc_list,output_path,_as_importance_path)
+    part2(output_path,topo_list)
     part3(topo_list, output_path)
     # print(topo_list)
     record_result(topo_list, output_path, 'anova', 'med')

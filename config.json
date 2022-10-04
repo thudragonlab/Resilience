@@ -1,10 +1,15 @@
 {
-    "root":"/home/peizd01/for_dragon/pzd_test5",
+    "root":"/home/peizd01/for_dragon/pzd_levene_cone_top_50_cut_10_few_cc_2",
     "types":{
         "asRank":true,
-        "problink":false,
-        "toposcope":false,
-        "toposcope_hidden":false
+        "problink":true,
+        "toposcope":true,
+        "toposcope_hidden":true
     },
-    "cc_list":["LV", "HU", "CL"]
+    "cc_list":["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR"],
+    "build_route_tree_model":"SORT_BY_CONE_TOP_10",
+    "destroy_route_tree_model":"DESTROY_TOP_10",
+    "cut_route_tree_model":"CUT_NO_MORE_THAN_1000",
+    "cut_node_depth":4,
+    "optimize_link_list":[1,2,3]
 }

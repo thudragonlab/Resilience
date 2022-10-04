@@ -2,16 +2,17 @@ import json
 import os
 import csv
 import multiprocessing
-from typing import Dict, List
+from typing import Dict, List, NewType, Union
 from util import mkdir, record_launch_time
 
+Weight = NewType('Weight', List[int])
 
-def get_radio(as_list, path):
-    inner_rank_map = {}
+
+def get_radio(as_list: List[str], path: str) -> Dict[str, int]:
+    inner_rank_map: Dict[str, int] = {}
     sum_rank = 0
-    user_weight_list = []
-    with open(os.path.join(path, 'input', 'as_user_ratio.json'),
-              'r') as user_file:
+    user_weight_list: List[Union[str, int]] = []
+    with open(os.path.join(path, 'input', 'as_user_ratio.json'), 'r') as user_file:
         data = json.load(user_file)
         rank_index = 0
         for i in data:
@@ -32,11 +33,11 @@ def get_radio(as_list, path):
         return inner_rank_map
 
 
-def get_radio_domain(as_list_domain, csv_data):
-    as_domain_map = {}
+def get_radio_domain(as_list_domain: List[str], csv_data: List[str]) -> Dict[str, int]:
+    as_domain_map: Dict[str, int] = {}
     sum_rank_domain = 0
     rank_index = 0
-    as_weight_list = []
+    as_weight_list: List[Union[str, int]] = []
     for c in csv_data:
         weight = c[4]
         # weight = c[9]
@@ -59,17 +60,16 @@ def get_radio_domain(as_list_domain, csv_data):
     return as_domain_map
 
 
-def do_something(ccc, path, csv_data):
+def do_something(ccc: str, path: str, csv_data: List[str]) -> None:
     cc2as_path2 = os.path.join(path, 'output/cc2as')
-    as_map: Dict[str, List[int]] = {}
-    result = []
+    as_map: Dict[str, Weight] = {}
+    result: List[Union[str, int]] = []
     output_path = os.path.join(path, 'output/weight_data')
     mkdir(output_path)
     try:
         with open(os.path.join(cc2as_path2, '%s.json' % ccc), 'r') as cc_file:
-            cc_as_list = json.load(cc_file)
-            user_rank_map = get_radio(
-                list(map(lambda x: 'AS%s' % x, cc_as_list)), path)
+            cc_as_list: List[str] = json.load(cc_file)
+            user_rank_map = get_radio(list(map(lambda x: 'AS%s' % x, cc_as_list)), path)
             domain_rank_map = get_radio_domain(cc_as_list, csv_data)
         for _as in user_rank_map:
             if _as not in as_map:
@@ -90,12 +90,9 @@ def do_something(ccc, path, csv_data):
 
 
 @record_launch_time
-def make_as_importance(path, cc_list) -> str:
+def make_as_importance(path: str, cc_list: List[str]) -> str:
     csv_data: List[str] = []
-    with open(
-            os.path.join(path, 'input',
-                         'normprefixrank_list-alexa_family-4_limit-all.csv'),
-            'r') as csv_file:
+    with open(os.path.join(path, 'input', 'normprefixrank_list-alexa_family-4_limit-all.csv'), 'r') as csv_file:
         for i in csv.reader(csv_file):
             csv_data.append(i)
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())

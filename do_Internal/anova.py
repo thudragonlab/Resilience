@@ -93,10 +93,7 @@ def extract_connect_list(path, dsn_path):
 
 def anova_sort(dsn_path, VALUE, debug_path):
     # if os.path.exists(os.path.join(dsn_path, 'sorted_country_'+VALUE+'.json')): return
-    with open(
-            os.path.join(dsn_path,
-                         'anova_' + VALUE + '_multi_comparison.json'),
-            'r') as f:
+    with open(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json'), 'r') as f:
         reader = json.load(f)
     res = {}  # 记录{国家:【比其更安全的国家】【无差异国家】【更不安全的国家】}
     for line in reader:
@@ -135,14 +132,11 @@ def anova_sort(dsn_path, VALUE, debug_path):
                 temp.append(cc)
         sorted_country.append(temp)
 
-    with open(os.path.join(dsn_path, 'sorted_country_' + VALUE + '.json'),
-              'w') as f:
+    with open(os.path.join(dsn_path, 'sorted_country_' + VALUE + '.json'), 'w') as f:
         json.dump(sorted_country, f)
 
     if debug_path:
-        with open(
-                os.path.join(debug_path, 'sorted_country_' + VALUE + '.json'),
-                'w') as f:
+        with open(os.path.join(debug_path, 'sorted_country_' + VALUE + '.json'), 'w') as f:
             json.dump(sorted_country, f)
 
 
@@ -150,9 +144,7 @@ def anova(dict_l, dsn_path, VALUE):
     '''
     输入L:[[],...,[]]，列表每个元素为国家所有的破坏性度量
     '''
-    if os.path.exists(
-            os.path.join(dsn_path,
-                         'anova_' + VALUE + '_multi_comparison.json')):
+    if os.path.exists(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json')):
         return
     l = [v for _, v in dict_l.items()]
     print(l)
@@ -163,7 +155,7 @@ def anova(dict_l, dsn_path, VALUE):
     print('P value:', p)
     if p > 0.05:
         print('无显著性差异 p>0.05')
-        return
+        # return
     else:
         print('有显著性差异')
 
@@ -182,10 +174,7 @@ def anova(dict_l, dsn_path, VALUE):
         else:
             res.append([line[0], line[1], 0])
 
-    with open(
-            os.path.join(dsn_path,
-                         'anova_' + VALUE + '_multi_comparison.json'),
-            'w') as f:
+    with open(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json'), 'w') as f:
         json.dump(res, f)
 
 
@@ -235,14 +224,12 @@ def groud_truth_based_anova(path, dsn_path, value, debug_path):
 
 
 @record_launch_time
-def country_internal_rank(path, rank_path, _type, cc_list, topo_list,
-                          debug_path):
+def country_internal_rank(path, rank_path, _type, cc_list, topo_list, debug_path):
 
     def country_internal_rank_thread(value2, value):
         del_path = os.path.join(path, value, 'rtree')
         npz_file_name = del_path
-        anova_path = os.path.join(path, value, 'result', _type,
-                                  'sorted_country_' + value2 + '.json')
+        anova_path = os.path.join(path, value, 'result', _type, 'sorted_country_' + value2 + '.json')
         with open(anova_path, 'r') as f:
             reader = json.load(f)
         res = {}
@@ -252,49 +239,42 @@ def country_internal_rank(path, rank_path, _type, cc_list, topo_list,
                 if _cc not in res: res[_cc] = {}
                 if len(_as) == 0: continue
                 if _as[0] == 'd': _as = _as[9:]
-                res[_cc][_as] = index + 1
+                res[_cc][_as] = index + 1 # 每个国家下每个AS的排名
         for _cc in res:
             if _cc not in rank: continue
             file_name = os.listdir(os.path.join(del_path, _cc))
             file_name = [i for i in file_name if i.find('.graph') != -1]
-            if len(file_name) == 0:
+            if len(file_name) == 0: # 如果没有找到生成的.graph数据
                 temp = 0
                 for _as in res[_cc]:
                     if _as[0] == 'd': _as = _as[9:]
-                    temp += res[_cc][_as]
-                temp = temp / len(res[_cc])
-            else:
+                    temp += res[_cc][_as] # temp是每个国家下所有AS排名之和
+                temp = temp / len(res[_cc]) # temp 再除以这个国家下AS的数量
+            else: # 否则
                 ans = {}
                 for _as in res[_cc]:
                     if len(_as) == 0: continue
-                    if _as[0] == 'd': _as = _as[9:]
-                    if 'dcomplete' + _as + '.npz.graph.json' in file_name:
-                        with open(
-                                os.path.join(
-                                    del_path, _cc,
-                                    'dcomplete' + _as + '.npz.graph.json'),
-                                'r') as f:
+                    if _as[0] == 'd': _as = _as[9:] #格式化每个国家下的AS号
+                    if 'dcomplete' + _as + '.npz.graph.json' in file_name: # 如果有graph文件
+                        with open(os.path.join(del_path, _cc, 'dcomplete' + _as + '.npz.graph.json'), 'r') as f:
                             n = json.load(f)
-                        ans[_as] = len(set(list(n.keys())))
-                    elif 'dcomplete' + _as + '.npz' in os.path.join(
-                            npz_file_name, _cc):
-                        m = np.load(
-                            os.path.join(npz_file_name, _cc,
-                                         'dcomplete' + _as + '.npz'))
-                        ans[_as] = len(set(m['row']))
+                        ans[_as] = len(set(list(n.keys()))) # 统计每个路由树下的链接个数
+                    elif 'dcomplete' + _as + '.npz' in os.path.join(npz_file_name, _cc): #否则解析npz文件
+                        m = np.load(os.path.join(npz_file_name, _cc, 'dcomplete' + _as + '.npz'))
+                        ans[_as] = len(set(m['row'])) # 统计每个路由树下的链接个数
                     else:
-                        ans[_as] = 0
+                        ans[_as] = 0 # 否则链接数为0
                 temp = 0
                 for _as in res[_cc]:
                     if len(_as) == 0: continue
                     if _as[0] == 'd': _as = _as[9:]
                     if ans[_as] == 0: continue
-                    temp += res[_cc][_as] * ans[_as]
+                    temp += res[_cc][_as] * ans[_as] #  sum(国家下所有AS的排名 * 各自链接数量)
 
                 try:
-                    temp /= sum(list(ans.values()))
+                    temp /= sum(list(ans.values())) # 再除以国家所有链接的个数
                 except:
-                    temp = sum(res[_cc].values()) / len(res[_cc])
+                    temp = sum(res[_cc].values()) / len(res[_cc]) # 如果ans是空的 每个国家的AS排名之和除以拥有的AS数量
 
             if _cc in rank:
                 if temp < 1:
@@ -331,14 +311,16 @@ def judge_var(target_list, result):
     if len(target_list) == 0:
         return
     for ii in target_list:
-        F = np.var(source_list['list']) / np.var(ii['list'])
-        # p = 1 - stats.f.cdf(F, 60, 60)
-        stat, p = stats.levene(source_list['list'], ii['list'])
         if ii['key'] == source_list['key']:
-            continue
-        if p > 0.05:
+                continue
+        if np.var(source_list['list']) == 0 and np.var(ii['list']):
             result[-1].append(ii['key'])
             target_list.remove(ii)
+        else:
+            stat, p = stats.levene(source_list['list'], ii['list'])
+            if p > 0.05:
+                result[-1].append(ii['key'])
+                target_list.remove(ii)
     judge_var(target_list, result)
 
 
@@ -358,8 +340,7 @@ def groud_truth_based_var(path, _type, debug_path):
         as_list = os.listdir(os.path.join(count_num_path, cc))
         if len(as_list) != 0:
             for as_file_name in as_list:
-                with open(os.path.join(count_num_path, cc, as_file_name),
-                          'r') as as_file:
+                with open(os.path.join(count_num_path, cc, as_file_name), 'r') as as_file:
                     as_data = json.load(as_file)
                     for _as in as_data:
                         N = as_data[_as]['asNum']
@@ -395,13 +376,11 @@ def groud_truth_based_var(path, _type, debug_path):
     if not os.path.exists(var_path):
         os.mkdir(var_path)
 
-    with open(os.path.join(var_path, 'sorted_country_%s.json' % _type),
-              'w') as sorted_var_f:
+    with open(os.path.join(var_path, 'sorted_country_%s.json' % _type), 'w') as sorted_var_f:
         json.dump(result, sorted_var_f)
 
     if debug_path:
-        with open(os.path.join(debug_path, 'sorted_country_%s.json' % _type),
-                  'w') as sorted_var_f:
+        with open(os.path.join(debug_path, 'sorted_country_%s.json' % _type), 'w') as sorted_var_f:
             json.dump(result, sorted_var_f)
 
 
@@ -487,7 +466,5 @@ def do_country_internal_rank(path, cc_list, topo_list, debug_path):
     # del_path和monitor_random_cut.py中的path含义相当
     # npz_file_name和create_routingtree.py中p2的含义相当
     # anova_path和本文件groud_truth_based_anova函数中anova_path含义相当
-    country_internal_rank(path, new_rank_path, 'anova', cc_list, topo_list,
-                          med_debug_path)
-    country_internal_rank(path, var_rank_path, 'var', cc_list, topo_list,
-                          var_debug_path)
+    country_internal_rank(path, new_rank_path, 'anova', cc_list, topo_list, med_debug_path)
+    country_internal_rank(path, var_rank_path, 'var', cc_list, topo_list, var_debug_path)

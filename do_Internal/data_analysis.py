@@ -1,10 +1,11 @@
 import json
 import os
+from typing import Dict,List
 from util import record_launch_time
 
 
 @record_launch_time
-def as_rela_txt(dsn_path, txt_path):
+def as_rela_txt(dsn_path:str, txt_path:str) -> str:
     '''
     处理AS关系数据
     {as:[peer, customor], ......}
@@ -13,7 +14,7 @@ def as_rela_txt(dsn_path, txt_path):
     file_name = txt_path.split('/')[-1][:-4]
     # dsn_path = '/home/peizd01/for_dragon/new_data_pzd/'
     real_dst_path = ''
-    result = {}
+    result:Dict[str,List[str]] = {}
     try:
         for line in file:
             if line[0] != '#':

@@ -29,7 +29,7 @@ def anova(dict_l, dsn_path, VALUE, num):
     print ('P value:', p, '\n')
     if p > 0.05:
         print('无显著性差异 p>0.05')
-        return
+        # return
     else:
         print('有显著性差异')
     
@@ -50,6 +50,7 @@ def anova(dict_l, dsn_path, VALUE, num):
     with open(os.path.join(dsn_path, 'anova_'+VALUE+'_multi_comparison.'+num+'.json'), 'w')  as f:
         json.dump(res, f)
     print(os.path.join(dsn_path, 'anova_'+VALUE+'_multi_comparison.'+num+'.json')+' created')
+    # anova_sort(dsn_path, VALUE, num)
  
 def anova_sort(dsn_path,VALUE, num):
     if os.path.exists(os.path.join(dsn_path, 'sorted_country_'+VALUE+'.'+num+'.json')): return
@@ -233,7 +234,7 @@ def internal_survival(rank_file, begin_index, end_index):
     r = list(r.items())
     # rank_file数据格式 asrank_basic asrank_user asrank_domain problink_basic problink_user problink_domain toposcope_basic toposcope_user toposcope_domain toposcope-h_basic toposcope-h_user toposcope-h_domain
     # locate 映射 basic->[asRank problink，toposcope toposcope-h] user->[asRank problink，toposcope toposcope-h] domain->[asRank problink，toposcope toposcope-h]
-    locate = [0,3,6,9,1,4,7,10,2,5,8,11]
+    # locate = [0,3,6,9,1,4,7,10,2,5,8,11]
     ccres = []
     for i in range(len(r)): ccres.append([])
     for i in range(len(r)):

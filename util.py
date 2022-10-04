@@ -65,7 +65,7 @@ def record_launch_time_and_param(*param_index):
                                cal_frame))) - 1
                 suffix = ''
                 if layer > 0:
-                    suffix = '\t' * layer
+                    suffix = '|\t' * layer
                 func_name = func.__name__
                 result = func(*args)
                 time_stamp.write('{} {:<20} {:>30}'.format(

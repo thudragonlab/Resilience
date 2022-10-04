@@ -9,14 +9,10 @@ import json
 import itertools
 from multiprocessing.pool import ThreadPool
 import random
-from do_Internal.monitor_random_cut_model.cut_10_1000_times import get_list_len, get_top_rtree
-# from do_Internal.monitor_random_cut_model.cut_10_full_tree import get_list_len, get_top_rtree
-# from do_Internal.monitor_random_cut_model.cut_all_full_tree import get_list_len, get_top_rtree
-# from do_Internal.monitor_random_cut_model.cut_all_1000_times import get_list_len, get_top_rtree
+from importlib import import_module
 from util import record_launch_time, record_launch_time_and_param
 
 izip = zip
-
 
 class monitor_cut():
 
@@ -71,15 +67,12 @@ class monitor_cut():
         nodelist = set(self.row)
         tempG = len(self.graph)
         print(self.dsn_path)
-        # if len(nodelist)<1000:
-        #     epoch = len(nodelist)
-        # else:
-        #     epoch = 1000
-        nodelist_len = get_list_len(nodelist)
+        
+        cut_times = gl_get_cut_num(nodelist)
         with open(self.dsn_path, 'a') as f:
             for num in range(1, self.n_node):
                 flag = 0
-                while flag < nodelist_len:
+                while flag < cut_times:
                     # while flag<epoch:
                     flag += 1
                     node = random.sample(nodelist, num)
@@ -103,13 +96,13 @@ class monitor_cut():
         # else:
         #     epoch = 1000
         # +
-        linklist_len = get_list_len(linklist)
+        cut_times = gl_get_cut_num(linklist)
         with open(self.dsn_path, 'a') as f:
             for num in range(self.n_link):
                 # size = 500
                 # flag = size-1
                 flag = 0
-                while flag < linklist_len:
+                while flag < cut_times:
                     # while flag<epoch:
                     flag += 1
                     link = random.sample(linklist, num)
@@ -209,7 +202,7 @@ def monitor_cut_class2func_inter(f):
     print(f)
     index = f.rfind('/')
     if f[index + 1:][:-4] + '.addDel.txt' not in os.listdir(f[:index]):
-        monitor_cut(5, 2, f, f[:-4] + '.addDel.txt', True)
+        monitor_cut(gl_cut_node_depth, 1, f, f[:-4] + '.addDel.txt', True)
     else:
         print('exist')
     return 0
@@ -228,10 +221,10 @@ def do_cut_by_cc(cc, path, asn_data):
         if f[9:-4] not in asn_data:
             continue
         node_num.append([f, asn_data[f[9:-4]]])
-    file = sorted(node_num, key=lambda x: x[1], reverse=True)
+    # file = sorted(node_num, key=lambda x: x[1], reverse=True)
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
     file_name = os.listdir(os.path.join(path, cc))
-    for f in get_top_rtree(file):
+    for f in gl_get_destroy_trees(node_num):
         if f[0][:-4] + '.addDel.txt' in file_name:
             continue
         try:
@@ -245,10 +238,20 @@ def do_cut_by_cc(cc, path, asn_data):
 
 
 @record_launch_time
-def monitor_country_internal(prefix, _type, asn_data):
+def monitor_country_internal(prefix, _type, asn_data,destroy_model_path,cut_rtree_model_path,cut_node_depth):
     path = os.path.join(prefix, _type, 'rtree/')
     file = os.listdir(path)
     file.reverse()
+    global gl_get_destroy_trees
+    global gl_get_cut_num
+    global gl_cut_node_depth
+    dynamic_module_1 = import_module(destroy_model_path)
+    dynamic_module_2 = import_module(cut_rtree_model_path)
+
+    gl_cut_node_depth = cut_node_depth + 1
+    gl_get_destroy_trees = dynamic_module_1.get_destroy_trees
+    gl_get_cut_num = dynamic_module_2.get_cut_num
+
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     for cc in file:
         pool.apply_async(do_cut_by_cc, (

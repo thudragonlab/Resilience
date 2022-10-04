@@ -6,7 +6,7 @@ from util import record_launch_time
 
 
 @record_launch_time
-def make_asn_cone_file(input_path: str, output_path: str):
+def make_asn_cone_file(input_path: str, output_path: str) -> str:
     result: Dict[asn:str, cone:int] = {}
     with open(os.path.join(input_path, 'asns.jsonl'), 'r') as f:
         for i in jsonlines.Reader(f):
