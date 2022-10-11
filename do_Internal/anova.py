@@ -91,10 +91,10 @@ def extract_connect_list(path, dsn_path):
     pool.join()
 
 
-def anova_sort(dsn_path, VALUE, debug_path):
+def anova_sort(dsn_path, VALUE, debug_path, reader):
     # if os.path.exists(os.path.join(dsn_path, 'sorted_country_'+VALUE+'.json')): return
-    with open(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json'), 'r') as f:
-        reader = json.load(f)
+    # with open(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json'), 'r') as f:
+    #     reader = json.load(f)
     res = {}  # 记录{国家:【比其更安全的国家】【无差异国家】【更不安全的国家】}
     for line in reader:
         if line[0] not in res: res[line[0]] = [[], [], []]
@@ -140,12 +140,12 @@ def anova_sort(dsn_path, VALUE, debug_path):
             json.dump(sorted_country, f)
 
 
-def anova(dict_l, dsn_path, VALUE):
+def anova(dict_l, dsn_path, VALUE, debug_path):
     '''
     输入L:[[],...,[]]，列表每个元素为国家所有的破坏性度量
     '''
-    if os.path.exists(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json')):
-        return
+    # if os.path.exists(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json')):
+    #     return
     l = [v for _, v in dict_l.items()]
     print(l)
     f, p = stats.f_oneway(*l)
@@ -174,8 +174,9 @@ def anova(dict_l, dsn_path, VALUE):
         else:
             res.append([line[0], line[1], 0])
 
-    with open(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json'), 'w') as f:
-        json.dump(res, f)
+    # with open(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json'), 'w') as f:
+    #     json.dump(res, f)
+    anova_sort(dsn_path, VALUE, debug_path, res)
 
 
 @record_launch_time_and_param(2)
@@ -189,12 +190,13 @@ def groud_truth_based_anova(path, dsn_path, value, debug_path):
             try:
                 with open(os.path.join(path, _cc, file), 'r') as f:
                     r = json.load(f)
-            except:
+            except Exception as e:
                 print(file)
+            
             for _as in r:
                 N = r[_as]['asNum']
                 if N < 0: continue
-                if N < 20: continue
+                
                 for i in r[_as]['connect']:
                     if value == 'basic':
                         _l += [_i[value_dict[value]] / N for _i in i]
@@ -204,7 +206,7 @@ def groud_truth_based_anova(path, dsn_path, value, debug_path):
             if len(_l) > 0:
                 l[_cc + '-' + asname] = _l
 
-    file_name = os.listdir(path)
+    # file_name = os.listdir(path)
     '''
     l 的数据结构
     {
@@ -214,17 +216,17 @@ def groud_truth_based_anova(path, dsn_path, value, debug_path):
     l = {}
     value_dict = {'basic': 0, 'user': 1, 'domain': 2}
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
-    for _cc in file_name:
+    for _cc in cc_list:
         thread_pool.apply(groud_truth_based_anova_thread, (_cc, ))
     thread_pool.close()
     thread_pool.join()
     # print(l[list(l.keys())[0]])
-    anova(l, dsn_path, value)
-    anova_sort(dsn_path, value, debug_path)
+    anova(l, dsn_path, value, debug_path)
+    # anova_sort(dsn_path, value, debug_path)
 
 
 @record_launch_time
-def country_internal_rank(path, rank_path, _type, cc_list, topo_list, debug_path):
+def country_internal_rank(path, rank_path, _type, topo_list, debug_path):
 
     def country_internal_rank_thread(value2, value):
         del_path = os.path.join(path, value, 'rtree')
@@ -239,48 +241,52 @@ def country_internal_rank(path, rank_path, _type, cc_list, topo_list, debug_path
                 if _cc not in res: res[_cc] = {}
                 if len(_as) == 0: continue
                 if _as[0] == 'd': _as = _as[9:]
-                res[_cc][_as] = index + 1 # 每个国家下每个AS的排名
+                res[_cc][_as] = index + 1  # 每个国家下每个AS的排名
         for _cc in res:
             if _cc not in rank: continue
             file_name = os.listdir(os.path.join(del_path, _cc))
             file_name = [i for i in file_name if i.find('.graph') != -1]
-            if len(file_name) == 0: # 如果没有找到生成的.graph数据
+            if len(file_name) == 0:  # 如果没有找到生成的.graph数据
                 temp = 0
                 for _as in res[_cc]:
                     if _as[0] == 'd': _as = _as[9:]
-                    temp += res[_cc][_as] # temp是每个国家下所有AS排名之和
-                temp = temp / len(res[_cc]) # temp 再除以这个国家下AS的数量
-            else: # 否则
+                    temp += res[_cc][_as]  # temp是每个国家下所有AS排名之和
+                temp = temp / len(res[_cc])  # temp 再除以这个国家下AS的数量
+            else:  # 否则
                 ans = {}
                 for _as in res[_cc]:
                     if len(_as) == 0: continue
-                    if _as[0] == 'd': _as = _as[9:] #格式化每个国家下的AS号
-                    if 'dcomplete' + _as + '.npz.graph.json' in file_name: # 如果有graph文件
+                    if _as[0] == 'd': _as = _as[9:]  #格式化每个国家下的AS号
+                    if 'dcomplete' + _as + '.npz.graph.json' in file_name:  # 如果有graph文件
                         with open(os.path.join(del_path, _cc, 'dcomplete' + _as + '.npz.graph.json'), 'r') as f:
                             n = json.load(f)
-                        ans[_as] = len(set(list(n.keys()))) # 统计每个路由树下的链接个数
-                    elif 'dcomplete' + _as + '.npz' in os.path.join(npz_file_name, _cc): #否则解析npz文件
+                        ans[_as] = len(set(list(n.keys())))  # 统计每个路由树下的链接个数
+                    elif 'dcomplete' + _as + '.npz' in os.path.join(npz_file_name, _cc):  #否则解析npz文件
                         m = np.load(os.path.join(npz_file_name, _cc, 'dcomplete' + _as + '.npz'))
-                        ans[_as] = len(set(m['row'])) # 统计每个路由树下的链接个数
+                        ans[_as] = len(set(m['row']))  # 统计每个路由树下的链接个数
                     else:
-                        ans[_as] = 0 # 否则链接数为0
+                        ans[_as] = 0  # 否则链接数为0
                 temp = 0
                 for _as in res[_cc]:
                     if len(_as) == 0: continue
                     if _as[0] == 'd': _as = _as[9:]
                     if ans[_as] == 0: continue
-                    temp += res[_cc][_as] * ans[_as] #  sum(国家下所有AS的排名 * 各自链接数量)
+                    # temp += res[_cc][_as] * ans[_as] #  sum(国家下所有AS的排名 * 各自链接数量)
+                    temp += res[_cc][_as]  #  sum(国家下所有AS的排名 * 各自链接数量)
+                    if _cc == 'KH' and value2 == 'user' and value == 'asRank':
+                        print(_as, res[_cc][_as])
 
-                try:
-                    temp /= sum(list(ans.values())) # 再除以国家所有链接的个数
-                except:
-                    temp = sum(res[_cc].values()) / len(res[_cc]) # 如果ans是空的 每个国家的AS排名之和除以拥有的AS数量
+                    # print(temp,len(res[_cc]))
+                # try:
+                #     temp /= sum(list(ans.values())) # 再除以国家所有链接的个数
+                # except:
+                temp = sum(res[_cc].values()) / len(res[_cc])  # 如果ans是空的 每个国家的AS排名之和除以拥有的AS数量
 
             if _cc in rank:
                 if temp < 1:
                     temp = 1
                 rank[_cc].append(temp)
-                print(temp)
+                # print(temp)
 
     rank = {}
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
@@ -288,12 +294,14 @@ def country_internal_rank(path, rank_path, _type, cc_list, topo_list, debug_path
         rank[_cc] = []
     for value2 in ['basic', 'user', 'domain']:
         for value in topo_list:
-            thread_pool.apply_async(country_internal_rank_thread, (
-                value2,
-                value,
-            ))
-    thread_pool.close()
-    thread_pool.join()
+            #### 开多线程数组会乱套
+            #         thread_pool.apply_async(country_internal_rank_thread, (
+            #             value2,
+            #             value,
+            #         ))
+            # thread_pool.close()
+            # thread_pool.join()
+            country_internal_rank_thread(value2, value)
     with open(rank_path, 'w') as f:
         json.dump(rank, f)
     if debug_path:
@@ -312,7 +320,7 @@ def judge_var(target_list, result):
         return
     for ii in target_list:
         if ii['key'] == source_list['key']:
-                continue
+            continue
         if np.var(source_list['list']) == 0 and np.var(ii['list']):
             result[-1].append(ii['key'])
             target_list.remove(ii)
@@ -346,8 +354,8 @@ def groud_truth_based_var(path, _type, debug_path):
                         N = as_data[_as]['asNum']
                         if N < 0:
                             continue
-                        if N < 20:
-                            continue
+                        # if N < 20:
+                        #     continue
                         for i in as_data[_as]['connect']:
                             if len(i) == 0:
                                 continue
@@ -409,7 +417,10 @@ def do_extract_connect_list(prefix, rela, weight_data_path):
 # for rela in ['asRank', 'problink', 'toposcope', 'toposcope_hidden']:
 # for rela in ['toposcope', 'toposcope_hidden']:
 @record_launch_time
-def do_groud_truth_based_anova(prefix, rela, debug_path):
+def do_groud_truth_based_anova(prefix, rela, debug_path,_cc_list):
+    global cc_list
+    cc_list = _cc_list
+    print("?")
     if debug_path:
         debug_path = os.path.join(debug_path, rela, 'anova')
         mkdir(debug_path)
@@ -436,7 +447,9 @@ def do_groud_truth_based_anova(prefix, rela, debug_path):
 
 
 @record_launch_time
-def do_groud_truth_based_var(prefix, rela, debug_path):
+def do_groud_truth_based_var(prefix, rela, debug_path,_cc_list):
+    global cc_list
+    cc_list = _cc_list
     path = os.path.join(prefix, rela, 'result')
     if debug_path:
         debug_path = os.path.join(debug_path, rela, 'var')
@@ -453,9 +466,10 @@ def do_groud_truth_based_var(prefix, rela, debug_path):
 
 
 @record_launch_time
-def do_country_internal_rank(path, cc_list, topo_list, debug_path):
+def do_country_internal_rank(path, _cc_list, topo_list, debug_path):
     # old_prefix = '/home/peizd01/for_dragon/new_data/'
-
+    global cc_list
+    cc_list = _cc_list
     new_rank_path = os.path.join(path, 'public/med_rank.json')
     var_rank_path = os.path.join(path, 'public/var_rank.json')
 
@@ -466,5 +480,5 @@ def do_country_internal_rank(path, cc_list, topo_list, debug_path):
     # del_path和monitor_random_cut.py中的path含义相当
     # npz_file_name和create_routingtree.py中p2的含义相当
     # anova_path和本文件groud_truth_based_anova函数中anova_path含义相当
-    country_internal_rank(path, new_rank_path, 'anova', cc_list, topo_list, med_debug_path)
-    country_internal_rank(path, var_rank_path, 'var', cc_list, topo_list, var_debug_path)
+    country_internal_rank(path, new_rank_path, 'anova', topo_list, med_debug_path)
+    country_internal_rank(path, var_rank_path, 'var', topo_list, var_debug_path)

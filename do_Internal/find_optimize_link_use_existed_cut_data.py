@@ -1,7 +1,7 @@
 #!usr/bin/env python
 # _*_ coding:utf8 _*_
 import multiprocessing
-from typing import no_type_check_decorator
+from typing import Dict, List, Mapping, NewType, Tuple, Iterator, TypeVar, Union
 import numpy as np
 import json
 import os
@@ -18,12 +18,20 @@ as_customer = {}
 as_peer = {}
 numberAsns = {}
 
+ForwardPointType = NewType('ForwardPointType', List[str])
+BackwardPointType = NewType('BackwardPointType', List[str])
+AsnType = TypeVar('AsnType', str, int)
+ASRelationType = NewType('ASRelationType', Dict[int, List[AsnType]])
+UserWeightType = NewType('UserWeightType', int)
+DomainWeightType = NewType('DomainWeightType', int)
+
 
 class cut_week_point():
 
-    def __init__(self, file_name) -> None:
-        self.file_name = file_name
-        self.graph = {}
+    def __init__(self, file_name: str) -> None:
+
+        self.file_name: str = file_name
+        self.graph: Dict[AsnType, Tuple[ForwardPointType, BackwardPointType]] = {}
         self.res = {}
         pass
 
@@ -32,8 +40,8 @@ class cut_week_point():
         存routingTree 【【前向点】【后向点】】 后向点为空说>明就脱离了routingTree
         '''
         m = np.load(self.file_name)
-        self.row = [str(i) for i in m['row']]
-        self.col = [str(i) for i in m['col']]
+        self.row: List[str] = [str(i) for i in m['row']]
+        self.col: List[str] = [str(i) for i in m['col']]
         link = list(zip(self.row, self.col))
         for l in link:
             a, b = l
@@ -46,7 +54,7 @@ class cut_week_point():
         #monitor_cut_node(self.graph, list(self.graph.keys())[2])
         self.res[''] = len(self.graph)
 
-    def monitor_cut_node(self, queue):
+    def monitor_cut_node(self, queue: List[int]):
         res = []
         queue = list(map(str, queue))
         n = len(queue)
@@ -74,7 +82,7 @@ class cut_week_point():
             del self.graph[n]
         return res
 
-    def yield_cur_link(self, depth=None):
+    def yield_cur_link(self, depth=None) -> Iterator:
         begin_as = self.file_name.split('/')[-1].split('.')[0]
         if not depth:
             for _as in self.graph:
@@ -141,25 +149,19 @@ class FindOptimizeLink():
     '''
 
     # def __init__(self, rtpath, break_link, week_point, raw_graph, node_index, dsn_path) -> None:
-    def __init__(self, rtpath, break_link, week_point, dsn_path) -> None:
+    def __init__(self, rtpath: str, break_link: List[Tuple[str, str]], week_point: List[int], dsn_path: str) -> None:
         '''
         rtpath: 存放npz的路径
         break_link: [[begin_as, end_as],...]
         '''
-        self.rtpath = rtpath
+        self.rtpath: str = rtpath
         self.file_name = os.listdir(self.rtpath)
-        self.break_link = break_link
-        self.week_point = week_point
-        # self.raw_graph = raw_graph
-        # self.node_index = node_index
-        # self.index_node = {self.node_index[k]:k for k in self.node_index}
-        self.dsn_path = dsn_path
-
-        # for i in range(len(self.raw_graph)): self.raw_graph[i] = np.array(self.raw_graph[i])
-        # self.raw_graph = np.array(self.raw_graph)
+        self.break_link: List[Tuple[str, str]] = break_link
+        self.week_point: List[int] = week_point
+        self.dsn_path: str = dsn_path
 
     def break_link_begin_rtree_frequency(self, depth=None):
-        hash_dict = {}
+        hash_dict: Dict[str, ASRelationType] = {}
         for begin_as, _ in self.break_link:
             if begin_as in hash_dict:
                 continue
@@ -195,12 +197,12 @@ class FindOptimizeLink():
 
             匹配优先state: 1 - 2
             '''
-            for _as in cwp.yield_cur_link(depth=depth):
+            for _as in cwp.yield_cur_link(depth=depth):  # 遍历以beginAS为根结点的路由树生成graph的所有节点
                 if str(begin_as) == str(_as):
                     hash_dict[begin_as][1].append(int(_as))
                     hash_dict[begin_as][2].append(int(_as))
                 else:
-                    state = cwp.cal_state(_as)
+                    state = cwp.cal_state(_as)  # 计算_as在topo数据(txt)里面的所有的关系
                     if 1 in state:
                         state = 1
                     else:
@@ -208,9 +210,11 @@ class FindOptimizeLink():
                     hash_dict[begin_as][state].append(int(_as))
 
         self.begin_hash_dict = hash_dict
+        # hash_dict[begin_as][1]表示和begin_as是p2c关系的AS列表
+        # hash_dict[begin_as][2]表示和begin_as是p2p关系的AS列表
 
     def break_link_end_rtree_frequency(self, depth=None):
-        hash_dict = {}
+        hash_dict: Dict[str, ASRelationType] = {}
         for _, end_as in self.break_link:
             if end_as in hash_dict:
                 continue
@@ -219,7 +223,7 @@ class FindOptimizeLink():
             elif 'dcomplete' + str(end_as) + '.npz' in self.file_name:
                 cwp = cut_week_point(os.path.join(self.rtpath, 'dcomplete' + str(end_as) + '.npz'))
             else:
-                print(str(end_as) + '.npz not exist in ')
+                # print(str(end_as) + '.npz not exist in ')
                 # print(self.rtpath)
                 continue
 
@@ -261,6 +265,8 @@ class FindOptimizeLink():
                     hash_dict[end_as][state].append(int(_as))
 
         self.end_hash_dict = hash_dict
+        # hash_dict[end_as][1]表示和begin_as是p2c关系的AS列表
+        # hash_dict[end_as][2]表示和begin_as是p2p关系的AS列表
 
         with open(self.dsn_path + '.begin_hash_dict.json', 'w') as f:
             json.dump(self.begin_hash_dict, f)
@@ -343,12 +349,15 @@ class FindOptimizeLink():
         country_name = os.path.basename(self.dsn_path).split('_')[0]
         if NODE_VALUE != 'basic':
             with open(os.path.join(as_importance_path, country_name + '.json'), 'r') as f:
-                as_importance_weight = json.load(f)
-            as_importance_weight = {line[0]: [line[1], line[2]] for line in as_importance_weight}
+                as_importance_weight: List[Tuple[str, int, int]] = json.load(f)
+            as_importance_weight: Dict[str, Tuple[UserWeightType, DomainWeightType]] = {
+                line[0]: [line[1], line[2]]
+                for line in as_importance_weight
+            }
             if NODE_VALUE == 'user':
-                as_importance_weight_min = min([as_importance_weight[k][0] for k in as_importance_weight])
+                as_importance_weight_min = min([as_importance_weight[k][0] for k in as_importance_weight])  # 最小的user权重值
             else:
-                as_importance_weight_min = min([as_importance_weight[k][1] for k in as_importance_weight])
+                as_importance_weight_min = min([as_importance_weight[k][1] for k in as_importance_weight])  # 最小的domain权重值
         else:
             as_importance_weight_min = 0.5
 
@@ -365,8 +374,8 @@ class FindOptimizeLink():
                 for end_state in state[begin_state]:
                     benefit, left_as, right_as = 0, '', ''
 
-                    count_dict = {}
-                    for begin_as, _ in self.break_link:
+                    count_dict: Dict[AsnType, int] = {}  # 所有和被破坏连接有关的AS的value
+                    for begin_as, _ in self.break_link:  # 遍历这个国家下所有被模拟破坏路由树的所有被破坏链接的左节点
                         if str(begin_as) not in self.begin_hash_dict:
                             continue
                         v = cal_node_value(begin_as)
@@ -381,6 +390,7 @@ class FindOptimizeLink():
                     #         count_dict[_as]+=1
                     left_as, left_max_benefit = '', -1
 
+                    # 寻找价值最大的能连上begin_as的左节点
                     if count_dict:
                         for _nodes, _value in count_dict.items():
                             if _value > left_max_benefit:
@@ -388,9 +398,9 @@ class FindOptimizeLink():
                     else:
                         continue
 
-                    count_dict = {}
+                    count_dict: Dict[AsnType, int] = {}
                     for begin_as, end_as in self.break_link:
-                        if left_as in self.begin_hash_dict[str(begin_as)][begin_state]:
+                        if left_as in self.begin_hash_dict[str(begin_as)][begin_state]:  # 如果价值最大的左节点能连上begin_as
                             # print(begin_as, end_as)
                             # print(self.end_hash_dict)
                             if str(end_as) not in self.end_hash_dict:
@@ -405,6 +415,8 @@ class FindOptimizeLink():
                     right_max_benefit, right_as = float('-inf'), ''
                     for _as in count_dict:
                         cost = cal_cost(left_as, _as, begin_state, end_state)
+                        if '%s %s' % (left_as,_as) in as_rel:
+                            continue
                         if right_max_benefit <= count_dict[_as] - cost:
                             right_max_benefit, right_as = count_dict[_as] - cost, _as
 
@@ -427,7 +439,7 @@ class FindOptimizeLink():
             if opt_right_as == '' or opt_left_as == '':
                 break
             n = len(self.break_link)
-            opt_re_link = []
+            opt_re_link:Tuple[str,str] = []
             for i in range(n - 1, -1, -1):
                 begin_as, end_as = self.break_link[i]
                 if str(begin_as) not in self.begin_hash_dict or str(end_as) not in self.end_hash_dict:
@@ -441,8 +453,8 @@ class FindOptimizeLink():
                     opt_re_link.append([self.break_link[i][1], self.break_link[i][0]])
                     del self.break_link[i]
 
-            res.append([[opt_left_as, opt_right_as], [opt_begin_state, opt_end_state, opt_cost], opt_re_link, n,
-                        len(self.break_link)])
+            res.append([[opt_left_as, opt_right_as], [opt_begin_state, opt_end_state, opt_cost], opt_re_link, n, len(self.break_link)]) 
+             #          [优化链接左节点, 优化链接右节点], [优化链接左节点连begin_as关系,优化链接右节点连end_as关系,优化成本],重新连接的链接,原来断开链接数,优化后断开链接数
         return res
 
 
@@ -476,23 +488,23 @@ def find_optimize_link_pool(_dsn_path, cname):
         mb = monitor_break()
         # week_point_and_break_link = mb.main_2(os.path.join(
         #     rtree_path, cname), os.path.join(dsn_path, cname), sample_num_dict[sample_num][0], sample_num_dict[sample_num][1])
-        week_point_and_break_link = make_weak_point(rtree_path, cname, dsn_path)
+        week_point_and_break_link: Dict[str, List[Tuple[str, str]]] = make_weak_point(rtree_path, cname, dsn_path)
         # mb.main_2(os.path.join(
         #     rtree_path, cname), os.path.join(dsn_path, cname))
 
     # week_point_and_break_link = sorted(week_point_and_break_link.items(), key=lambda d: len(d[1]), reverse=True)
-    week_point_and_break_link = list(week_point_and_break_link.items())
+    week_point_and_break_link: Tuple[str, List[Tuple[str, str]]] = list(week_point_and_break_link.items())
     Res = {}
     range_num = min(50, len(week_point_and_break_link))
     for i in range(range_num):
-        # for i in range(len(week_point_and_break_link)):
         if isinstance(week_point_and_break_link[i][0], int):
-            week_point = [int(week_point_and_break_link[i][0])]
+            week_point: List[int] = [int(week_point_and_break_link[i][0])]
         elif isinstance(week_point_and_break_link[i][0], str):
-            week_point = list(map(int, week_point_and_break_link[i][0].split(' ')))
-        else:
-            week_point = list(week_point_and_break_link[i][0])
-        break_link = week_point_and_break_link[i][1]
+            week_point: List[int] = list(map(int, week_point_and_break_link[i][0].split(' ')))
+        # else:
+        #     print("??")
+        #     week_point = list(week_point_and_break_link[i][0])
+        break_link: List[Tuple[str, str]] = week_point_and_break_link[i][1]
         if len(break_link) == 0:
             break
         else:

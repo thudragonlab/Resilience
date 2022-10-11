@@ -18,7 +18,7 @@ from datetime import datetime
 import sys
 
 DEBUG = True
-ONLY_PATH = True
+ONLY_PATH = False
 
 model_map: Dict[str, str] = {
     'ALL': 'do_Internal.create_rtree_model.all_tree',
@@ -117,21 +117,21 @@ if __name__ == '__main__':
             if not types[_type]:
                 continue
             topo_list.append(_type)
-            # time_stamp.write('------------------- %s start -------------------\n' % _type)
-            # time_stamp.flush()
-            # as_rela_file = transformToJSON(dst_dir_path, type_map[_type]['txt_path'])
-            # if as_rela_file == '':
-            #     raise Exception('PATH ERROR')
-            # createRoutingTree(as_rela_file, dst_dir_path, _type, cc_list, asn_data, cc2as_path, build_rtree_model_path)
-            # monitorCountryInternal(dst_dir_path, _type, asn_data, destroy_rtree_model_path, cut_rtree_model_path,
-            #                        cut_node_depth)
-            # #     # # # anova.py
-            # do_extract_connect_list(dst_dir_path, _type, weight_data_path)
-            # do_groud_truth_based_anova(dst_dir_path, _type, debug_path)
-            # do_groud_truth_based_var(dst_dir_path, _type, debug_path)
-            # find_optimize_link(type_map[_type]['txt_path'], os.path.join(dst_dir_path, _type), cone_path, cc_list,
-            #                    weight_data_path)
-            # time_stamp.write('------------------- %s end ------------------- \n\n' % _type)
-            # time_stamp.flush()
+            time_stamp.write('------------------- %s start -------------------\n' % _type)
+            time_stamp.flush()
+            as_rela_file = transformToJSON(dst_dir_path, type_map[_type]['txt_path'])
+            if as_rela_file == '':
+                raise Exception('PATH ERROR')
+            createRoutingTree(as_rela_file, dst_dir_path, _type, cc_list, asn_data, cc2as_path, build_rtree_model_path)
+            monitorCountryInternal(dst_dir_path, _type, asn_data, destroy_rtree_model_path, cut_rtree_model_path,
+                                   cut_node_depth)
+                # # # anova.py
+            do_extract_connect_list(dst_dir_path, _type, weight_data_path)
+            do_groud_truth_based_anova(dst_dir_path, _type, debug_path,cc_list)
+            do_groud_truth_based_var(dst_dir_path, _type, debug_path,cc_list)
+            find_optimize_link(type_map[_type]['txt_path'], os.path.join(dst_dir_path, _type), cone_path, cc_list,
+                               weight_data_path)
+            time_stamp.write('------------------- %s end ------------------- \n\n' % _type)
+            time_stamp.flush()
         do_country_internal_rank(dst_dir_path, cc_list, topo_list, debug_path)
-        # train_routing_tree(topo_list, cc_list, dst_dir_path, weight_data_path, optimize_link_list)
+        train_routing_tree(topo_list, cc_list, dst_dir_path, weight_data_path, optimize_link_list)

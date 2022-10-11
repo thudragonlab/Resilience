@@ -2,7 +2,7 @@ import json
 import os
 import csv
 import multiprocessing
-from typing import Dict, List, NewType, Union
+from typing import Dict, List, NewType, Tuple, Union
 from util import mkdir, record_launch_time
 
 Weight = NewType('Weight', List[int])
@@ -63,7 +63,7 @@ def get_radio_domain(as_list_domain: List[str], csv_data: List[str]) -> Dict[str
 def do_something(ccc: str, path: str, csv_data: List[str]) -> None:
     cc2as_path2 = os.path.join(path, 'output/cc2as')
     as_map: Dict[str, Weight] = {}
-    result: List[Union[str, int]] = []
+    result: List[Tuple[str,int,int]] = []
     output_path = os.path.join(path, 'output/weight_data')
     mkdir(output_path)
     try:

@@ -16,10 +16,11 @@ izip = zip
 
 class monitor_cut():
 
-    def __init__(self, n_node, n_link, file_path, dsn_path, del_n=False):
+    def __init__(self, n_node, n_link, file_path, dsn_path, asn,del_n=False):
         self.file_name = file_path
         self.n_node = n_node
         self.n_link = n_link
+        self.asn = asn
         self.graph = {}
         self.dsn_path = dsn_path
         self.tempgraphname = file_path + '.graph.json'
@@ -29,8 +30,8 @@ class monitor_cut():
 
         #创建图
         self.from_npz_create_graph()
-        print(file_path + ' graph created')
-        print(self.res[''])
+        # print(file_path + ' graph created')
+        # print(self.res[''])
         with open(self.tempgraphname, 'w') as f:
             json.dump(self.graph, f)
 
@@ -42,7 +43,7 @@ class monitor_cut():
                 self.n_node = len(self.graph) // 2
                 self.n_link = len(self.graph) // 2
 
-        print(file_path + ' monitor node')
+        # print(file_path + ' monitor node')
         self.monitor_random_node_addDel()
         self.monitor_random_link_addDel()
 
@@ -62,11 +63,15 @@ class monitor_cut():
             self.graph[b][0].append(a)
         #monitor_cut_node(self.graph, list(self.graph.keys())[2])
         self.res[''] = len(self.graph)
+        for i in self.graph[self.asn][1]:
+            self.graph[i][0].remove(self.asn)
+            self.graph[self.asn][1].clear()
+        
 
     def monitor_random_node_addDel(self):
         nodelist = set(self.row)
         tempG = len(self.graph)
-        print(self.dsn_path)
+        # print(self.dsn_path)
         
         cut_times = gl_get_cut_num(nodelist)
         with open(self.dsn_path, 'a') as f:
@@ -80,6 +85,8 @@ class monitor_cut():
                     node.sort()
                     temp = ' '.join(list(map(str, node)))
                     linkres = self.monitor_cut_node(node)
+                    # if '6471' in node:
+                    
                     # f.write(temp + '|' + str(linkres) + '\n')
                     f.write(temp + '|' + ' '.join(list(map(str, linkres))) +
                             '\n')
@@ -165,10 +172,15 @@ class monitor_cut():
         res = []
         for node in queue:
             for i in self.graph[node][1]:
+                if node == '6471':
+                    print(self.graph[node])
+                    continue
                 self.graph[i][0].remove(node)
 
             self.graph[node][1] = []
 
+            
+        
         while queue:
             n = queue.pop(0)
             res.append(n)
@@ -200,11 +212,12 @@ class monitor_cut():
 
 def monitor_cut_class2func_inter(f):
     print(f)
-    index = f.rfind('/')
-    if f[index + 1:][:-4] + '.addDel.txt' not in os.listdir(f[:index]):
-        monitor_cut(gl_cut_node_depth, 1, f, f[:-4] + '.addDel.txt', True)
-    else:
-        print('exist')
+    # index = f.rfind('/')
+    monitor_cut(gl_cut_node_depth, 1, f, f[:-4] + '.addDel.txt',f.split('/')[-1][9:-4], True)
+    # if f[index + 1:][:-4] + '.addDel.txt' not in os.listdir(f[:index]):
+        
+    # else:
+    #     print('exist')
     return 0
 
 
@@ -225,8 +238,8 @@ def do_cut_by_cc(cc, path, asn_data):
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
     file_name = os.listdir(os.path.join(path, cc))
     for f in gl_get_destroy_trees(node_num):
-        if f[0][:-4] + '.addDel.txt' in file_name:
-            continue
+        # if f[0][:-4] + '.addDel.txt' in file_name:
+        #     continue
         try:
             thread_pool.apply(monitor_cut_class2func_inter,
                               (os.path.join(path, cc, f[0]), ))

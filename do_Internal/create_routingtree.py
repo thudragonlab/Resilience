@@ -9,7 +9,8 @@ from glob import glob
 import os
 import json
 import copy
-from typing import Dict, List
+from types import ModuleType
+from typing import Callable, Dict, List
 import numpy as np
 import time
 from mpi4py import MPI
@@ -21,9 +22,10 @@ from multiprocessing.pool import ThreadPool
 from importlib import import_module
 from util import mkdir, record_launch_time, record_launch_time_and_param
 
-# gl_asn_data
-# gl_filter_rtree
-# gl_as_rela_file_path
+gl_asn_data:Dict[str, int]
+gl_filter_rtree:Callable
+gl_dst_dir_path:str
+gl_as_rela_file_path:str
 '''
 把inFile里面的所有AS号写入到outFile中
 
@@ -283,21 +285,22 @@ def speedyGET(args):
         shape = matrixCOO.shape
         np.savez(fileName, row=row, col=col, data=data, shape=shape)
 
-    def makeRoutingTree(destinationNode, routingTree, fullGraph):
+    def makeRoutingTree(destinationNode, fullGraph):
         '''
         input:
             destination AS
         output:
             routing tree of destination AS in sparse matrix format
         '''
+
         print("=================" + str(destinationNode) + "=======================")
         if "dcomplete" + str(destinationNode) + '.npz' in file_name:
             print('exist')
             return
+        routingTree = sparse.dok_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
         # print('numNodes',numNodes)
         # print('routingTree',routingTree)
         stepOneRT, stepOneNodes, lvls = customerToProviderBFS(destinationNode, routingTree, fullGraph)
-        # print('stepOneNodes',stepOneNodes)
         stepTwoRT, stepTwoNodes, lvlsTwo = peerToPeer(stepOneRT, stepOneNodes, fullGraph, lvls)
         stepThreeRT = providerToCustomer(stepTwoRT, stepTwoNodes, fullGraph, lvlsTwo)
         saveAsNPZ(os.path.join(str(args[3]), "dcomplete" + str(destinationNode)), stepThreeRT)
@@ -335,7 +338,7 @@ def speedyGET(args):
         nodeList = None
     nodeList = comm.bcast(nodeList, root=0)
     numNodes = int(args[5])  # max(nodeList)
-    routingTree = sparse.dok_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
+    
     # firstIndex, lastIndex = getRankBounds(nodeList)
     file_name = os.listdir(str(args[3]))
     # if (verbose):  ### Printing MPI Status for debugging purposes
@@ -362,7 +365,6 @@ def speedyGET(args):
             # threads.append(t)
             thread_pool.apply_async(makeRoutingTree, (
                 destinationNode,
-                routingTree,
                 fullGraph,
             ))
         except Exception as e:
@@ -496,9 +498,9 @@ gl_as_rela_file_path 国家对应的topo关系文件
 
 
 @record_launch_time_and_param(2)
-def monitor_routingTree(file, dsn_path, country):
-    country_name = os.listdir(dsn_path)
-    dsn_path = os.path.join(dsn_path, country)
+def monitor_routingTree(file:str, dsn_path:str, country:str):
+    country_name:List[str] = os.listdir(dsn_path)
+    dsn_path:str = os.path.join(dsn_path, country)
     if country not in country_name:
         os.makedirs(dsn_path, exist_ok=True)
     print(country + ' begin')
@@ -520,7 +522,7 @@ def monitor_routingTree(file, dsn_path, country):
     print(country + ' end')
 
 
-def set_glabal_variable(as_rela_file, asn_data, model_path, _dst_dir_path):
+def set_glabal_variable(as_rela_file:str, asn_data:Dict[str, int], model_path:str, _dst_dir_path:str) -> None:
     global gl_asn_data
     global gl_filter_rtree
     global gl_as_rela_file_path
@@ -528,7 +530,7 @@ def set_glabal_variable(as_rela_file, asn_data, model_path, _dst_dir_path):
 
     gl_asn_data = asn_data
     dynamic_module = import_module(model_path)
-    gl_filter_rtree = dynamic_module.filter_rtree
+    gl_filter_rtree= dynamic_module.filter_rtree
     gl_dst_dir_path = _dst_dir_path
     gl_as_rela_file_path = as_rela_file
 
@@ -539,7 +541,7 @@ def create_rtree(as_rela_file: str, _dst_dir_path: str, _type: str, cc_list: Lis
 
     set_glabal_variable(as_rela_file, asn_data, model_path, _dst_dir_path)
 
-    rtree_path = os.path.join(_dst_dir_path, _type, 'rtree')
+    rtree_path:str = os.path.join(_dst_dir_path, _type, 'rtree')
     mkdir(rtree_path)
 
     process_pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())

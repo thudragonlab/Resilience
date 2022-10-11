@@ -2,7 +2,7 @@ import os
 import json
 
 
-def make_weak_point(rtree_path, cc, dst_path):
+def make_weak_point(rtree_path:str, cc:str, dst_path:str):
     files_list = os.listdir(os.path.join(rtree_path, cc))
     sample_result = {}
     result = {}
