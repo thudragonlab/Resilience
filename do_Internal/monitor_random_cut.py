@@ -172,9 +172,6 @@ class monitor_cut():
         res = []
         for node in queue:
             for i in self.graph[node][1]:
-                if node == '6471':
-                    print(self.graph[node])
-                    continue
                 self.graph[i][0].remove(node)
 
             self.graph[node][1] = []
@@ -241,7 +238,7 @@ def do_cut_by_cc(cc, path, asn_data):
         # if f[0][:-4] + '.addDel.txt' in file_name:
         #     continue
         try:
-            thread_pool.apply(monitor_cut_class2func_inter,
+            thread_pool.apply_async(monitor_cut_class2func_inter,
                               (os.path.join(path, cc, f[0]), ))
         except Exception as e:
             print(e)
@@ -251,10 +248,8 @@ def do_cut_by_cc(cc, path, asn_data):
 
 
 @record_launch_time
-def monitor_country_internal(prefix, _type, asn_data,destroy_model_path,cut_rtree_model_path,cut_node_depth):
+def monitor_country_internal(prefix, _type, asn_data,destroy_model_path,cut_rtree_model_path,cut_node_depth,cc_list):
     path = os.path.join(prefix, _type, 'rtree/')
-    file = os.listdir(path)
-    file.reverse()
     global gl_get_destroy_trees
     global gl_get_cut_num
     global gl_cut_node_depth
@@ -266,7 +261,7 @@ def monitor_country_internal(prefix, _type, asn_data,destroy_model_path,cut_rtre
     gl_get_cut_num = dynamic_module_2.get_cut_num
 
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-    for cc in file:
+    for cc in cc_list:
         pool.apply_async(do_cut_by_cc, (
             cc,
             path,

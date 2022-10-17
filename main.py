@@ -17,7 +17,7 @@ import json
 from datetime import datetime
 import sys
 
-DEBUG = True
+DEBUG = False
 ONLY_PATH = False
 
 model_map: Dict[str, str] = {
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         sys.path.append(root_path)
         types = config['types']
         cc_list: List[str] = config['cc_list']
-
+        rtree_node_min_cone: int = config['min_cone']
         build_rtree_model: str = config['build_route_tree_model']
         destroy_rtree_model: str = config['destroy_route_tree_model']
         cut_rtree_model: str = config['cut_route_tree_model']
@@ -119,12 +119,12 @@ if __name__ == '__main__':
             topo_list.append(_type)
             time_stamp.write('------------------- %s start -------------------\n' % _type)
             time_stamp.flush()
-            as_rela_file = transformToJSON(dst_dir_path, type_map[_type]['txt_path'])
+            as_rela_file = transformToJSON(dst_dir_path, type_map[_type]['txt_path'],asn_data,rtree_node_min_cone)
             if as_rela_file == '':
                 raise Exception('PATH ERROR')
             createRoutingTree(as_rela_file, dst_dir_path, _type, cc_list, asn_data, cc2as_path, build_rtree_model_path)
             monitorCountryInternal(dst_dir_path, _type, asn_data, destroy_rtree_model_path, cut_rtree_model_path,
-                                   cut_node_depth)
+                                   cut_node_depth,cc_list)
                 # # # anova.py
             do_extract_connect_list(dst_dir_path, _type, weight_data_path)
             do_groud_truth_based_anova(dst_dir_path, _type, debug_path,cc_list)

@@ -472,7 +472,8 @@ def do_country_internal_rank(path, _cc_list, topo_list, debug_path):
     cc_list = _cc_list
     new_rank_path = os.path.join(path, 'public/med_rank.json')
     var_rank_path = os.path.join(path, 'public/var_rank.json')
-
+    med_debug_path = None
+    var_debug_path = None
     if debug_path:
         med_debug_path = os.path.join(debug_path, 'med_rank.json')
         var_debug_path = os.path.join(debug_path, 'var_rank.json')

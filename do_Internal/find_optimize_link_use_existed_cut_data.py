@@ -535,7 +535,7 @@ as_importance_path = ''
 #         180, 2], '3': [100, 3], '4': [80, 4]}
 
 # cost
-a, b, c = 0, 0, 50
+a, b, c = 0, 0, 100
 
 
 @record_launch_time

@@ -1,13 +1,19 @@
 #!usr/bin/env python
 # _*_ coding:utf8 _*_
+import copy
 import json
 import multiprocessing
 from multiprocessing.pool import ThreadPool
 import os
 import random
-from scipy import stats
+from typing import Any, Dict, List, Union
+from scipy import stats,sparse
+import scipy.io
 import numpy as np
 import time
+import json
+# from do_Internal.create_routingtree import create_rela_file
+from do_Internal.data_analysis import as_rela_txt_dont_save
 from do_Internal.sort_rank import groud_truth_based_anova_for_single_country, country_internal_rank, internal_survival
 from multiprocessing import Pool
 from util import mkdir, record_launch_time, record_launch_time_and_param
@@ -107,8 +113,8 @@ def add_link_to_npz(add_link_file, old_npz_file, relas_file, dsn_npz_file, add_l
     n = 0
     begin_n = len(add_link)
     # print('!!!!')
-    if add_link_num == 8 and add_link_relas_file == '/home/peizd01/for_dragon/pzd_test5_2/output/asRank/optimize_link/new_optimize/KH/rtree/dcomplete9902.8.add_link_relas.json':
-        print('add link num:', len(add_link), len(add_link_relas))
+    # if add_link_num == 8 and add_link_relas_file == '/home/peizd01/for_dragon/pzd_test5_2/output/asRank/optimize_link/new_optimize/KH/rtree/dcomplete9902.8.add_link_relas.json':
+    #     print('add link num:', len(add_link), len(add_link_relas))
     while add_link:
         link = add_link.pop(0)
         if link[0] == link[1]:
@@ -142,29 +148,99 @@ def add_link_to_npz(add_link_file, old_npz_file, relas_file, dsn_npz_file, add_l
                         and _node in cur_graph:
                     add_link.append([link[1], _node, _s])
 
-    row, col = [], []
-    o = {}
-    for node in cur_graph:
-        for _node in cur_graph[node]['pre']:
-            if '%s-%s' % (node, _node) not in o:
-                o['%s-%s' % (node, _node)] = 0
+    # row, col = [], []
+    # o = {}
+    # for node in cur_graph:
+    #     for _node in cur_graph[node]['pre']:
+    #         if '%s-%s' % (node, _node) not in o:
+    #             o['%s-%s' % (node, _node)] = 0
 
-            if o['%s-%s' % (node, _node)] == 1:
-                continue
-            row.append(node)
-            col.append(_node)
+    #         if o['%s-%s' % (node, _node)] == 1:
+    #             continue
+    #         row.append(node)
+    #         col.append(_node)
 
-            o['%s-%s' % (node, _node)] += 1
+    #         o['%s-%s' % (node, _node)] += 1
 
     with open(add_link_relas_file, 'w') as f:
         json.dump(add_link_relas, f)
-    np.savez(dsn_npz_file, row=row, col=col)
+    # np.savez(dsn_npz_file, row=row, col=col)
+
+
+def generate_new_rela(add_link_file:str, relas_file:str, add_link_num:int,cc_as_list_path:str) -> Dict[int,List[List[int]]]:
+
+    state = {'c2p': 0, 'p2p': 1, 'p2c': 2, 0: 'c2p', 1: 'p2p', 2: 'p2c'}
+    match_state = {'1': {'1': 'p2p', '2': 'c2p'}, '2': {'1': 'p2c'}}
+
+    def create_relas(as_rela:str) -> Dict[int,List[List[int]]]:
+        # global relas
+        relas = {}
+        with open(cc_as_list_path, 'r') as f:
+            cclist = json.load(f)
+        for c in cclist:
+            relas[c] = [[], [], []]
+
+        for c in relas:
+            if c in as_rela:
+                relas[c][2] += [i for i in as_rela[c][0] if i in cclist]
+                for i in relas[c][2]:
+                    relas[i][2].append(c)
+                relas[c][1] += [i for i in as_rela[c][1] if i in cclist]
+                for i in relas[c][1]:
+                    relas[i][0].append(c)
+
+        return relas
+
+    json_data = as_rela_txt_dont_save(relas_file)
+    relas = create_relas(json_data)
+
+
+    with open(add_link_file, 'r') as f:
+        m = json.load(f)
+    add_link = []
+    if isinstance(m, dict):
+        for line in m:
+            if len(line) < 2:
+                continue
+            line = line.split(' ')
+            line[0] = line[0][1:-1]
+            line[1] = line[1][:-1]
+            begin_state = line[2][2:-2]
+            end_state = line[3][1:-2]
+            add_link.append([str(line[0]), str(line[1]), state[match_state[begin_state][end_state]]])
+            if len(add_link) > add_link_num:
+                break
+    elif isinstance(m, list):
+        for line in m:
+            add_link.append([str(line[0]), str(line[1]), state[match_state[begin_state][end_state]]])
+            if len(add_link) > add_link_num:
+                break
+
+
+    while add_link:
+        link = add_link.pop(0)
+        left_as = link[0]
+        right_as = link[1]
+        if link[0] == link[1]:
+            continue
+        s = link[2]
+        if s == 1:
+            if right_as not in relas[left_as][2]:relas[left_as][2].append(right_as)
+            if left_as not in relas[right_as][2]:relas[right_as][2].append(left_as)
+        elif s == 0:
+            if right_as not in relas[left_as][0]:relas[left_as][0].append(right_as)
+            if left_as not in relas[right_as][1]:relas[right_as][1].append(left_as)
+        elif s == 2:
+            if right_as not in relas[left_as][1]:relas[left_as][1].append(right_as)
+            if left_as not in relas[right_as][0]:relas[right_as][0].append(left_as)
+    return relas
+        
 
 
 class monitor_cut():
     # 3、读取旧的.addDel文件 计算新routingTree下模拟的结果 （37服务器 routingTree.py）
 
-    def __init__(self, file_path, old_del_path, dsn_path,asn):
+    def __init__(self, file_path, old_del_path, dsn_path, asn):
         self.file_name = file_path
         self.graph = {}
         self.asn = asn
@@ -177,7 +253,7 @@ class monitor_cut():
 
         # 创建图
         self.from_npz_create_graph()
-        print(self.file_name + ' graph created')
+        # print(self.file_name + ' graph created')
         with open(self.tempgraphname, 'w') as f:
             json.dump(self.graph, f)
 
@@ -216,8 +292,7 @@ class monitor_cut():
                         linkres = self.monitor_cut_node(queue)
 
                         if len(linkres) > len(oldbreak):
-                            print(self.tempgraphname, line, linkres,
-                                  'bad error\n')
+                            print(self.tempgraphname, line, linkres, 'bad error\n')
 
                         # elif len(linkres)<len(oldbreak):
                         #    print(self.tempgraphname, line, linkres, 'good error\n')
@@ -342,7 +417,8 @@ def cal_anova_change_for_single_country(connect_dsn_path, old_connect_path, num,
         print(os.path.join(connect_dsn_path, _cc, str(num)) + ' file is 0')
         return
 
-    for value in ['basic', 'user', 'domain']:
+    # for value in ['basic', 'user', 'domain']:
+    for value in ['basic']:
         new_anova_path = os.path.join(output_path, m, SORT_DSN_PATH_SUFFIX, value + '_' + _cc)
         mkdir(new_anova_path)
         groud_truth_based_anova_for_single_country(os.path.join(connect_dsn_path, _cc, str(num)), _cc, old_connect_path,
@@ -367,6 +443,258 @@ def record_result(topo_list, output_path, type_path, _type):
             change_res[_cc][str(num)] = {}
             country_internal_rank(cc_list, topo_list, output_path, RESULT_SUFFIX, type_path, _type, _cc, str(num))
 
+def customerToProviderBFS(destinationNode, routingTree, graph):
+        '''
+        input:
+            destinationNode (the root of routing tree)
+            empty routing tree which is sparse also
+        output:
+            routing tree after step 1 of routing tree algorithm
+            nodes added this step as a dictionary where key = level and value = list of nodes
+        what it does:
+            perform a bfs from destinationNode and only add relationship = 3
+        '''
+        BFS = [(0, [destinationNode])]
+        levels = {}  # Dictionary returning the highest level of each key
+        allNodes = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
+        for node in allNodes:
+            levels[node] = -1
+
+        levels[destinationNode] = 0
+
+        for pair in BFS:
+            level = pair[0]
+            vertices = pair[1]
+            for vertex in vertices:
+                # print(vertex)
+                for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
+                    if (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0) and (
+                        (not levels[node] <= level) or (levels[node] == -1)):
+                        routingTree[node, vertex] = 1
+                        if BFS[-1][0] == level:
+                            BFS.append((level + 1, [node]))
+                            levels[node] = level + 1
+                        else:
+                            BFS[-1][1].append(node)
+                            levels[node] = BFS[-1][0]
+                    elif (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0):
+                        routingTree[node, vertex] = 1
+        return routingTree, BFS, levels
+
+def peerToPeer(routingTree, BFS, graph, levels):
+    '''
+    input:
+        routing tree which is sparse also
+        nodes from step 1 of RT algorithm in bfs order
+    output:
+        routing tree after step 2 of routing tree algorithm
+        nodes added from this step and previous step as a dictionary where key = level and value = list of nodes
+    purpose:
+        connect new nodes to nodes added in step 1 with relationship = 1
+    '''
+    oldNodes = []
+    old = {}
+    allNodes = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
+    for node in allNodes:
+        old[node] = 0
+
+    for pair in BFS:
+        oldNodes.extend(pair[1])
+        for node in pair[1]:
+            old[node] = 1
+    newBFS = copy.deepcopy(BFS)
+    newLevels = levels
+    for pair in BFS:
+        level = pair[0]
+        # print "---level---: ",level
+        vertices = pair[1]
+        for vertex in vertices:
+            for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
+                if (relationship == 1) and (old[node] == 0):
+                    routingTree[node, vertex] = 1
+                    if newBFS[-1][0] == level:
+                        newBFS.append((level + 1, [node]))
+                        newLevels[node] = level + 1
+                    else:
+                        newBFS[-1][1].append(node)
+                        newLevels[node] = newBFS[-1][0]
+    return routingTree, newBFS, newLevels
+
+def providerToCustomer(routingTree, BFS, graph, levels):
+    '''
+    input:
+        routing tree which is sparse also
+        nodes from step 1 and 2 of RT algorithm
+    output:
+        routing tree after step 3 of routing tree algorithm
+        nodes added from this step and previous two steps as a dictionary where key = level and value = list of nodes
+    purpose:
+        breadth first search of tree, add nodes with relationship 2
+    '''
+    edgesCount = 0
+    oldNodes = []
+    old = {}
+    allNodes = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
+    for node in allNodes:
+        old[node] = 0
+    for pair in BFS:
+        oldNodes.extend(pair[1])
+
+    for node in oldNodes:
+        old[node] = 1
+
+    for pair in BFS:
+        level = pair[0]
+        vertices = pair[1]
+        for vertex in vertices:
+            for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
+                if (relationship == 2) and (routingTree[vertex, node] == 0 and routingTree[node, vertex] == 0) and \
+                        old[node] == 0 and ((not (levels[node] <= level)) or (levels[node] == -1)):
+                    routingTree[node, vertex] = 1
+                    if BFS[-1][0] == level:
+                        BFS.append((level + 1, [node]))
+                        levels[node] = level + 1
+                    else:
+                        BFS[-1][1].append(node)
+                        levels[node] = BFS[-1][0]
+                elif (relationship == 2) and (routingTree[vertex, node] == 0 and routingTree[node, vertex] == 0):
+                    routingTree[node, vertex] = 1
+    return routingTree
+
+def saveAsNPZ(fileName, matrix):
+    matrixCOO = matrix.tocoo()
+    row = matrixCOO.row
+    col = matrixCOO.col
+    data = matrixCOO.data
+    shape = matrixCOO.shape
+    np.savez(fileName, row=row, col=col, data=data, shape=shape)
+
+def makeRoutingTree(destinationNode, fullGraph,routingTree,new_npz_path):
+    '''
+    input:
+        destination AS
+    output:
+        routing tree of destination AS in sparse matrix format
+    '''
+
+    print("=================" + str(destinationNode) + "=======================")
+    
+    # print('routingTree',routingTree)
+    stepOneRT, stepOneNodes, lvls = customerToProviderBFS(destinationNode, routingTree, fullGraph)
+    stepTwoRT, stepTwoNodes, lvlsTwo = peerToPeer(stepOneRT, stepOneNodes, fullGraph, lvls)
+    stepThreeRT = providerToCustomer(stepTwoRT, stepTwoNodes, fullGraph, lvlsTwo)
+    saveAsNPZ(os.path.join(new_npz_path, "dcomplete" + str(destinationNode)), stepThreeRT)
+
+def dataConverter(relas_list):
+    returned_list = []
+    
+    for data in relas_list:
+    # while line:
+        # if (line[0] != '#'):
+        output_data = []
+        # data = line.split('|')
+        # outString = str(data[0]) + "\t" + str(data[1])
+        try:
+            if (int(data[0]) not in output_data):
+                output_data.append(data[0])
+            if (int(data[1]) not in output_data):
+                output_data.append(data[1])
+            
+        except Exception as e:
+            print(e)
+            raise e
+            exit()
+        if (data[2] == 0 or data[2] == "0"):
+            output_data.append('p2p')
+        else:
+            output_data.append('p2c')
+
+        returned_list.append(output_data)
+
+    return returned_list
+
+def graphGenerator(data_list):
+
+    def determineNodeCount(_data_list):
+        nodeList = []
+        # with open(fileName, 'r') as f:
+        #     content = f.readlines()
+            # print(fileName)
+        for splitLine in _data_list:
+            # if (line[0] != '#'):
+            #     splitLine = line.split("\t", 2)
+            if (int(splitLine[0]) not in nodeList):
+                nodeList.append(int(splitLine[0]))
+            if (int(splitLine[1]) not in nodeList):
+                nodeList.append(int(splitLine[1]))
+        # print("Node Count: " + str(len(nodeList)))
+        # print("Max Node ID: " + str(max(nodeList)))
+
+        ### Saving the node list ###
+        # outFileList = outName + ".nodeList"
+        # ouf = open(outFileList, 'w')
+        # for node in nodeList:
+        #     ouf.write(str(node) + "\n")
+        # ouf.close()
+        return max(nodeList)
+
+    def fileToSparse(d_list):
+        '''
+        reads the full AS graph in as a text file of relationships,
+        converts it to a sparse matrix (note that row x or column x is for AS x)
+        saves the sparse matrix
+        loads the sparse matrix and times the loading
+        usage: fileToSparse("Cyclops_caida_cons.txt")
+        '''
+
+        numNodes = determineNodeCount(d_list)
+
+        # with open(fileName, 'r') as f:
+        #     content = f.readlines()
+        empMatrix = sparse.lil_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
+        i = 1
+        total = len(d_list)
+        for splitLine in d_list:
+            if i % 1000 == 0:
+                print("completed: " + str((float(i) / float(total)) * 100.0))
+            i += 1
+            # splitLine = line.split("\t", 2)
+            node1 = int(splitLine[0])
+            node2 = int(splitLine[1])
+            relationship = splitLine[2][:3]
+            if relationship == "p2p":
+                empMatrix[node1, node2] = 1
+                empMatrix[node2, node1] = 1
+            if relationship == "p2c":
+                empMatrix[node1, node2] = 2
+                empMatrix[node2, node1] = 3
+        empMatrix = empMatrix.tocsr()
+        # scipy.io.mmwrite(outName, empMatrix)
+        # start = time.time()
+        # test = scipy.io.mmread(outName).tolil()  # 5.4MB to save sparse matrix
+        # end = time.time()
+        # print(end - start, " seconds to load")  # 2.3 seconds
+        return numNodes,empMatrix
+
+    return fileToSparse(data_list)
+
+def create_rela_file(relas):
+    sum = 0
+    relas_list = []
+    # with open(relaFile, 'w') as f:
+    for c in relas:
+        sum += 1
+        for b in relas[c][1]:
+            relas_list.append([str(c),str(b),-1])
+            # f.write(str(c) + '|' + str(b) + '|-1\n')
+        for b in relas[c][2]:
+            if c <= b:
+                relas_list.append([str(c),str(b),0])
+                # f.write(str(c) + '|' + str(b) + '|0\n')
+    # relas_list = []
+    return relas_list
+    # print(sum)
+
 
 @record_launch_time_and_param(2, 1)
 def add_npz_and_monitor_cut_pool(output_path, m, cname):
@@ -382,41 +710,53 @@ def add_npz_and_monitor_cut_pool(output_path, m, cname):
     relas_file = os.path.join(rtree_path, cname, 'as-rel.txt')
     add_link_file = os.path.join(floyed_path, cname + '.opt_add_link_rich.json')
 
-    def add_npz_and_monitor_cut_thread(file, _add_link_num):
-        
+    def add_npz_and_monitor_cut_thread(file, add_link_num):
+
         old_npz_file = os.path.join(rtree_path, cname, file.split('.')[0] + '.npz')
-        new_npz_path = os.path.join(new_path, cname, 'rtree', str(_add_link_num) + '/')
+        new_npz_path = os.path.join(new_path, cname, 'rtree', str(add_link_num) + '/')
+        temp_path = os.path.join(new_npz_path,'temp')
         new_npz_file = os.path.join(new_npz_path, file.split('.')[0] + '.npz')
         add_link_relas_file = os.path.join(new_path, cname, 'rtree',
-                                           '%s.%s.add_link_relas.json' % (file.split('.')[0], _add_link_num))
+                                           '%s.%s.add_link_relas.json' % (file.split('.')[0], add_link_num))
         old_del_path = os.path.join(rtree_path, cname, file)
-        new_del_path = os.path.join(new_path, cname, 'all', str(_add_link_num) + '/')
+        new_del_path = os.path.join(new_path, cname, 'all', str(add_link_num) + '/')
         new_del_file = os.path.join(new_del_path, file)
+        cc_as_list_path = os.path.join(output_path, 'cc2as', '%s.json' % cname)
         mkdir(new_npz_path)
         mkdir(new_del_path)
+        mkdir(temp_path)
 
         if os.path.exists(old_npz_file) and not os.path.exists(new_del_file):
-            # if os.path.exists(old_npz_file) :
-            add_link_to_npz(add_link_file, old_npz_file, relas_file, new_npz_file, add_link_relas_file, _add_link_num)
             asn = file.split('.')[0][9:]
-            monitor_cut(new_npz_file, old_del_path, new_del_file,asn)
+            # add_link_to_npz(add_link_file, old_npz_file, relas_file, new_npz_file, add_link_relas_file, add_link_num)
+            rela = generate_new_rela(add_link_file, relas_file, add_link_num,cc_as_list_path)
+            # relaFile = os.path.join(temp_path, 'as-rel-%s.txt' % add_link_num)
+            relas_list = create_rela_file(rela)
+            data_list = dataConverter(relas_list)
+            # print(data_list)
+            maxNum,fullGraph = graphGenerator(data_list)
+            # fullGraph = empMatrix.tocsr()
+            routingTree = sparse.dok_matrix((maxNum + 1, maxNum + 1), dtype=np.int8)
+            
+            makeRoutingTree(int(asn),fullGraph,routingTree,new_npz_path)
+            monitor_cut(new_npz_file, old_del_path, new_del_file, asn)
         # elif not os.path.exists(old_npz_file):
         #     print(old_npz_file + " not exist")
         # else:
         #     print(new_del_file + " exist")
 
     thread_pool_inner = ThreadPool(multiprocessing.cpu_count() * 10)
-    for file in os.listdir(os.path.join(rtree_path, cname)):
-        if file.find('addDel') == -1:
+    for _file in os.listdir(os.path.join(rtree_path, cname)):
+        if _file.find('addDel') == -1:
             continue
         # for _add_link_num in range(1, Num):
         for _add_link_num in Num_list:
             # add_npz_and_monitor_cut_thread (
-            #     file,
+            #     _file,
             #     _add_link_num,
             # )
             thread_pool_inner.apply_async(add_npz_and_monitor_cut_thread, (
-                file,
+                _file,
                 _add_link_num,
             ))
     thread_pool_inner.close()
@@ -554,7 +894,12 @@ def part1(topo_list, output_path):
             if not os.path.exists(os.path.join(floyed_path, cname + '.opt_add_link_rich.json')):
                 print(cname + ' 没有opt_add_link_rich')
                 continue
-            # input.append([os.path.join(output_path,m),cname])
+            
+            # add_npz_and_monitor_cut_pool(
+            #     output_path,
+            #     m,
+            #     cname,
+            # )
             pool.apply_async(add_npz_and_monitor_cut_pool, (
                 output_path,
                 m,
@@ -611,6 +956,12 @@ def part3(topo_list, output_path):
                     str(num),
                     output_path,
                 ))
+                # pool.apply_async(new_cal_anova_for_single_cc_pool, (
+                #     m,
+                #     _cc,
+                #     str(num),
+                #     output_path,
+                # ))
                 pool.apply_async(cal_var_for_single_cc_pool, (
                     m,
                     _cc,
@@ -619,6 +970,8 @@ def part3(topo_list, output_path):
                 ))
     pool.close()
     pool.join()
+
+
 
 
 # Num = 6
@@ -642,6 +995,7 @@ def train_routing_tree(topo_list, _cc_list, output_path, _as_importance_path, op
     part1(topo_list, output_path)
     part2(output_path, topo_list)
     part3(topo_list, output_path)
-    print(topo_list)
-    record_result(topo_list, output_path, 'anova', 'med')
-    record_result(topo_list, output_path, 'var', 'var')
+    # print(topo_list)
+    # record_result(topo_list, output_path, 'anova', 'med')
+    # record_result(topo_list, output_path, 'var', 'var')
+    # print(output_path)

@@ -68,7 +68,7 @@ def dataConverter(inFile, outFile):
             else:
                 line = fp.readline()
 
-        print("number of unique nodes: " + str(len(nodeList)))
+        # print("number of unique nodes: " + str(len(nodeList)))
 
     of.close()
 
@@ -94,8 +94,8 @@ def graphGenerator(inFile, outFile):
                     nodeList.append(int(splitLine[0]))
                 if (int(splitLine[1]) not in nodeList):
                     nodeList.append(int(splitLine[1]))
-        print("Node Count: " + str(len(nodeList)))
-        print("Max Node ID: " + str(max(nodeList)))
+        # print("Node Count: " + str(len(nodeList)))
+        # print("Max Node ID: " + str(max(nodeList)))
 
         ### Saving the node list ###
         outFileList = outName + ".nodeList"
@@ -183,7 +183,7 @@ def speedyGET(args):
             for vertex in vertices:
                 # print(vertex)
                 # print(fullGraph)
-                for node, relationship in zip(fullGraph[vertex].nonzero()[1], fullGraph[vertex].data):
+                for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
                     if (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0) and (
                         (not levels[node] <= level) or (levels[node] == -1)):
                         routingTree[node, vertex] = 1
@@ -225,7 +225,7 @@ def speedyGET(args):
             # print "---level---: ",level
             vertices = pair[1]
             for vertex in vertices:
-                for node, relationship in zip(fullGraph[vertex].nonzero()[1], fullGraph[vertex].data):
+                for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
                     if (relationship == 1) and (old[node] == 0):
                         routingTree[node, vertex] = 1
                         if newBFS[-1][0] == level:
@@ -263,7 +263,7 @@ def speedyGET(args):
             level = pair[0]
             vertices = pair[1]
             for vertex in vertices:
-                for node, relationship in zip(fullGraph[vertex].nonzero()[1], fullGraph[vertex].data):
+                for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
                     if (relationship == 2) and (routingTree[vertex, node] == 0 and routingTree[node, vertex] == 0) and \
                             old[node] == 0 and ((not (levels[node] <= level)) or (levels[node] == -1)):
                         routingTree[node, vertex] = 1
@@ -304,7 +304,6 @@ def speedyGET(args):
         stepTwoRT, stepTwoNodes, lvlsTwo = peerToPeer(stepOneRT, stepOneNodes, fullGraph, lvls)
         stepThreeRT = providerToCustomer(stepTwoRT, stepTwoNodes, fullGraph, lvlsTwo)
         saveAsNPZ(os.path.join(str(args[3]), "dcomplete" + str(destinationNode)), stepThreeRT)
-        return stepThreeRT
 
     ### Helper Functions ###
 
@@ -352,6 +351,7 @@ def speedyGET(args):
 
     ### Primary Loop, executed distrubitively in parallel
     nodeList = gl_filter_rtree(nodeList, gl_asn_data)
+    print('len(nodeList)',len(gl_filter_rtree(nodeList, gl_asn_data)))
     thread_pool = ThreadPool(processes=multiprocessing.cpu_count() * 10)
     for destinationNode in nodeList:
         #    random_index = get_random_index()
@@ -415,7 +415,7 @@ def create_rela_file(relas, relaFile):
             for b in relas[c][2]:
                 if c <= b:
                     f.write(str(c) + '|' + str(b) + '|0\n')
-    print(sum)
+    # print(sum)
 
 
 def run_routingTree(dsn_file, relaFile, cc):
@@ -458,6 +458,13 @@ def create_relas(
     with open(file, 'r') as f:
         cclist = json.load(f)
     for c in cclist:
+
+        # if c not in gl_asn_data or gl_asn_data[c] <= 1:
+        #     continue
+
+        
+        
+
         relas[c] = [[], [], []]
 
     for c in relas:
@@ -548,7 +555,8 @@ def create_rtree(as_rela_file: str, _dst_dir_path: str, _type: str, cc_list: Lis
     for cc in cc_list:
         try:
             cc_path: str = os.path.join(cc2as_path, cc + '.json')
-            process_pool.apply_async(monitor_routingTree, (cc_path, rtree_path, cc))
+            monitor_routingTree(cc_path, rtree_path, cc)
+            # process_pool.apply_async(monitor_routingTree, (cc_path, rtree_path, cc))
         except Exception as e:
             print(e)
             raise e
