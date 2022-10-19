@@ -262,6 +262,11 @@ def monitor_country_internal(prefix, _type, asn_data,destroy_model_path,cut_rtre
 
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     for cc in cc_list:
+        # do_cut_by_cc(
+        #     cc,
+        #     path,
+        #     asn_data,
+        # )
         pool.apply_async(do_cut_by_cc, (
             cc,
             path,

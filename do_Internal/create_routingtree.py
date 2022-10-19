@@ -186,7 +186,7 @@ def speedyGET(args):
                 for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
                     if (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0) and (
                         (not levels[node] <= level) or (levels[node] == -1)):
-                        routingTree[node, vertex] = 1
+                        routingTree[node, vertex] = 3
                         if BFS[-1][0] == level:
                             BFS.append((level + 1, [node]))
                             levels[node] = level + 1
@@ -194,7 +194,7 @@ def speedyGET(args):
                             BFS[-1][1].append(node)
                             levels[node] = BFS[-1][0]
                     elif (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0):
-                        routingTree[node, vertex] = 1
+                        routingTree[node, vertex] = 3
         return routingTree, BFS, levels
 
     def peerToPeer(routingTree, BFS, graph, levels):
@@ -266,7 +266,7 @@ def speedyGET(args):
                 for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
                     if (relationship == 2) and (routingTree[vertex, node] == 0 and routingTree[node, vertex] == 0) and \
                             old[node] == 0 and ((not (levels[node] <= level)) or (levels[node] == -1)):
-                        routingTree[node, vertex] = 1
+                        routingTree[node, vertex] = 2
                         if BFS[-1][0] == level:
                             BFS.append((level + 1, [node]))
                             levels[node] = level + 1
@@ -274,7 +274,7 @@ def speedyGET(args):
                             BFS[-1][1].append(node)
                             levels[node] = BFS[-1][0]
                     elif (relationship == 2) and (routingTree[vertex, node] == 0 and routingTree[node, vertex] == 0):
-                        routingTree[node, vertex] = 1
+                        routingTree[node, vertex] = 2
         return routingTree
 
     def saveAsNPZ(fileName, matrix):
@@ -555,8 +555,8 @@ def create_rtree(as_rela_file: str, _dst_dir_path: str, _type: str, cc_list: Lis
     for cc in cc_list:
         try:
             cc_path: str = os.path.join(cc2as_path, cc + '.json')
-            monitor_routingTree(cc_path, rtree_path, cc)
-            # process_pool.apply_async(monitor_routingTree, (cc_path, rtree_path, cc))
+            # monitor_routingTree(cc_path, rtree_path, cc)
+            process_pool.apply(monitor_routingTree, (cc_path, rtree_path, cc))
         except Exception as e:
             print(e)
             raise e

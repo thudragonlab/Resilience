@@ -47,6 +47,7 @@ if __name__ == '__main__':
         types = config['types']
         cc_list: List[str] = config['cc_list']
         rtree_node_min_cone: int = config['min_cone']
+        data_dim:List[str] = config['data_dim']
         build_rtree_model: str = config['build_route_tree_model']
         destroy_rtree_model: str = config['destroy_route_tree_model']
         cut_rtree_model: str = config['cut_route_tree_model']
@@ -133,5 +134,5 @@ if __name__ == '__main__':
                                weight_data_path)
             time_stamp.write('------------------- %s end ------------------- \n\n' % _type)
             time_stamp.flush()
-        do_country_internal_rank(dst_dir_path, cc_list, topo_list, debug_path)
-        train_routing_tree(topo_list, cc_list, dst_dir_path, weight_data_path, optimize_link_list)
+        do_country_internal_rank(dst_dir_path, cc_list, topo_list, debug_path,data_dim)
+        train_routing_tree(topo_list, cc_list, dst_dir_path, weight_data_path, optimize_link_list,data_dim)

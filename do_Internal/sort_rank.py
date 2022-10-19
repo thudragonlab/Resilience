@@ -132,7 +132,7 @@ def cal_rank_weight(_cc: str, rtree_path: str, as_dict: Dict[str, int]) -> int:
     return temp
 
 
-def country_internal_rank(cc_list, topo_list, output_path, RESULT_SUFFIX, type_path, _type, country_name, num):
+def country_internal_rank(cc_list, topo_list, output_path, RESULT_SUFFIX, type_path, _type, country_name, num,data_dim):
     rank_dir_path = os.path.join(output_path, 'public', 'optimize')
     mkdir(rank_dir_path)
 
@@ -141,8 +141,8 @@ def country_internal_rank(cc_list, topo_list, output_path, RESULT_SUFFIX, type_p
     with open(old_rank_path, 'r') as orf:
         rank = json.load(orf)
     # rank = {k:[] for k in cc_list}
-    new_cc_rank_weight = []
-    for value2 in ['basic', 'user', 'domain']:
+    new_cc_rank_weight = {}
+    for value2 in data_dim:
         for m in topo_list:
             old_graph_path = os.path.join(output_path, m, 'rtree')
             sort_dsn_path = os.path.join(output_path, m, RESULT_SUFFIX, type_path)
@@ -162,7 +162,7 @@ def country_internal_rank(cc_list, topo_list, output_path, RESULT_SUFFIX, type_p
                     if country_name == 'KH' and value2 == 'user' and m == 'asRank' and num == '8':
                         print(_as, res[_as])
             temp = cal_rank_weight(country_name, old_graph_path, res)
-            new_cc_rank_weight.append(temp)
+            new_cc_rank_weight[f'{value2}-{m}'] = temp
 
     rank[country_name] = new_cc_rank_weight
     with open(rank_dsn_path, 'w') as f:

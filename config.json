@@ -6,14 +6,9 @@
         "toposcope": false,
         "toposcope_hidden": false
     },
-    "cc_list": [
-        "SK",
-        "MY",
-        "PT",
-        "KH",
-        "LU"
-    ],
-    "min_cone":2,
+    "data_dim":["basic"],
+    "cc_list":  ["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR", "RO", "NZ", "CZ", "BD", "SE", "UA", "SG", "HK", "ES", "AT", "JP", "IN", "ID", "CH", "PL", "NL", "IT", "FR", "CA", "ZA", "AU", "GB", "DE"],
+    "min_cone":1,
     "build_route_tree_model": "SORT_BY_CONE_TOP_10",
     "destroy_route_tree_model": "DESTROY_TOP_10",
     "cut_route_tree_model": "CUT_NO_MORE_THAN_1000",

@@ -226,7 +226,7 @@ def groud_truth_based_anova(path, dsn_path, value, debug_path):
 
 
 @record_launch_time
-def country_internal_rank(path, rank_path, _type, topo_list, debug_path):
+def country_internal_rank(path, rank_path, _type, topo_list, debug_path,data_dim):
 
     def country_internal_rank_thread(value2, value):
         del_path = os.path.join(path, value, 'rtree')
@@ -285,14 +285,14 @@ def country_internal_rank(path, rank_path, _type, topo_list, debug_path):
             if _cc in rank:
                 if temp < 1:
                     temp = 1
-                rank[_cc].append(temp)
+                rank[_cc][f'{value2}-{value}'] = temp
                 # print(temp)
 
     rank = {}
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
     for _cc in cc_list:
-        rank[_cc] = []
-    for value2 in ['basic', 'user', 'domain']:
+        rank[_cc] = {}
+    for value2 in data_dim:
         for value in topo_list:
             #### 开多线程数组会乱套
             #         thread_pool.apply_async(country_internal_rank_thread, (
@@ -372,7 +372,7 @@ def groud_truth_based_var(path, _type, debug_path):
 
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
     for cc in cc_list:
-        thread_pool.apply_async(groud_truth_based_var_thread, (cc, ))
+        thread_pool.apply(groud_truth_based_var_thread, (cc, ))
     thread_pool.close()
     thread_pool.join()
     var_list = list(var_result.values())
@@ -466,7 +466,7 @@ def do_groud_truth_based_var(prefix, rela, debug_path,_cc_list):
 
 
 @record_launch_time
-def do_country_internal_rank(path, _cc_list, topo_list, debug_path):
+def do_country_internal_rank(path, _cc_list, topo_list, debug_path,data_dim):
     # old_prefix = '/home/peizd01/for_dragon/new_data/'
     global cc_list
     cc_list = _cc_list
@@ -481,5 +481,5 @@ def do_country_internal_rank(path, _cc_list, topo_list, debug_path):
     # del_path和monitor_random_cut.py中的path含义相当
     # npz_file_name和create_routingtree.py中p2的含义相当
     # anova_path和本文件groud_truth_based_anova函数中anova_path含义相当
-    country_internal_rank(path, new_rank_path, 'anova', topo_list, med_debug_path)
-    country_internal_rank(path, var_rank_path, 'var', topo_list, var_debug_path)
+    country_internal_rank(path, new_rank_path, 'anova', topo_list, med_debug_path,data_dim)
+    country_internal_rank(path, var_rank_path, 'var', topo_list, var_debug_path,data_dim)

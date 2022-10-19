@@ -495,7 +495,8 @@ def find_optimize_link_pool(_dsn_path, cname):
     # week_point_and_break_link = sorted(week_point_and_break_link.items(), key=lambda d: len(d[1]), reverse=True)
     week_point_and_break_link = list(week_point_and_break_link.items())
     Res = {}
-    range_num = min(50, len(week_point_and_break_link))
+    # range_num = min(50, len(week_point_and_break_link))
+    range_num = len(week_point_and_break_link)
     file_names =  os.listdir(os.path.join(rtree_path, cname))
     for i in range(range_num):
     # for i in range(len(week_point_and_break_link)):
