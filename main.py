@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List
+from my_types import *
 from do_Internal.create_routingtree import create_rtree as createRoutingTree
 from do_Internal.data_analysis import as_rela_txt as transformToJSON
 from do_Internal.monitor_random_cut import monitor_country_internal as monitorCountryInternal
@@ -44,14 +44,15 @@ if __name__ == '__main__':
         config = json.load(config_file)
         root_path = config['root']
         sys.path.append(root_path)
-        types = config['types']
-        cc_list: List[str] = config['cc_list']
+        types:Dict[TOPO_TPYE,bool] = config['types']
+        cc_list: List[COUNTRY_CODE] = config['cc_list']
         rtree_node_min_cone: int = config['min_cone']
         data_dim:List[str] = config['data_dim']
         build_rtree_model: str = config['build_route_tree_model']
         destroy_rtree_model: str = config['destroy_route_tree_model']
         cut_rtree_model: str = config['cut_route_tree_model']
         cut_node_depth: int = config['cut_node_depth']
+        opt_cc_list:List[COUNTRY_CODE] = config['opt_cc_list']
         optimize_link_list: List[int] = config['optimize_link_list']
 
         set_timestamp_path(root_path)
@@ -80,7 +81,7 @@ if __name__ == '__main__':
             }
         }
 
-        dst_dir_path = os.path.join(root_path, 'output')
+        dst_dir_path:OUTPUT_PATH = os.path.join(root_path, 'output')
         if DEBUG:
             debug_path = os.path.join(dst_dir_path, 'debug')
             mkdir(debug_path)
@@ -91,17 +92,17 @@ if __name__ == '__main__':
         mkdir(temp_path)
 
         if ONLY_PATH:
-            cc2as_path = os.path.join(dst_dir_path, 'cc2as')
+            cc2as_path:CC2AS_PATH = os.path.join(dst_dir_path, 'cc2as')
             cone_path = os.path.join(dst_dir_path, 'asns.json')
-            weight_data_path = os.path.join(root_path, 'output/weight_data')
+            weight_data_path:WEIGHT_PATH = os.path.join(root_path, 'output/weight_data')
         else:
-            cc2as_path = make_cc2as(os.path.join(root_path, 'input'), dst_dir_path)
+            cc2as_path:CC2AS_PATH = make_cc2as(os.path.join(root_path, 'input'), dst_dir_path)
             cone_path = make_asn_cone_file(os.path.join(root_path, 'input'), dst_dir_path)
-            weight_data_path = make_as_importance(root_path, cc_list)
+            weight_data_path:WEIGHT_PATH = make_as_importance(root_path, cc_list)
 
         start_time = datetime.now()
         with open(cone_path, 'r') as asn_f:
-            asn_data:Dict[str,int] = json.load(asn_f)
+            asn_data:Dict[AS_CODE,int] = json.load(asn_f)
         time_stamp.write('load asns.json %s  \n' % (datetime.now() - start_time))
 
         def make_model_path(model_path: str) -> str:
@@ -125,14 +126,14 @@ if __name__ == '__main__':
                 raise Exception('PATH ERROR')
             createRoutingTree(as_rela_file, dst_dir_path, _type, cc_list, asn_data, cc2as_path, build_rtree_model_path)
             monitorCountryInternal(dst_dir_path, _type, asn_data, destroy_rtree_model_path, cut_rtree_model_path,
-                                   cut_node_depth,cc_list)
+                                   cut_node_depth,cc_list,cc2as_path)
                 # # # anova.py
             do_extract_connect_list(dst_dir_path, _type, weight_data_path)
             do_groud_truth_based_anova(dst_dir_path, _type, debug_path,cc_list)
             do_groud_truth_based_var(dst_dir_path, _type, debug_path,cc_list)
-            find_optimize_link(type_map[_type]['txt_path'], os.path.join(dst_dir_path, _type), cone_path, cc_list,
-                               weight_data_path)
+            find_optimize_link(type_map[_type]['txt_path'], dst_dir_path,_type, cone_path, opt_cc_list,
+                               weight_data_path,optimize_link_list,cc2as_path)
             time_stamp.write('------------------- %s end ------------------- \n\n' % _type)
             time_stamp.flush()
         do_country_internal_rank(dst_dir_path, cc_list, topo_list, debug_path,data_dim)
-        train_routing_tree(topo_list, cc_list, dst_dir_path, weight_data_path, optimize_link_list,data_dim)
+        train_routing_tree(topo_list, opt_cc_list, dst_dir_path, weight_data_path, optimize_link_list,data_dim)

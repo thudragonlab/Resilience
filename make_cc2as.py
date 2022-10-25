@@ -1,12 +1,13 @@
 import json
 import os
+from my_types import *
 from typing import Dict, List
 import jsonlines
 from util import mkdir, record_launch_time
 
 
 @record_launch_time
-def make_cc2as(input_path: str, output_path: str) -> str:
+def make_cc2as(input_path: str, output_path: OUTPUT_PATH) -> CC2AS_PATH:
     result: Dict[cc:str, List[asn:str]] = {}
     cc2as_path: str = os.path.join(output_path, 'cc2as')
     mkdir(cc2as_path)

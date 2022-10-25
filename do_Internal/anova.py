@@ -57,7 +57,7 @@ def extract_connect_list_async(
     file_name = [i for i in file_name if i.find('.addDel') != -1]
 
     if not os.path.exists(os.path.join(dsn_path, cc)):
-        os.makedirs(os.path.join(dsn_path, cc))
+        mkdir(os.path.join(dsn_path, cc))
     for file in file_name:
         res = {}
         asname = file.split('.')[0]
@@ -87,6 +87,11 @@ def extract_connect_list(path, dsn_path):
             path,
             dsn_path,
         ))
+        # extract_connect_list_async (
+        #     cc,
+        #     path,
+        #     dsn_path,
+        # )
     pool.close()
     pool.join()
 
@@ -130,7 +135,8 @@ def anova_sort(dsn_path, VALUE, debug_path, reader):
         for cc in res:
             if len(res[cc][0]) == 0:
                 temp.append(cc)
-        sorted_country.append(temp)
+        if len(temp) != 0:
+            sorted_country.append(temp)
 
     with open(os.path.join(dsn_path, 'sorted_country_' + VALUE + '.json'), 'w') as f:
         json.dump(sorted_country, f)
@@ -174,8 +180,8 @@ def anova(dict_l, dsn_path, VALUE, debug_path):
         else:
             res.append([line[0], line[1], 0])
 
-    # with open(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json'), 'w') as f:
-    #     json.dump(res, f)
+    with open(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json'), 'w') as f:
+        json.dump(res, f)
     anova_sort(dsn_path, VALUE, debug_path, res)
 
 
@@ -273,8 +279,6 @@ def country_internal_rank(path, rank_path, _type, topo_list, debug_path,data_dim
                     if ans[_as] == 0: continue
                     # temp += res[_cc][_as] * ans[_as] #  sum(国家下所有AS的排名 * 各自链接数量)
                     temp += res[_cc][_as]  #  sum(国家下所有AS的排名 * 各自链接数量)
-                    if _cc == 'KH' and value2 == 'user' and value == 'asRank':
-                        print(_as, res[_cc][_as])
 
                     # print(temp,len(res[_cc]))
                 # try:
@@ -420,7 +424,6 @@ def do_extract_connect_list(prefix, rela, weight_data_path):
 def do_groud_truth_based_anova(prefix, rela, debug_path,_cc_list):
     global cc_list
     cc_list = _cc_list
-    print("?")
     if debug_path:
         debug_path = os.path.join(debug_path, rela, 'anova')
         mkdir(debug_path)

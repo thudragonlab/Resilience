@@ -2,8 +2,9 @@ import json
 import os
 import csv
 import multiprocessing
+from my_types import *
 from typing import Dict, List, NewType, Tuple, Union
-from util import mkdir, record_launch_time
+from util import mkdir, record_launch_time, record_launch_time_and_param
 
 Weight = NewType('Weight', List[int])
 
@@ -60,12 +61,15 @@ def get_radio_domain(as_list_domain: List[str], csv_data: List[str]) -> Dict[str
     return as_domain_map
 
 
+@record_launch_time_and_param(0)
 def do_something(ccc: str, path: str, csv_data: List[str]) -> None:
     cc2as_path2 = os.path.join(path, 'output/cc2as')
     as_map: Dict[str, Weight] = {}
     result: List[Tuple[str,int,int]] = []
     output_path = os.path.join(path, 'output/weight_data')
     mkdir(output_path)
+    if os.path.exists(os.path.join(output_path, '%s.json' % ccc)):
+        return
     try:
         with open(os.path.join(cc2as_path2, '%s.json' % ccc), 'r') as cc_file:
             cc_as_list: List[str] = json.load(cc_file)
@@ -87,10 +91,11 @@ def do_something(ccc: str, path: str, csv_data: List[str]) -> None:
             json.dump(result, f)
     except Exception as e:
         print(e)
+        raise e
 
 
 @record_launch_time
-def make_as_importance(path: str, cc_list: List[str]) -> str:
+def make_as_importance(path: str, cc_list: List[COUNTRY_CODE]) -> WEIGHT_PATH:
     csv_data: List[str] = []
     with open(os.path.join(path, 'input', 'normprefixrank_list-alexa_family-4_limit-all.csv'), 'r') as csv_file:
         for i in csv.reader(csv_file):
@@ -99,6 +104,7 @@ def make_as_importance(path: str, cc_list: List[str]) -> str:
     for cc in cc_list:
         try:
             pool.apply_async(do_something, (cc, path, csv_data))
+            # do_something (cc, path, csv_data)
         except Exception as e:
             print(e)
     pool.close()

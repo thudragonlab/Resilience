@@ -1,11 +1,30 @@
 {
-    "root":"/home/peizd01/for_dragon/pzd_levene_cone_top_50_cut_10",
-    "types":{
-        "asRank":true,
-        "problink":false,
-        "toposcope":false,
-        "toposcope_hidden":false
+    "root": "/home/peizd01/for_dragon/pzd_test5",
+    "types": {
+        "asRank": true,
+        "problink": false,
+        "toposcope": false,
+        "toposcope_hidden": false
     },
-    "cc_list":["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR", "RO", "NZ", "CZ", "BD", "SE", "UA", "SG", "HK", "ES", "AT", "JP", "IN", "ID", "CH", "PL", "NL", "IT", "FR", "CA", "ZA", "AU", "GB", "DE", "US", "RU", "BR"]
-    
+    "data_dim":["basic"],
+    "cc_list":  ["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR", "RO", "NZ", "CZ", "BD", "SE", "UA", "SG", "HK", "ES", "AT", "JP", "IN", "ID", "CH", "PL", "NL", "IT", "FR", "CA", "ZA", "AU", "GB", "DE", "US", "RU", "BR"],
+    "opt_cc_list": ["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR", "RO", "NZ", "CZ", "BD", "SE", "UA", "SG", "HK", "ES", "AT", "JP", "IN", "ID", "CH", "PL", "NL", "IT", "FR", "CA", "ZA", "AU", "GB", "DE"],
+    "min_cone":1,
+    "build_route_tree_model": "SORT_BY_CONE_TOP_10",
+    "destroy_route_tree_model": "DESTROY_TOP_10",
+    "cut_route_tree_model": "CUT_NO_MORE_THAN_1000",
+    "cut_node_depth": 4,
+    "optimize_link_list": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45,
+        50,
+        200
+    ]
 }

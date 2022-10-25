@@ -1,5 +1,5 @@
 {
-    "root": "/home/peizd01/for_dragon/pzd_test5",
+    "root": "/home/peizd01/for_dragon/pzd_test5_3",
     "types": {
         "asRank": true,
         "problink": false,
@@ -7,7 +7,8 @@
         "toposcope_hidden": false
     },
     "data_dim":["basic"],
-    "cc_list":  ["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR", "RO", "NZ", "CZ", "BD", "SE", "UA", "SG", "HK", "ES", "AT", "JP", "IN", "ID", "CH", "PL", "NL", "IT", "FR", "CA", "ZA", "AU", "GB", "DE"],
+    "cc_list":  ["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN"],
+    "opt_cc_list": ["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN"],
     "min_cone":1,
     "build_route_tree_model": "SORT_BY_CONE_TOP_10",
     "destroy_route_tree_model": "DESTROY_TOP_10",
@@ -23,6 +24,7 @@
         35,
         40,
         45,
-        50
+        50,
+        200
     ]
 }

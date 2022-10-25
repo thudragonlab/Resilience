@@ -132,15 +132,15 @@ def cal_rank_weight(_cc: str, rtree_path: str, as_dict: Dict[str, int]) -> int:
     return temp
 
 
-def country_internal_rank(cc_list, topo_list, output_path, RESULT_SUFFIX, type_path, _type, country_name, num,data_dim):
+def country_internal_rank( topo_list, output_path, RESULT_SUFFIX, type_path, _type, country_name, num,data_dim):
     rank_dir_path = os.path.join(output_path, 'public', 'optimize')
     mkdir(rank_dir_path)
 
     rank_dsn_path = os.path.join(rank_dir_path, '%s_rank.%s.%s.json' % (_type, country_name, str(num)))
     old_rank_path = os.path.join(output_path, 'public', '%s_rank.json' % _type)
     with open(old_rank_path, 'r') as orf:
-        rank = json.load(orf)
-    # rank = {k:[] for k in cc_list}
+        rank = json.load(orf) #读取之前的排名数据
+    
     new_cc_rank_weight = {}
     for value2 in data_dim:
         for m in topo_list:
@@ -149,18 +149,18 @@ def country_internal_rank(cc_list, topo_list, output_path, RESULT_SUFFIX, type_p
 
             path = os.path.join(sort_dsn_path, value2 + '_' + country_name,
                                 'sorted_country_' + value2 + '.' + str(num) + '.json')
-            with open(path, 'r') as f:
+            with open(path, 'r') as f: #读取优化后的AS排名结果
                 reader = json.load(f)
             res = {}
             for index in range(len(reader)):
                 for _v in reader[index]:
                     _cc, _as = _v.split('-')
-                    if _cc != country_name:
+                    if _cc != country_name: #只记录优化的国家排名
                         continue
                     if not _as[0].isdigit(): _as = _as[9:]
-                    res[_as] = index + 1
-                    if country_name == 'KH' and value2 == 'user' and m == 'asRank' and num == '8':
-                        print(_as, res[_as])
+                    res[_as] = index + 1 #记录国家内所有AS的排名
+
+            # print(res)
             temp = cal_rank_weight(country_name, old_graph_path, res)
             new_cc_rank_weight[f'{value2}-{m}'] = temp
 
