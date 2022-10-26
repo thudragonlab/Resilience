@@ -486,6 +486,10 @@ class FindOptimizeLink():
             max_num = max(gl_num_list)
             state = {'1':{'1':['p2p', 'p2c', 'c2p'],'2':['c2p']}, \
                 '2':{'1':['p2c']}}
+            # with open(self.dsn_path + '.begin_hash_dict.json', 'r') as f:
+            #     self.begin_hash_dict = json.load(f)
+            # with open(self.dsn_path + '.end_hash_dict.json', 'r') as f:
+            #     self.end_hash_dict = json.load(f)
 
             country_name = os.path.basename(self.dsn_path).split('_')[0]
             if NODE_VALUE != 'basic':
@@ -572,28 +576,39 @@ class FindOptimizeLink():
                     #             count_dict[_as] = 0
                     #         count_dict[_as] += cal_node_value(end_as)
 
-
                     for left_as in self.all_as_list:
                         
+                        #如果cone小于5的话，就不能作为优化路径
+
+                        if left_as not in numberAsns or numberAsns[left_as] < max(2,gl_mine_cone):
+                            continue
 
 
                         for right_as in self.all_as_list:
+                            
+                            if right_as not in numberAsns or numberAsns[right_as] < max(2,gl_mine_cone):
+                                continue
+
+                            #如果left和right一样或者在原来的topo里面存在 就跳过
+                            if left_as == right_as or '%s %s' % (left_as,right_as) in as_rel :
+                                continue
                             
                             #如果left和right一样或者在原来的topo里面存在 就跳过
                             if left_as == right_as or '%s %s' % (left_as,right_as) in as_rel :
                                 continue
 
                             
-                            cost = cal_cost(left_as, right_as, begin_state, end_state)
-                            if left_as not in count_dict: # cc2as里面的某个节点不在input的topo数据中
-                                left_as_value = 0 #价值设置为0
-                            else:
-                                left_as_value = count_dict[left_as]
-                            if right_as not in count_dict: # cc2as里面的某个节点不在input的topo数据中
-                                right_as_value = 0 #价值设置为0
-                            else:
-                                right_as_value = count_dict[right_as]
-
+                            
+                            if left_as not in count_dict or right_as not in count_dict: # cc2as里面的某个节点不在input的topo数据中
+                                continue
+                            
+                            cost = cal_cost(left_as, right_as, begin_state, end_state)    
+                            # 如果成本无限大
+                            if cost == float('inf'):
+                                continue
+                            
+                            left_as_value = count_dict[left_as]
+                            right_as_value = count_dict[right_as]
                             benefit =left_as_value + right_as_value - cost
                             res.append([[left_as, right_as], [begin_state, end_state],benefit]) 
                             #[优化链接左节点, 优化链接右节点], [优化链接左节点连begin_as关系,优化链接右节点连end_as关系,优化成本],收益
@@ -606,6 +621,7 @@ class FindOptimizeLink():
             res.sort(key=lambda x:x[2],reverse=True)   
             # res = res[:max_num]
             print('len(res)',len(res))
+            print(res)
             return res
 
 @record_launch_time_and_param(1)
@@ -651,7 +667,7 @@ def find_optimize_link_pool(output_path,m, cname):
         json.dump(res_list, f)
     
 
-    add_npz_and_monitor_cut(output_path, m, cname, gl_num_list,os.path.join(gl_cc2as_path,'%s.json' % cname),gl_numberAsns)
+    add_npz_and_monitor_cut(output_path, m, cname, gl_num_list,os.path.join(gl_cc2as_path,'%s.json' % cname),numberAsns)
 
 
 NODE_VALUE = 'basic'  # 'basic' 'user' 'domain'
@@ -668,18 +684,19 @@ a, b, c = 0, 0, 0
 
 
 @record_launch_time
-def find_optimize_link(txt_path, output_path,_type, cone_path, cc_list, _as_importance_path,num_list,cc2as_path):
+def find_optimize_link(txt_path, output_path,_type, cone_path, cc_list, _as_importance_path,num_list,cc2as_path,mine_cone):
     global as_importance_path
     global gl_num_list
     global gl_cc2as_path
-    global gl_numberAsns
+    global numberAsns
+    global gl_mine_cone
     gl_cc2as_path = cc2as_path
     gl_num_list = num_list
+    gl_mine_cone = mine_cone
     as_importance_path = _as_importance_path
     # input = []
     with open(cone_path, 'r') as f:
         numberAsns = json.load(f)
-        gl_numberAsns = numberAsns
 
     with open(txt_path) as fp:
         line = fp.readline().strip()

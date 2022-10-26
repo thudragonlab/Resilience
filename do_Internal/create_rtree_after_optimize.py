@@ -584,11 +584,9 @@ def add_npz_and_monitor_cut(output_path, m, cname, num_list,cc2as_list_path,numb
                                      asn,set(old_as_data),numberAsns)  # 把优化的节点加入到rtree连接文件中
             # for i in rela:
             #     print(i,rela[i])
-            relas_list = create_rela_file(rela)
             # print(relas_list)
-            data_list = dataConverter(relas_list)
             # print(len(data_list),file,add_link_num)
-            maxNum, fullGraph = graphGenerator(data_list)
+            maxNum, fullGraph = graphGenerator(dataConverter(create_rela_file(rela)))
             routingTree = sparse.dok_matrix((maxNum + 1, maxNum + 1), dtype=np.int8)
 
             makeRoutingTree(int(asn), fullGraph, routingTree, new_npz_path)

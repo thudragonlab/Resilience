@@ -1156,4 +1156,4 @@ def train_routing_tree(topo_list, _cc_list, output_path, _as_importance_path, op
     # print(topo_list)
     record_result(topo_list, output_path, 'anova', 'med')
     record_result(topo_list, output_path, 'var', 'var')
-    # print(output_path)
+    print(output_path)

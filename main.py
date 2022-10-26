@@ -132,7 +132,7 @@ if __name__ == '__main__':
             do_groud_truth_based_anova(dst_dir_path, _type, debug_path,cc_list)
             do_groud_truth_based_var(dst_dir_path, _type, debug_path,cc_list)
             find_optimize_link(type_map[_type]['txt_path'], dst_dir_path,_type, cone_path, opt_cc_list,
-                               weight_data_path,optimize_link_list,cc2as_path)
+                               weight_data_path,optimize_link_list,cc2as_path,rtree_node_min_cone)
             time_stamp.write('------------------- %s end ------------------- \n\n' % _type)
             time_stamp.flush()
         do_country_internal_rank(dst_dir_path, cc_list, topo_list, debug_path,data_dim)
