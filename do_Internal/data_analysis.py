@@ -1,13 +1,17 @@
 import json
 import os
 from typing import Dict,List
-from util import record_launch_time
-from my_types import *
+from other_script.util import record_launch_time
+from other_script.my_types import *
 
 
 @record_launch_time
 def as_rela_txt(dsn_path:OUTPUT_PATH, txt_path:str,asn_data:Dict[AS_CODE,int],rtree_node_min_cone:int) -> str:
     '''
+    dsn_path:output路径
+    txt_path:原始txt文件路径
+    asn_data:as-cone关系字典
+    rtree_node_min_cone:配置文件中最小cone值
     处理AS关系数据
     {as:[peer, customor], ......}
     '''

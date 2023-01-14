@@ -2,11 +2,11 @@ import json
 import os
 import csv
 import multiprocessing
-from my_types import *
+from other_script.my_types import *
 from typing import Dict, List, NewType, Tuple, Union
-from util import mkdir, record_launch_time, record_launch_time_and_param
+from other_script.util import mkdir, record_launch_time, record_launch_time_and_param
 
-Weight = NewType('Weight', List[int])
+WEIGHT = NewType('Weight', List[Union[USER_IMPORTANT_WEIGHT,DOMAIN_IMPORTANT_WEIGHT]])
 
 
 def get_radio(as_list: List[str], path: str) -> Dict[str, int]:
@@ -62,10 +62,10 @@ def get_radio_domain(as_list_domain: List[str], csv_data: List[str]) -> Dict[str
 
 
 @record_launch_time_and_param(0)
-def do_something(ccc: str, path: str, csv_data: List[str]) -> None:
+def do_something(ccc: COUNTRY_CODE, path: ROOT_PATH, csv_data: List[str]) -> None:
     cc2as_path2 = os.path.join(path, 'output/cc2as')
-    as_map: Dict[str, Weight] = {}
-    result: List[Tuple[str,int,int]] = []
+    as_map: Dict[AS_CODE, WEIGHT] = {}
+    result: List[Tuple[COUNTRY_CODE,USER_IMPORTANT_WEIGHT,DOMAIN_IMPORTANT_WEIGHT]] = []
     output_path = os.path.join(path, 'output/weight_data')
     mkdir(output_path)
     if os.path.exists(os.path.join(output_path, '%s.json' % ccc)):
@@ -86,7 +86,7 @@ def do_something(ccc: str, path: str, csv_data: List[str]) -> None:
             as_map[_as][1] = domain_rank_map[_as]
 
         for _as in as_map:
-            result.append([_as] + as_map[_as])
+            result.append((_as,*as_map[_as]))
         with open(os.path.join(output_path, '%s.json' % ccc), 'w') as f:
             json.dump(result, f)
     except Exception as e:
@@ -95,7 +95,15 @@ def do_something(ccc: str, path: str, csv_data: List[str]) -> None:
 
 
 @record_launch_time
-def make_as_importance(path: str, cc_list: List[COUNTRY_CODE]) -> WEIGHT_PATH:
+def make_as_importance(path: ROOT_PATH, cc_list: List[COUNTRY_CODE]) -> WEIGHT_PATH:
+    '''
+    path:input的父级目录
+    cc_list:参与计算的国家列表
+
+    按照cc_list生成每个国家的权重数据
+
+    return 存储权重数据的文件夹路径
+    '''
     csv_data: List[str] = []
     with open(os.path.join(path, 'input', 'normprefixrank_list-alexa_family-4_limit-all.csv'), 'r') as csv_file:
         for i in csv.reader(csv_file):

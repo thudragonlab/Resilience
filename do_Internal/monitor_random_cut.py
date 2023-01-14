@@ -2,33 +2,33 @@
 # _*_ coding:utf8 _*_
 import multiprocessing
 import os
-import itertools
-import copy
+from other_script.my_types import *
 import numpy as np
 import json
 import itertools
 from multiprocessing.pool import ThreadPool
 import random
 from importlib import import_module
-from util import record_launch_time, record_launch_time_and_param
+from other_script.util import record_launch_time, record_launch_time_and_param
 
 izip = zip
-
+gl_get_destroy_trees:Callable[[List[Tuple[str,int]]],List[Tuple[str,int]]] = None
+gl_get_cut_num:Callable[[List[AS_CODE]],List[AS_CODE]] = None
+gl_cc2as_path:CC2AS_PATH = None
 class monitor_cut():
 
-    def __init__(self, n_node, file_path, dsn_path, asn,cc2as_list_path,del_n=False):
-        self.file_name = file_path
-        self.n_node = n_node
+    def __init__(self, n_node:int, file_path:str, dsn_path:ADDDEL_PATH, asn:AS_CODE,cc2as_list_path:CC_PATH):
+        self.file_name:str = file_path
+        self.n_node:int = n_node
         # self.n_link = n_link
-        self.asn = asn
-        self.graph = {}
-        self.dsn_path = dsn_path
-        self.tempgraphname = file_path + '.graph.json'
+        self.asn:AS_CODE = asn
+        self.graph:Dict[AS_CODE,List[List[AS_CODE]]] = {}
+        self.dsn_path:ADDDEL_PATH = dsn_path
+        self.tempgraphname:str = file_path + '.graph.json'
         with open(cc2as_list_path,'r') as ff:
-            self.all_as_list = json.load(ff)
+            self.all_as_list:List[AS_CODE] = json.load(ff)
 
         #存储结果：{[]:节点总数量，[queue]:节点数量}
-        self.res = {}
 
         #创建图
         self.from_npz_create_graph()
@@ -38,11 +38,11 @@ class monitor_cut():
             json.dump(self.graph, f)
 
         with open(self.dsn_path, 'w') as f:
-            f.write('#|' + str(self.res['']) + '\n')
-
-        if del_n:
-            if len(self.graph) < self.n_node:
-                self.n_node = len(self.graph) // 2
+            # f.write('#|' + str(len(self.graph)) + '\n')
+            f.write('#|' + str(len(self.all_as_list)) + '\n')
+        # if del_n:
+        if len(self.graph) < self.n_node:
+            self.n_node = len(self.graph) // 2
                 # self.n_link = len(self.graph) // 2
 
         # print(file_path + ' monitor node')
@@ -54,9 +54,9 @@ class monitor_cut():
         存routingTree 【【前向点】【后向点】】 后向点为空说>明就脱离了routingTree
         '''
         m = np.load(self.file_name)
-        self.row = [str(i) for i in m['row']]
-        self.col = [str(i) for i in m['col']]
-        link = list(zip(self.row, self.col))
+        self.row:List[AS_CODE] = [str(i) for i in m['row']]
+        self.col:List[AS_CODE] = [str(i) for i in m['col']]
+        link:List[Dict[AS_CODE,AS_CODE]] = list(zip(self.row, self.col))
         for l in link:
             a, b = l
             if a not in self.graph: self.graph[a] = [[], []]
@@ -64,29 +64,29 @@ class monitor_cut():
             self.graph[a][1].append(b)
             self.graph[b][0].append(a)
         #monitor_cut_node(self.graph, list(self.graph.keys())[2])
-        self.res[''] = len(self.graph)
+        # self.res[''] = len(self.graph)
         for i in self.graph[self.asn][1]:
             self.graph[i][0].remove(self.asn)
             self.graph[self.asn][1].clear()
         
 
     def monitor_random_node_addDel(self):
-        nodelist = set(self.row)
-        tempG = len(self.graph)
+        nodelist:List[AS_CODE] = set(self.row)
+        tempG:int = len(self.graph)
         # print(self.dsn_path)
         
-        cut_times = gl_get_cut_num(nodelist)
+        cut_times:int = gl_get_cut_num(nodelist)
         with open(self.dsn_path, 'a') as f:
             for num in range(1, self.n_node):
                 flag = 0
                 while flag < cut_times:
                     # while flag<epoch:
                     flag += 1
-                    node = random.sample(nodelist, num)
+                    node:List[AS_CODE] = random.sample(nodelist, num)
                     node = list(set(list(node)))
                     node.sort()
-                    temp = ' '.join(list(map(str, node)))
-                    linkres = self.monitor_cut_node(node)
+                    temp:str = ' '.join(list(map(str, node)))
+                    linkres:List[AS_CODE] = self.monitor_cut_node(node)
                     # if '6471' in node:
                     
                     # f.write(temp + '|' + str(linkres) + '\n')
@@ -96,68 +96,8 @@ class monitor_cut():
                         with open(self.tempgraphname, 'r') as ff:
                             self.graph = json.load(ff)
 
-    # def monitor_random_link_addDel(self):
-    #     linklist = list(zip(self.row, self.col))
-    #     tempG = len(self.graph)
-    #     # # +
-    #     # if len(linklist)<1000:
-    #     #     epoch = len(linklist)
-    #     # else:
-    #     #     epoch = 1000
-    #     # +
-    #     cut_times = gl_get_cut_num(linklist)
-    #     with open(self.dsn_path, 'a') as f:
-    #         for num in range(self.n_link):
-    #             # size = 500
-    #             # flag = size-1
-    #             flag = 0
-    #             while flag < cut_times:
-    #                 # while flag<epoch:
-    #                 flag += 1
-    #                 link = random.sample(linklist, num)
-    #                 link = list(set(list(link)))
-    #                 link.sort()
-    #                 temp = ' '.join(list(map(str, link)))
-    #                 linkres = self.monitor_cut_link(link)
-    #                 # f.write(temp + '|' + str(linkres) + '\n')
-    #                 f.write(temp + '|' + ' '.join(list(map(str, linkres))) +
-    #                         '\n')
-    #                 if len(self.graph) != tempG:
-    #                     with open(self.tempgraphname, 'r') as ff:
-    #                         self.graph = json.load(ff)
-
-
-    # def monitor_random_node(self):
-    #     nodelist = set(self.row)
-    #     for i in itertools.combinations_with_replacement(
-    #             nodelist, self.n_node):
-    #         node = list(set(list(i)))
-    #         node.sort()
-    #         # print(node)
-    #         temp = ' '.join(list(map(str, node)))
-    #         self.res[temp] = self.monitor_cut_node(node)
-    #         if len(self.graph) != len(tempG):
-    #             #self.graph = copy.deepcopy(tempG)
-    #             with open(self.tempgraphname, 'r') as f:
-    #                 self.graph = json.load(f)
-
-    # def monitor_random_link(self):
-    #     linklist = list(zip(self.row, self.col))
-    #     tempG = copy.deepcopy(self.graph)
-    #     for i in itertools.combinations_with_replacement(
-    #             linklist, self.n_link):
-    #         link = list(set(list(i)))
-    #         link.sort()
-    #         # print(link)
-    #         temp = ' '.join(list(map(str, link)))
-    #         self.res[temp] = self.monitor_cut_link(link)
-    #         if len(self.graph) != len(tempG):
-    #             # self.graph = copy.deepcopy(tempG)
-    #             with open(self.tempgraphname, 'r') as f:
-    #                 self.graph = json.load(f)
-
-    def monitor_cut_node(self, queue):
-        res = []
+    def monitor_cut_node(self, queue:List[AS_CODE]):
+        res:List[AS_CODE] = []
         for node in queue:
             for i in self.graph[node][1]:
                 self.graph[i][0].remove(node)
@@ -167,7 +107,7 @@ class monitor_cut():
             
         
         while queue:
-            n = queue.pop(0)
+            n:AS_CODE = queue.pop(0)
             res.append(n)
             if n not in self.graph: continue
 
@@ -180,51 +120,27 @@ class monitor_cut():
         # self.graph.keys()
         return [ii for ii in self.all_as_list if ii not in self.graph.keys()]
 
-    def monitor_cut_link(self, queue):
-        '''
-        queue格式是【[a,b],[c,d]】
-        '''
-        tempQ = []
-        for link in queue:
-            a, b = link
-            self.graph[a][1].remove(b)
-            self.graph[b][0].remove(a)
-            if len(self.graph[a][1]) == 0: tempQ.append(a)
 
-        for link in queue:
-            a, b = link
-            self.graph[a][1].append(b)
-            self.graph[b][0].append(a)
-        return tempQ
-
-
-def monitor_cut_class2func_inter(f,cc2as_list_path):
-    print(f)
-    # index = f.rfind('/')
-    monitor_cut(gl_cut_node_depth, f, f[:-4] + '.addDel.txt',f.split('/')[-1][9:-4],cc2as_list_path, True)
-    # if f[index + 1:][:-4] + '.addDel.txt' not in os.listdir(f[:index]):
-        
-    # else:
-    #     print('exist')
-    return 0
+def monitor_cut_class2func_inter(f:str,cc2as_list_path:CC_PATH):
+    monitor_cut(gl_cut_node_depth, f, f[:-4] + '.addDel.txt',f.split('/')[-1][9:-4],cc2as_list_path)
 
 
 # @record_launch_time
 @record_launch_time_and_param(0)
-def do_cut_by_cc(cc, path, asn_data):
+def do_cut_by_cc(cc:COUNTRY_CODE, path:RTREE_PATH, asn_data:Dict[AS_CODE, int]):
     print('country: ' + cc)
-    file_name = os.listdir(os.path.join(path, cc))
-    node_num = []
+    file_name:List[str] = os.listdir(os.path.join(path, cc))
+    node_num:List[Tuple[str,int]] = []
     for f in file_name:
         if f.find('.json') != -1 or f.find(
                 '.txt') != -1 or f[-4:] != '.npz' or f[:3] != 'dco':
             continue
         if f[9:-4] not in asn_data:
             continue
-        node_num.append([f, asn_data[f[9:-4]]])
+        node_num.append((f, asn_data[f[9:-4]]))
     # file = sorted(node_num, key=lambda x: x[1], reverse=True)
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
-    file_name = os.listdir(os.path.join(path, cc))
+    # file_name = os.listdir(os.path.join(path, cc))
     for f in gl_get_destroy_trees(node_num):
         # if f[0][:-4] + '.addDel.txt' in file_name:
         #     continue
@@ -239,31 +155,31 @@ def do_cut_by_cc(cc, path, asn_data):
 
 
 @record_launch_time
-def monitor_country_internal(prefix, _type, asn_data,destroy_model_path,cut_rtree_model_path,cut_node_depth,cc_list,cc2as_path):
-    path = os.path.join(prefix, _type, 'rtree/')
+def monitor_country_internal(prefix:OUTPUT_PATH, _type:TOPO_TPYE, asn_data:Dict[AS_CODE, int],destroy_model_path:str,cut_rtree_model_path:str,cut_node_depth:int,cc_list:List[COUNTRY_CODE],cc2as_path:CC2AS_PATH):
+    path:RTREE_PATH = os.path.join(prefix, _type, 'rtree/')
     global gl_get_destroy_trees
     global gl_get_cut_num
     global gl_cut_node_depth
     global gl_cc2as_path
-    dynamic_module_1 = import_module(destroy_model_path)
+    dynamic_module_1= import_module(destroy_model_path)
     dynamic_module_2 = import_module(cut_rtree_model_path)
 
     gl_cut_node_depth = cut_node_depth + 1
-    gl_get_destroy_trees = dynamic_module_1.get_destroy_trees
+    gl_get_destroy_trees  = dynamic_module_1.get_destroy_trees
     gl_get_cut_num = dynamic_module_2.get_cut_num
     gl_cc2as_path = cc2as_path
 
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     for cc in cc_list:
-        # do_cut_by_cc(
-        #     cc,
-        #     path,
-        #     asn_data,
-        # )
-        pool.apply_async(do_cut_by_cc, (
+        do_cut_by_cc(
             cc,
             path,
             asn_data,
-        ))
+        )
+        # pool.apply_async(do_cut_by_cc, (
+        #     cc,
+        #     path,
+        #     asn_data,
+        # ))
     pool.close()
     pool.join()

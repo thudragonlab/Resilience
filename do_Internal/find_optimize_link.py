@@ -1,6 +1,6 @@
 #!usr/bin/env python
 # _*_ coding:utf8 _*_
-from typing import no_type_check_decorator
+# from typing import no_type_check_decorator
 import numpy as np
 import json
 import os
@@ -9,7 +9,7 @@ from collections import Counter
 import time
 from multiprocessing import Pool
 import copy
-from util import mkdir
+from other_script.util import mkdir
 
 as_rel = {}
 as_customer = {}

@@ -1,0 +1,30 @@
+from typing import *
+from scipy import sparse
+
+
+
+MATRIX = NewType('MATRIX',sparse.spmatrix)
+
+TOPO_TPYE = NewType('TOPO_TPYE',str)
+ASPECT_TPYE = NewType('ASPECT_TPYE',str)
+
+
+USER_IMPORTANT_WEIGHT =  NewType('USER_IMPORTANT_WEIGHT',int) 
+DOMAIN_IMPORTANT_WEIGHT =  NewType('DOMAIN_IMPORTANT_WEIGHT',int) 
+AFFECTED_AS_NUMBER =  NewType('AFFECTED_AS_NUMBER',int) 
+
+ROOT_PATH = NewType('ROOT_PATH',str) 
+OUTPUT_PATH = NewType('OUTPUT_PATH',str) 
+RTREE_PATH = NewType('RTREE_PATH',str)
+RTREE_CC_PATH = NewType('RTREE_CC_PATH',str)
+WEIGHT_PATH = NewType('WEIGHT_PATH',str)
+CC2AS_PATH = NewType('CC2AS_PATH',str)
+CC_PATH = NewType('CC2AS_PATH',str)
+ADDDEL_PATH = NewType('ADDDEL_PATH',str)
+RESULT_PATH = NewType('RESULT_PATH',str)
+COUNT_NUM_PATH = NewType('COUNT_NUM_PATH',str)
+ANOVA_NUM_PATH = NewType('ANOVA_NUM_PATH',str)
+
+COUNTRY_CODE = NewType('COUNTRY_CODE',str)
+AS_CODE = NewType('AS_CODE', int or str)
+DCOMPLETE_AS_CODE = NewType('DCOMPLETE_AS_CODE', str)

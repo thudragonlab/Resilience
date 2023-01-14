@@ -9,7 +9,7 @@ from glob import glob
 import os
 import json
 import copy
-from my_types import *
+from other_script.my_types import *
 import numpy as np
 import time
 from mpi4py import MPI
@@ -19,7 +19,7 @@ import itertools
 import multiprocessing
 from multiprocessing.pool import ThreadPool
 from importlib import import_module
-from util import mkdir, record_launch_time, record_launch_time_and_param
+from other_script.util import mkdir, record_launch_time, record_launch_time_and_param
 
 # as-cone关系数据
 gl_asn_data:Dict[AS_CODE, int]
@@ -43,6 +43,11 @@ outFile里面的格式 as1\tas2\tp2p
 
 # 将AS间的关系由数字表示转为文本表示
 def dataConverter(in_relaFile_path, out_temp_text_file):
+    '''
+    in_relaFile_path :as-rel.txt存储路径
+    out_temp_text_file 临时输出文件-1路径
+    将AS间的关系由数字表示转为文本表示,存储到out_temp_text_file
+    '''
     of = open(out_temp_text_file, 'w')
 
     with open(in_relaFile_path) as fp:
@@ -89,7 +94,13 @@ def dataConverter(in_relaFile_path, out_temp_text_file):
 
 
 def graphGenerator(in_temp_text_file:str, out_mtx_file:str):
-
+    '''
+    in_temp_text_file 临时输出文件-1路径
+    out_mtx_file : 二维矩阵路径 大小为as最大值
+    
+    将临时输出文件-1转为矩阵存到out_mtx_file
+    同时存下矩阵所有节点,路径为out_mtx_file.nodeList
+    '''
     def determineNodeCount(in_temp_text_file:str, out_mtx_file:str) -> int:
         # 所有AS列表
         nodeList:List[AS_CODE] = []
@@ -165,6 +176,12 @@ def graphGenerator(in_temp_text_file:str, out_mtx_file:str):
 
 # 准备工作及创建路由树
 def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes:int) -> None:
+    '''
+    mtx_path 矩阵路径
+    dsn_file rtree/cc路径
+    mtx_nodeList_file:矩阵节点列表文件路径
+    numNodes:最大AS号
+    '''
     def checkPreviousLevelsAlt(BFS, node, level):
         '''
         check if node is in BFS at given level or any previous level
@@ -334,19 +351,8 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
         stepThreeRT:MATRIX = providerToCustomer(stepTwoRT, stepTwoNodes, fullGraph, lvlsTwo)
         saveAsNPZ(os.path.join(dsn_file, "dcomplete" + str(destinationNode)), stepThreeRT)
 
-    ### Helper Functions ###
-
-    # Interpret User Input
-    # verbose = True
-    # interpretArgs(args) #TODO
-
-    ### initialization phase ###
     fullGraph:MATRIX = scipy.io.mmread(str(mtx_path)).tocsr()  # read the graph on all ranks
-    # print(args)
-    # comm = MPI.COMM_WORLD
-    # rank = comm.Get_rank()
 
-    ### Get the node count and node list
     nodeList:List[AS_CODE] = []
     print('nodeListFile', mtx_nodeList_file)
     with open(mtx_nodeList_file) as fp:
@@ -357,35 +363,13 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
             nodeList.append(int(line))
             line = fp.readline()
     print("Max ASNode ID: " + str(max(nodeList)))
-    # nodeList = comm.bcast(nodeList, root=0)
     
-    # firstIndex, lastIndex = getRankBounds(nodeList)
-    # file_name = os.listdir(dsn_file)
-    # if (verbose):  ### Printing MPI Status for debugging purposes
-    #     print("MPI STATUS... rank " + str(rank) + " reporting... working on nodes " + str(firstIndex) + " to " + str(
-    #         lastIndex))
-
-    # comm.Barrier()  ## Synchronize here, then continue ##
-
-    # timer = {'start': 0.0, 'end': 0.0}
-    # timer['start'] = time.time()
-
-    ### Primary Loop, executed distrubitively in parallel
-
     #按照需求过滤节点
     nodeList = gl_filter_rtree(nodeList, gl_asn_data)
     print('len(nodeList)',len(gl_filter_rtree(nodeList, gl_asn_data)))
     thread_pool = ThreadPool(processes=multiprocessing.cpu_count() * 10)
     for destinationNode in nodeList:
-        #    random_index = get_random_index()
-        #    print('random_index,len(nodeList) %s %s' % (random_index,len(nodeList)))
-        # file_name = os.listdir(dsn_file)
-        #    destinationNode = nodeList[index]
-        #    destinationNode = 39642
         try:
-            # t = threading.Thread(target=makeRoutingTree,args=(destinationNode,routingTree,fullGraph,))
-            # t.start()
-            # threads.append(t)
 
             # 创建路由树
             thread_pool.apply_async(makeRoutingTree, (
@@ -399,35 +383,10 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
         except Exception as e:
             print('Exception', e)
             raise e
-    # for tt in threads:
-    #     tt.join()
+    
     thread_pool.close()
     thread_pool.join()
-    #    routingTree = makeRoutingTree(destinationNode)  ### Calculate the routing tree for this node
-
-    # for index in [36344,21326,19368,6621,33004]:
-    #     # file_name = os.listdir(str(args[3]))
-    #     destinationNode = index
-    #     routingTree = makeRoutingTree(destinationNode)  ### Calculate the routing tree for this node
-
-    # with open('/data/lyj/shiyan_database/ccExternal/globalCountryLabel/add_hidden_link/cal_rtree_code_v2.json', 'r') as f:
-    #     cal_node = json.load(f)
-    # cal_node.reverse()
-    # cal_node = cal_node[int(len(cal_node)/2):]
-    # with open('/data/lyj/shiyan_database/ccExternal/globalCountryLabel/add_hidden_link/rtree/errorfile.txt', 'a') as err_f:
-    #     for nodename in cal_node:
-    #         file_name = os.listdir(str(args[3]))
-    #         try:
-    #             routingTree = makeRoutingTree(int(nodename))
-    #         except:
-    #             err_f.write(nodename+'\n')
-
-    ### wait for all ranks to check time
-    # comm.Barrier()
-    # timer['end'] = time.time()
-    # if (rank == 0):
-    #     print("All Routing Trees Completed. Elapsed Time: " + str((timer['end'] - timer['start'])))
-
+    
 
 '''
     从国家的as，以及as关系文件，提取出国家内部拓扑的relas [provider、customer、peer]
@@ -437,6 +396,13 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
 def create_rela_file(relas:Dict[AS_CODE,List[List[AS_CODE]]], relaFile_path:str):
     # sum = 0
     # print('relaFile',relas)
+    '''
+    relas:as关系字典
+    relaFile_path:as-rel.txt存储路径
+
+    生产as-rel.txt,用来存储当前国家的topo数据
+
+    '''
     with open(relaFile_path, 'w') as f:
         for c in relas:
             # sum += 1
@@ -451,6 +417,12 @@ def create_rela_file(relas:Dict[AS_CODE,List[List[AS_CODE]]], relaFile_path:str)
 
 
 def start_create_routingTree(dsn_file:RTREE_CC_PATH, relaFile_path:str, cc:COUNTRY_CODE) -> None:
+    '''
+    dsn_file:rtree/cc路径
+    relaFile_path:as-rel.txt存储路径
+    cc:country code
+    开始创建路由树
+    '''
     # 将 cc 下所有AS全路径图 存为文本文件
     dataConverter(relaFile_path, os.path.join(gl_dst_dir_path, 'temp', '%s_bgp-sas.npz' % cc))
 
@@ -470,7 +442,12 @@ def start_create_routingTree(dsn_file:RTREE_CC_PATH, relaFile_path:str, cc:COUNT
 
 
 def rTree(relas:Dict[AS_CODE,List[List[AS_CODE]]], dsn_file:RTREE_CC_PATH, cc:COUNTRY_CODE) -> None:
-
+    '''
+    relas:as关系字典
+    dsn_file :存储rtree路径
+    cc:Country code
+    创建路由树
+    '''
     relaFile_path:str = os.path.join(dsn_file, 'as-rel.txt')
     # 创建 cc 下所有AS全路径图
     create_rela_file(relas, relaFile_path)
@@ -484,6 +461,12 @@ def rTree(relas:Dict[AS_CODE,List[List[AS_CODE]]], dsn_file:RTREE_CC_PATH, cc:CO
 
 
 def create_relas(file:CC_PATH) -> Dict[AS_CODE,List[List[AS_CODE]]]:
+    '''
+    file:cc2as单一json路径
+    生成as关系字典
+    {as:[provider、customer、peer]}
+    return as关系字典
+    '''
     # global relas
     relas:Dict[AS_CODE,List[List[AS_CODE]]] = {}
     with open(gl_as_rela_file_path, 'r') as f:
@@ -520,6 +503,13 @@ gl_as_rela_file_path 国家对应的topo关系文件
 
 @record_launch_time_and_param(2)
 def create_route_tree(cc_path:CC_PATH, _dsn_path:RTREE_PATH, country:COUNTRY_CODE) -> None: 
+    '''
+    cc_path:cc2as文件夹下单独json文件路径
+    _dst_dir_path:output路径
+    country:国家代码
+
+    创建路由树,存在{_dst_dir_path}/rtree
+    '''
     country_name:List[COUNTRY_CODE] = os.listdir(_dsn_path)
     dsn_path:RTREE_CC_PATH = os.path.join(_dsn_path, country)
     if country not in country_name:
@@ -562,7 +552,17 @@ def set_glabal_variable(as_rela_file:str, asn_data:Dict[AS_CODE, int], model_pat
 @record_launch_time
 def create_rtree(as_rela_file: str, _dst_dir_path: OUTPUT_PATH, _type: TOPO_TPYE, cc_list: List[COUNTRY_CODE], asn_data: Dict[AS_CODE, int],
                  cc2as_path: CC2AS_PATH, model_path: str):
+    '''
+    as_rela_file:原始txt转json之后的文件路径
+    _dst_dir_path:output路径
+    _type:topo类型
+    cc_list:国家列表
+    asn_data:cone字典
+    cc2as_path:as和国家关系文件夹路径
+    model_path:自定义模块路径
 
+    创建路由树,存在{_dst_dir_path}/rtree
+    '''
     
     set_glabal_variable(as_rela_file, asn_data, model_path, _dst_dir_path)
 

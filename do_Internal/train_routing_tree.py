@@ -17,7 +17,7 @@ import json
 from do_Internal.data_analysis import as_rela_txt_dont_save
 from do_Internal.sort_rank import groud_truth_based_anova_for_single_country, country_internal_rank, internal_survival
 from multiprocessing import Pool
-from util import mkdir, record_launch_time, record_launch_time_and_param
+from other_script.util import mkdir, record_launch_time, record_launch_time_and_param
 
 # from ..base.internal.internal_security import *
 # from base.internal.internal_security import *
@@ -202,16 +202,30 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
     # for i in relas:
     #     print(i,relas[i])
     with open(add_link_file, 'r') as f:
+        print(add_link_file)
         m = json.load(f)
     add_link = set()
     for line in m:
-        as_list, state_list = line
-        left_as, right_as = as_list
-        begin_state, end_state = state_list
+        if len(line) < 2:
+            continue
+        # if line == '[,]':
+        #     continue
+        line = line.split(' ')
+        print(line)
+        left_as = line[0][1:-1]
+        right_as = line[1][:-1]
+        begin_state = line[2][2:-2]
+        end_state = line[3][1:-2]
+        
+        # as_list, state_list = line
+        # left_as, right_as = as_list
+        # begin_state, end_state = state_list
         link_state = state[match_state[begin_state][end_state]]
         if link_state == 1:
             if int(left_as) > int(right_as):
-                right_as, left_as = as_list
+                right_as = line[0][1:-1]
+                left_as = line[1][:-1]
+                # right_as, left_as = as_list
 
         add_link.add('-'.join([str(left_as), str(right_as), str(state[match_state[begin_state][end_state]])]))
         if len(add_link) > add_link_num:
@@ -738,7 +752,7 @@ def add_npz_and_monitor_cut_pool(output_path, m, cname):
     floyed_path = os.path.join(dst_path, SUFFIX, 'floyed')
     rtree_path = os.path.join(dst_path, 'rtree/')
     add_link_path = os.path.join(floyed_path, 'add_link', cname)
-
+    # print('?')
     mkdir(new_path)
     mkdir(os.path.join(new_path, cname))
     mkdir(os.path.join(new_path, cname, 'rtree'))
@@ -792,7 +806,7 @@ def add_npz_and_monitor_cut_pool(output_path, m, cname):
             #     _file,
             #     _add_link_num,
             # )
-            thread_pool_inner.apply_async(add_npz_and_monitor_cut_thread, (
+            thread_pool_inner.apply(add_npz_and_monitor_cut_thread, (
                 _file,
                 _add_link_num,
             ))
@@ -920,28 +934,30 @@ def cal_var_change_for_single_country(new_count_num_path, old_count_num_path, _t
 
 @record_launch_time
 def part1(topo_list, output_path):
+    
     pool = Pool(multiprocessing.cpu_count())
     for m in topo_list:
+        
         for cname in cc_list:
             path = os.path.join(output_path, m, 'rtree/')
             floyed_path = os.path.join(output_path, m, SUFFIX, 'floyed/')
             if not os.path.exists(os.path.join(path, cname, 'as-rel.txt')):
-                # print(cname + ' 没有as-rel')
+                print(cname + ' 没有as-rel')
                 continue
             if not os.path.exists(os.path.join(floyed_path, cname + '.opt_add_link_rich.json')):
-                # print(cname + ' 没有opt_add_link_rich')
+                print(cname + ' 没有opt_add_link_rich')
                 continue
-
-            # add_npz_and_monitor_cut_pool(
-            #     output_path,
-            #     m,
-            #     cname,
-            # )
-            pool.apply_async(add_npz_and_monitor_cut_pool, (
+            
+            add_npz_and_monitor_cut_pool(
                 output_path,
                 m,
                 cname,
-            ))
+            )
+            # pool.apply_async(add_npz_and_monitor_cut_pool, (
+            #     output_path,
+            #     m,
+            #     cname,
+            # ))
     pool.close()
     pool.join()
 
@@ -949,7 +965,7 @@ def part1(topo_list, output_path):
 @record_launch_time
 def part2(output_path, topo_list):
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
-
+    print('Start part2')
     def make_dir_thread(m):
         new_path = os.path.join(output_path, m, SUFFIX, 'new_optimize')
         result_dsn_path = os.path.join(output_path, m, SUFFIX, 'new_optimize_result')
@@ -975,7 +991,7 @@ def part3(topo_list, output_path):
     global data_dim
     pool = Pool(multiprocessing.cpu_count())
     for _cc in cc_list:
-        if _cc in ['BR', 'US', 'RU']: continue
+        # if _cc in ['BR', 'US', 'RU']: continue
         # new_cal_anova_for_single_cc_pool (topo_list, _cc, output_path, data_dim)
 
         pool.apply_async(new_cal_anova_for_single_cc_pool, (topo_list, _cc, output_path, data_dim))
@@ -1151,9 +1167,10 @@ def train_routing_tree(topo_list, _cc_list, output_path, _as_importance_path, op
     as_importance_path = _as_importance_path
     data_dim = _data_dim
     # old_rank_file = os.path.join(output_path, 'public', 'med_rank.json')
+    part1(topo_list, output_path)
     part2(output_path, topo_list)
     part3(topo_list, output_path)
-    # print(topo_list)
+    # # print(topo_list)
     record_result(topo_list, output_path, 'anova', 'med')
     record_result(topo_list, output_path, 'var', 'var')
-    print(output_path)
+    # print(output_path)

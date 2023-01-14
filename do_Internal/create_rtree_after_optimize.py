@@ -3,8 +3,8 @@ import json
 import os
 from typing import Dict, List
 from do_Internal.data_analysis import as_rela_txt_dont_save
-from my_types import *
-from util import mkdir, record_launch_time_and_param
+from other_script.my_types import *
+from other_script.util import mkdir, record_launch_time_and_param
 import numpy as np
 from scipy import stats, sparse
 import multiprocessing
@@ -294,12 +294,14 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
         left_as, right_as = as_list
         begin_state, end_state = state_list
         s = state[match_state[begin_state][end_state]]
-        if left_as not in old_as_data:
-            return False
+
+        # 如果优化的节点在原来的路由树中不存在，就跳过
+        # if left_as not in old_as_data:
+        #     return False
 
         # 如果优化的节点在原来的topo数据中不存在，就跳过
-        if left_as not in relas or right_as not in relas:
-            return False
+        # if left_as not in relas or right_as not in relas:
+        #     return False
         
         # 如果set里面已经有了两个链接，只是链接类型不一样，则跳过
         if '-'.join([str(left_as), str(right_as)]) in list(map(lambda x : '-'.join(x.split('-')[:-1]),add_link)):
@@ -325,7 +327,6 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
         return True
 
         
-
     def add_opt_link():
             old_set_len = len(add_link)
             for line in m:
@@ -350,6 +351,29 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
                     find_rtree_list(right_as)
                     # old_as_data.add(right_as)
                     break
+    def create_relas(as_rela: str) -> Dict[int, List[List[int]]]:
+            # global relas
+            relas = {}
+            with open(cc_as_list_path, 'r') as f:
+                cclist = json.load(f)
+            for c in cclist:
+                #[provider、customer、peer]
+                relas[c] = [[], [], []]
+
+            for c in relas:
+                if c in as_rela:
+                    relas[c][2] += [i for i in as_rela[c][0] if i in cclist]
+                    for i in relas[c][2]:
+                        relas[i][2].append(c)
+                    relas[c][1] += [i for i in as_rela[c][1] if i in cclist]
+                    for i in relas[c][1]:
+                        relas[i][0].append(c)
+
+            for c in list(relas.keys()):
+                if relas[c] == [[], [], []]:
+                    del relas[c]
+
+            return relas
 
 # 递归寻找新加入的节点和其子节点
     def find_rtree_list(asn):
@@ -364,47 +388,26 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
             if ii in old_as_data:
                 continue
             find_rtree_list(ii)
-
-
-        
-        
-
-    def create_relas(as_rela: str) -> Dict[int, List[List[int]]]:
-        # global relas
-        relas = {}
-        with open(cc_as_list_path, 'r') as f:
-            cclist = json.load(f)
-        for c in cclist:
-            #[provider、customer、peer]
-            relas[c] = [[], [], []]
-
-        for c in relas:
-            if c in as_rela:
-                relas[c][2] += [i for i in as_rela[c][0] if i in cclist]
-                for i in relas[c][2]:
-                    relas[i][2].append(c)
-                relas[c][1] += [i for i in as_rela[c][1] if i in cclist]
-                for i in relas[c][1]:
-                    relas[i][0].append(c)
-
-        for c in list(relas.keys()):
-            if relas[c] == [[], [], []]:
-                del relas[c]
-
-        return relas
-
     json_data = as_rela_txt_dont_save(relas_file)
     relas = create_relas(json_data)
-    # for i in relas:
-    #     print(i,relas[i])
     with open(add_link_file, 'r') as f:
         m = json.load(f)
+
     add_link = set()
+    for i in range(add_link_num):
+            add_opt_link()
+
+   
+    
+    
+    # for i in relas:
+    #     print(i,relas[i])
+    
+    
 
     # print(old_as_data)
     # print(m)
-    for i in range(add_link_num):
-        add_opt_link()
+    
     
     # print(add_link)
     # elif isinstance(m, list):
@@ -557,8 +560,6 @@ def add_npz_and_monitor_cut(output_path, m, cname, num_list,cc2as_list_path,numb
         new_npz_path = os.path.join(new_path, cname, 'rtree', str(add_link_num) + '/')
         temp_path = os.path.join(new_npz_path, 'temp')
         new_npz_file = os.path.join(new_npz_path, file.split('.')[0] + '.npz')
-        add_link_relas_file = os.path.join(new_path, cname, 'rtree',
-                                           '%s.%s.add_link_relas.json' % (file.split('.')[0], add_link_num))
         old_del_path = os.path.join(rtree_path, cname, file)
         new_del_path = os.path.join(new_path, cname, 'all', str(add_link_num) + '/')
         new_del_file = os.path.join(new_del_path, file)
@@ -576,16 +577,9 @@ def add_npz_and_monitor_cut(output_path, m, cname, num_list,cc2as_list_path,numb
             old_as_data = [asn]
             old_as_data += list(old_npz_data['row'])
             old_as_data += list(old_npz_data['col'])
-            # if asn == '1955':
-            #     print(old_npz_data['row'])
-            #     print(old_npz_data['col'])
-            #     print(old_as_data)
             rela = generate_new_rela(add_link_file, relas_file, add_link_num, cc_as_list_path, add_link_path,
                                      asn,set(old_as_data),numberAsns)  # 把优化的节点加入到rtree连接文件中
-            # for i in rela:
-            #     print(i,rela[i])
-            # print(relas_list)
-            # print(len(data_list),file,add_link_num)
+            
             maxNum, fullGraph = graphGenerator(dataConverter(create_rela_file(rela)))
             routingTree = sparse.dok_matrix((maxNum + 1, maxNum + 1), dtype=np.int8)
 
@@ -598,13 +592,13 @@ def add_npz_and_monitor_cut(output_path, m, cname, num_list,cc2as_list_path,numb
             continue
         # for _add_link_num in range(1, Num):
         for _add_link_num in num_list:
-            # add_npz_and_monitor_cut_thread (
-            #     _file,
-            #     _add_link_num,
-            # )
-            thread_pool_inner.apply_async(add_npz_and_monitor_cut_thread, (
+            add_npz_and_monitor_cut_thread (
                 _file,
                 _add_link_num,
-            ))
+            )
+            # thread_pool_inner.apply_async(add_npz_and_monitor_cut_thread, (
+            #     _file,
+            #     _add_link_num,
+            # ))
     thread_pool_inner.close()
     thread_pool_inner.join()

@@ -5,16 +5,23 @@ import os
 import json
 import csv
 from math import floor
-from typing import Dict, List
+from typing import Callable, Dict, List
 import numpy as np
 from scipy import stats
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from statsmodels.stats.multicomp import MultiComparison
 from multiprocessing.pool import ThreadPool
 from pyecharts.globals import WarningType
-from util import mkdir
+from other_script.util import mkdir
+from importlib import import_module
 
 WarningType.ShowWarning = False
+gl_cal_rank_model:Callable
+
+def set_gl_cal_rank_model(cal_rank_model_path) -> None:
+    global gl_cal_rank_model
+    dynamic_module_1= import_module(cal_rank_model_path)
+    gl_cal_rank_model = dynamic_module_1.do_cal
 
 
 def anova(dict_l, dsn_path, VALUE, num):
@@ -118,16 +125,16 @@ def cal_rank_weight(_cc: str, rtree_path: str, as_dict: Dict[str, int]) -> int:
                 ans[_as] = len(set(m['row']))  # 统计每个路由树下的链接个数
             else:
                 ans[_as] = 0
-        temp = 0
-        for _as in as_dict:
-            if ans[_as] == 0: continue
-            # temp += as_dict[_as]*ans[_as] #sum(国家下所有AS的排名 * 各自链接数量)
-            temp += as_dict[_as]
-        if sum(list(ans.values())) == 0:
-            temp = 0
-        else:
-            # temp /= sum(list(ans.values())) # 再除这个国家的所有连接数
-            temp /= len(as_dict)  # 再除这个国家的AS数量
+        temp = gl_cal_rank_model(as_dict,ans)
+    #     for _as in as_dict:
+    #         if ans[_as] == 0: continue
+    #         temp += as_dict[_as]*ans[_as] #sum(国家下所有AS的排名 * 各自链接数量)
+    #         # temp += as_dict[_as]
+    #     if sum(list(ans.values())) == 0:
+    #         temp = 0
+    #     else:
+    #         temp /= sum(list(ans.values())) # 再除这个国家的所有连接数
+    #         # temp /= len(as_dict)  # 再除这个国家的AS数量
     if temp < 1: temp = 1
     return temp
 
