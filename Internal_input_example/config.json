@@ -1,0 +1,31 @@
+{
+    "types": {
+        "asRank": true,
+        "problink": false,
+        "toposcope": false,
+        "toposcope_hidden": false
+    },
+    "data_dim":["basic","user","domain"],
+    "cc_list":  ["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR", "RO", "NZ", "CZ", "BD", "SE", "UA", "SG", "HK", "ES", "AT", "JP", "IN", "ID", "CH", "PL", "NL", "IT", "FR", "CA", "ZA", "AU", "GB", "DE", "US", "RU", "BR"],
+    "opt_cc_list": ["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR", "RO", "NZ", "CZ", "BD", "SE", "UA", "SG", "HK", "ES", "AT", "JP", "IN", "ID", "CH", "PL", "NL", "IT", "FR", "CA", "ZA", "AU", "GB", "DE", "US", "RU", "BR"],
+    "min_cone":1,
+    "build_route_tree_model": "SORT_BY_CONE_TOP_10",
+    "destroy_route_tree_model": "DESTROY_TOP_10",
+    "cut_route_tree_model": "CUT_NO_MORE_THAN_1000",
+    "cal_rank_model":"CAL_RANK_SUM_RANK_AND_LINK_COUNT",
+    "monitor_model":"RECORD_TREE_AS",
+    "cut_node_depth": 4,
+    "optimize_link_list": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45,
+        50,
+        200
+    ]
+}

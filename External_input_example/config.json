@@ -1,0 +1,6 @@
+{
+    "cc_list": ["LV", "HU", "CL", "SK", "PT", "FI", "CO", "TR", "PH", "NG", "DK", "MX", "LU", "KH", "TW", "TH", "KR", "NO", "MY", "CN", "BG", "IR", "IE", "AR", "RO", "NZ", "CZ", "BD", "SE", "UA", "SG", "HK", "ES", "AT", "JP", "IN", "ID", "CH", "PL", "NL", "IT", "FR", "CA", "ZA", "AU", "GB", "DE", "RU", "BR"],
+    "cut_route_tree_model": "CUT_NO_MORE_THAN_1000",
+    "min_cone": 1,
+    "cut_node_depth": [18,19,20]
+}
