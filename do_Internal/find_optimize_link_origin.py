@@ -50,7 +50,6 @@ class cut_week_point():
                 self.graph[b] = [[], []]
             self.graph[a][1].append(b)
             self.graph[b][0].append(a)
-        #monitor_cut_node(self.graph, list(self.graph.keys())[2])
         self.res[''] = len(self.graph)
 
     def monitor_cut_node(self, queue: List[int]):
@@ -86,8 +85,6 @@ class cut_week_point():
         if not depth:
             for _as in self.graph:
                 yield str(_as)
-                # for end_as in self.graph[begin_as][1]:
-                #     yield int(begin_as), int(end_as)
         else:
             _as = self.file_name.split('/')[-1].split('.')[0]
             if not _as[0].isdigit():
@@ -125,10 +122,6 @@ class cut_week_point():
         global as_rel
         s = set()
         state_num = {'c2p': 1, 'p2p': 2, 'p2c': 3}
-        # file_name = os.path.join(file_path, 'dcomplete'+str(begin_as)+'.npz')
-        # m = np.load(file_name)
-        # row = [str(i) for i in m['row']]
-        # col = [str(i) for i in m['col']]
         begin_index = 0
         while _as in self.row[begin_index:]:
             index = self.row.index(_as, begin_index)
@@ -147,7 +140,6 @@ class FindOptimizeLink():
     所以目前原则是前面的as走向优先向上，后面的as走向优先向下
     '''
 
-    # def __init__(self, rtpath, break_link, week_point, raw_graph, node_index, dsn_path) -> None:
     def __init__(self, rtpath: str, break_link: List[Tuple[str, str]], week_point: List[int], dsn_path: str) -> None:
         '''
         rtpath: 存放npz的路径
@@ -244,8 +236,6 @@ class FindOptimizeLink():
             elif 'dcomplete' + str(end_as) + '.npz' in self.file_name:
                 cwp = cut_week_point(os.path.join(self.rtpath, 'dcomplete' + str(end_as) + '.npz'))
             else:
-                # print(str(end_as) + '.npz not exist in ')
-                # print(self.rtpath)
                 continue
 
             cwp.from_npz_create_graph()
@@ -369,9 +359,6 @@ class FindOptimizeLink():
                     cost = min(cost, c)
             return cost
 
-        # state = {'1':{'1':['p2c']}, '2':{'1':['p2c']}}
-        # state = {'1':{'1':['p2p']}}
-        # state = {'1': {'1': ['c2p'],'2':['c2p']}}
         state = {'1':{'1':['p2p', 'p2c', 'c2p'],'2':['c2p']}, \
             '2':{'1':['p2c']}}
         with open(self.dsn_path + '.begin_hash_dict.json', 'r') as f:
@@ -421,9 +408,6 @@ class FindOptimizeLink():
                                 count_dict[_nodes] = 0
                             count_dict[_nodes] += v
 
-                    #     for _as in set(self.begin_hash_dict[str(begin_as)][begin_state]):
-                    #         if _as not in count_dict: count_dict[_as] = 0
-                    #         count_dict[_as]+=1
                     left_as, left_max_benefit = '', -1
 
                     # 寻找价值最大的能连上begin_as的左节点
@@ -437,8 +421,6 @@ class FindOptimizeLink():
                     count_dict: Dict[AsnType, int] = {}
                     for begin_as, end_as in self.break_link:
                         if left_as in self.begin_hash_dict[str(begin_as)][begin_state]:  # 如果价值最大的左节点能连上begin_as
-                            # print(begin_as, end_as)
-                            # print(self.end_hash_dict)
                             if str(end_as) not in self.end_hash_dict:
                                 continue
                             for _as in set(self.end_hash_dict[str(end_as)][end_state]):
@@ -502,7 +484,6 @@ def find_optimize_link_pool(_dsn_path: OUTPUT_PATH, cname: COUNTRY_CODE):
     cname: country code
     '''
     global as_rel, as_customer, as_peer, numberAsns
-    # q, cname = s.split(' ')
     optimize_link_path = os.path.join(_dsn_path, 'optimize_link')
     dsn_path = os.path.join(optimize_link_path, 'floyed/')
     rtree_path = os.path.join(_dsn_path, 'rtree')
@@ -511,7 +492,6 @@ def find_optimize_link_pool(_dsn_path: OUTPUT_PATH, cname: COUNTRY_CODE):
     mkdir(optimize_link_path)
     mkdir(dsn_path)
 
-    # os.popen('mkdir '+dsn_floyed_path)
     if cname in ['BR', 'US', 'RU']:
         return
 
@@ -527,13 +507,8 @@ def find_optimize_link_pool(_dsn_path: OUTPUT_PATH, cname: COUNTRY_CODE):
             week_point_and_break_link = json.load(f)
     else:
         mb = monitor_break()
-        # week_point_and_break_link = mb.main_2(os.path.join(
-        #     rtree_path, cname), os.path.join(dsn_path, cname), sample_num_dict[sample_num][0], sample_num_dict[sample_num][1])
         week_point_and_break_link: Dict[str, List[Tuple[str, str]]] = make_weak_point(rtree_path, cname, dsn_path)
-        # mb.main_2(os.path.join(
-        #     rtree_path, cname), os.path.join(dsn_path, cname))
 
-    # week_point_and_break_link = sorted(week_point_and_break_link.items(), key=lambda d: len(d[1]), reverse=True)
     week_point_and_break_link: Tuple[str, List[Tuple[str, str]]] = list(week_point_and_break_link.items())
     Res: Dict[str, List[AS_CODE]] = {}
     range_num = min(50, len(week_point_and_break_link))
@@ -542,9 +517,6 @@ def find_optimize_link_pool(_dsn_path: OUTPUT_PATH, cname: COUNTRY_CODE):
             week_point: List[int] = [int(week_point_and_break_link[i][0])]
         elif isinstance(week_point_and_break_link[i][0], str):
             week_point: List[int] = list(map(int, week_point_and_break_link[i][0].split(' ')))
-        # else:
-        #     print("??")
-        #     week_point = list(week_point_and_break_link[i][0])
         break_link: List[Tuple[str, str]] = week_point_and_break_link[i][1]
         if len(break_link) == 0:
             break
@@ -572,7 +544,6 @@ def find_optimize_link_pool(_dsn_path: OUTPUT_PATH, cname: COUNTRY_CODE):
 NODE_VALUE = 'basic'  # 'basic' 'user' 'domain'
 as_importance_path = ''
 
-# sample_num = '3'
 
 # [按受影响的节点数量倒序取前多少名,破坏节点数量]
 # sample_num_dict = {'1': [400, 1], '2': [
@@ -597,7 +568,6 @@ def find_optimize_link(txt_path: str, _dsn_path: OUTPUT_PATH, _type: TOPO_TPYE, 
     '''
     global as_importance_path
     as_importance_path = _as_importance_path
-    # input = []
     with open(cone_path, 'r') as f:
         numberAsns = json.load(f)
 

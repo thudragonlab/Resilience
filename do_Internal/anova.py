@@ -22,12 +22,11 @@ from multiprocessing.pool import ThreadPool
 WarningType.ShowWarning = False
 '''
 10.25
-提取.addDel.txt文件的连通性数据，获得各个国家的连通性数据的文件
+提取.addDel.txt文件的连通性数据,获得各个国家的连通性数据的文件
 格式：
 key:AS号, value:[[],[],[]], asNum:AS的数量
 value索引为i存储破坏i个节点的所有连通性结果
 '''
-# old_rank_file = '/home/peizd01/for_dragon/public/rank_2.json'
 as_importance_pat: WEIGHT_PATH = ''
 gl_cut_node_depth: int
 cc_list: List[COUNTRY_CODE] = []
@@ -54,7 +53,6 @@ def extract_connect_list_async(
         res2: DOMAIN_IMPORTANT_WEIGHT = 0
         for _as in as_list:
             if _as in as_importance:
-                # print(as_importance)
                 res1 += as_importance[_as][0]
                 res2 += as_importance[_as][1]
         return (line.count(' ') + 1, res1, res2)
@@ -124,9 +122,6 @@ def anova_sort(dsn_path:ANOVA_NUM_PATH, VALUE:ASPECT_TPYE, reader:List[Tuple[str
 
     进行最终排序,结果存到dsn_path
     '''
-    # if os.path.exists(os.path.join(dsn_path, 'sorted_country_'+VALUE+'.json')): return
-    # with open(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json'), 'r') as f:
-    #     reader = json.load(f)
     res:Dict[str,Tuple[List[str],List[str],List[str]]] = {}  # 记录{AS:【比其更安全的AS】【无差异AS】【更不安全的AS】}
     for line in reader:
         if line[0] not in res: res[line[0]] = ([], [], [])
@@ -185,8 +180,6 @@ def anova(dict_l: Dict[str, List[float]], dsn_path: ANOVA_NUM_PATH, VALUE: ASPEC
 
     对AS进行两两对比,结果存到本地文件
     '''
-    # if os.path.exists(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json')):
-    #     return
     l: List[List[float]] = [v for _, v in dict_l.items()]
     print(l)
     f, p = stats.f_oneway(*l)
@@ -196,7 +189,6 @@ def anova(dict_l: Dict[str, List[float]], dsn_path: ANOVA_NUM_PATH, VALUE: ASPEC
     print('P value:', p)
     if p > 0.05:
         print('无显著性差异 p>0.05')
-        # return
     else:
         print('有显著性差异')
 
@@ -210,7 +202,6 @@ def anova(dict_l: Dict[str, List[float]], dsn_path: ANOVA_NUM_PATH, VALUE: ASPEC
 
     res: List[Tuple[str,str,int]] = []
     for line in result._results_table.data[1:]:
-        # print('line => %s \n '% line )
         if line[-1]:
             res.append((line[0], line[1], line[2]))
         else:
@@ -258,7 +249,6 @@ def groud_truth_based_anova(path: COUNT_NUM_PATH, dsn_path: ANOVA_NUM_PATH, valu
             if len(_l) > 0:
                 l[_cc + '-' + asname] = _l
 
-    # file_name = os.listdir(path)
     '''
     l 的数据结构
     {
@@ -272,9 +262,7 @@ def groud_truth_based_anova(path: COUNT_NUM_PATH, dsn_path: ANOVA_NUM_PATH, valu
         thread_pool.apply(groud_truth_based_anova_thread, (_cc, ))
     thread_pool.close()
     thread_pool.join()
-    # print(l[list(l.keys())[0]])
     anova(l, dsn_path, value)
-    # anova_sort(dsn_path, value, debug_path)
 
 
 @record_launch_time
@@ -312,7 +300,6 @@ def country_internal_rank(path:OUTPUT_PATH, rank_path, _type, topo_list:List[TOP
                 if temp < 1:
                     temp = 1
                 rank[_cc][f'{value2}-{value}'] = temp
-                # print(temp)
 
     rank = {}
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
@@ -321,12 +308,6 @@ def country_internal_rank(path:OUTPUT_PATH, rank_path, _type, topo_list:List[TOP
     for value2 in data_dim:
         for value in topo_list:
             #### 开多线程数组会乱套
-            #         thread_pool.apply_async(country_internal_rank_thread, (
-            #             value2,
-            #             value,
-            #         ))
-            # thread_pool.close()
-            # thread_pool.join()
             country_internal_rank_thread(value2, value)
     with open(rank_path, 'w') as f:
         json.dump(rank, f)
@@ -428,16 +409,6 @@ def groud_truth_based_var(path:RESULT_PATH, _type:ASPECT_TPYE):
 
 
 
-# 需要定义rtree_path、count_path、as_importance_path
-# rtree_path和create_routingtree.py中p2的含义相当
-# count_path为输出路径
-# as_importance_path为区域AS的资源权重
-
-# prefix = '/home/peizd01/for_dragon/new_data/'
-
-
-# for rela in ['asRank', 'problink', 'toposcope', 'toposcope_hidden']:
-# for rela in ['toposcope', 'toposcope_hidden']:
 @record_launch_time
 def do_extract_connect_list(prefix: OUTPUT_PATH, rela: TOPO_TPYE, weight_data_path: WEIGHT_PATH, cut_node_depth: int):
     '''
@@ -456,12 +427,6 @@ def do_extract_connect_list(prefix: OUTPUT_PATH, rela: TOPO_TPYE, weight_data_pa
     gl_cut_node_depth = cut_node_depth
     extract_connect_list(rtree_path, count_path)
 
-
-# 需要定义count_path、anova_path
-# count_path和本文件extract_connect_list函数中count_path含义相当
-# anova_path为输出路径
-# for rela in ['asRank', 'problink', 'toposcope', 'toposcope_hidden']:
-# for rela in ['toposcope', 'toposcope_hidden']:
 @record_launch_time
 def do_groud_truth_based_anova(prefix: OUTPUT_PATH, rela: TOPO_TPYE, _cc_list: List[COUNTRY_CODE]):
     '''
@@ -479,7 +444,6 @@ def do_groud_truth_based_anova(prefix: OUTPUT_PATH, rela: TOPO_TPYE, _cc_list: L
         os.mkdir(anova_path)
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
     for value in ['basic', 'user', 'domain']:
-        # groud_truth_based_anova(count_path, anova_path, value,debug_path)
         pool.apply_async(groud_truth_based_anova, (
             count_path,
             anova_path,
@@ -487,11 +451,6 @@ def do_groud_truth_based_anova(prefix: OUTPUT_PATH, rela: TOPO_TPYE, _cc_list: L
         ))
     pool.close()
     pool.join()
-
-
-# 需要定义old_rank_file、rank_path
-# 从old_rank_file拿到需要计算的区域，可以自己定义，具体在country_internal_rank函数使用
-# rank_path为输出路径
 
 
 @record_launch_time
@@ -522,20 +481,12 @@ def do_country_internal_rank(path:OUTPUT_PATH, _cc_list:List[COUNTRY_CODE], topo
     topo_list topo类型列表
     data_dim user|domain|basic 维度列表
     '''
-    # old_prefix = '/home/peizd01/for_dragon/new_data/'
     global cc_list
-    # global gl_cal_rank_model
     cc_list = _cc_list
-    # dynamic_module_1= import_module(cal_rank_model_path)
-    # gl_cal_rank_model = dynamic_module_1.do_cal
 
     new_rank_path = os.path.join(path, 'public/med_rank.json')
     var_rank_path = os.path.join(path, 'public/var_rank.json')
-    med_debug_path = None
-    var_debug_path = None
-    # if debug_path:
-    #     med_debug_path = os.path.join(debug_path, 'med_rank.json')
-    #     var_debug_path = os.path.join(debug_path, 'var_rank.json')
+    
     # 函数country_internal_rank内部的del_path、npz_file_name、anova_path需要定义
     # del_path和monitor_random_cut.py中的path含义相当
     # npz_file_name和create_routingtree.py中p2的含义相当

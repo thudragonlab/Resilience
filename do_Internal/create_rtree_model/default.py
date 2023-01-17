@@ -7,9 +7,6 @@ def getRankBounds(nodeList):
 
         dataSize = len(nodeList)
 
-        # if (verbose):
-        #     print("Node Count: " + str(dataSize))
-
         dataSizePerRank = dataSize / numRanks
         leftOver = dataSize % numRanks
         startIndex = dataSizePerRank * rank

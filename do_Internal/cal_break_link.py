@@ -6,9 +6,6 @@ from multiprocessing.pool import ThreadPool
 import os
 import json
 import numpy as np
-import random
-import itertools
-import copy
 
 class monitor_cut():
     def __init__(self, file_path):
@@ -24,19 +21,13 @@ class monitor_cut():
         #创建图
         self.from_npz_create_graph()
 
-        # return self.monitor_cut_node(queue)
-
 
 
     def from_npz_create_graph(self):
         '''
         存routingTree 【【前向点】【后向点】】 后向点为空说明就脱离了routingTree
         '''
-        #try:
         m = np.load(self.file_name)
-        #except:
-        #    print(self.file_name)
-        #    return
         self.row = [str(i) for i in m['row']]
         self.col = [str(i) for i in m['col']]
         link = list(zip(self.row, self.col))
@@ -106,18 +97,17 @@ class monitor_break():
                     line = fp.readline().strip()
         
         '''
-        按破坏受影响的数量倒序，取TOP ${sample_num}
+        按破坏受影响的数量倒序,取TOP ${sample_num}
         '''
         for i in range(len(self.sample_result)):
             self.sample_result[i] = sorted(
                 self.sample_result[i].items(), key=lambda d: d[1], reverse=True)
             self.sample_result[i] = self.sample_result[i][:100]
-            # self.sample_result[i] = list(self.sample_result[i].items())
         rtree_file = [file for file in os.listdir(rtree_path) if file[-3:]=='npz' and file[0]=='d']
         
 
         '''
-        从路由树里面剪掉sample_result里面的节点，被剪掉的节点存于.break_link.json
+        从路由树里面剪掉sample_result里面的节点,被剪掉的节点存于.break_link.json
         '''
 
         

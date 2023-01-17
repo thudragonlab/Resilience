@@ -7,8 +7,6 @@ from do_Internal.data_analysis import as_rela_txt_dont_save
 import json
 import os
 from do_Internal.cal_break_link import monitor_break
-from collections import Counter
-import time
 from multiprocessing import Pool
 import copy
 from do_Internal.create_rtree_after_optimize import add_npz_and_monitor_cut
@@ -54,7 +52,6 @@ class cut_week_point():
                 self.graph[b] = [[], []]
             self.graph[a][1].append(b)
             self.graph[b][0].append(a)
-        #monitor_cut_node(self.graph, list(self.graph.keys())[2])
         self.res[''] = len(self.graph)
 
     def monitor_cut_node(self, queue: List[int]):
@@ -90,8 +87,6 @@ class cut_week_point():
         if not depth:
             for _as in self.graph:
                 yield str(_as)
-                # for end_as in self.graph[begin_as][1]:
-                #     yield int(begin_as), int(end_as)
         else:
             _as = self.file_name.split('/')[-1].split('.')[0]
             if not _as[0].isdigit():
@@ -129,10 +124,6 @@ class cut_week_point():
         global as_rel
         s = set()
         state_num = {'c2p': 1, 'p2p': 2, 'p2c': 3}
-        # file_name = os.path.join(file_path, 'dcomplete'+str(begin_as)+'.npz')
-        # m = np.load(file_name)
-        # row = [str(i) for i in m['row']]
-        # col = [str(i) for i in m['col']]
         begin_index = 0
         while _as in self.row[begin_index:]:
             index = self.row.index(_as, begin_index)
@@ -157,8 +148,6 @@ class FindOptimizeLink():
         '''
         self.rtpath: str = rtpath
         self.file_name = os.listdir(self.rtpath)
-        # self.break_link: List[Tuple[str, str]] = break_link
-        # self.week_point: List[int] = week_point
         self.dsn_path: str = dsn_path
         with open(cc2as_list_path,'r') as ff:
             self.all_as_list = json.load(ff)
@@ -205,7 +194,6 @@ class FindOptimizeLink():
                 continue
 
             cwp.from_npz_create_graph()
-            # cwp.monitor_cut_node(copy.deepcopy(self.week_point))
 
             global total
             hash_dict[begin_as] = {1: [], 2: []}
@@ -249,7 +237,6 @@ class FindOptimizeLink():
     def break_link_end_rtree_frequency(self, depth=None):
         hash_dict: Dict[str, ASRelationType] = {}
         for end_as in self.all_as_list:
-            # print('end_as',_, end_as)
             if end_as in hash_dict:
                 continue
             if str(end_as) + '.npz' in self.file_name:
@@ -260,7 +247,6 @@ class FindOptimizeLink():
                 continue
 
             cwp.from_npz_create_graph()
-            # cwp.monitor_cut_node(copy.deepcopy(self.week_point))
 
             hash_dict[end_as] = {1: [], 2: []}
 
@@ -366,9 +352,6 @@ class FindOptimizeLink():
                     cost = min(cost, c)
             return cost
         
-        # state = {'1':{'1':['p2c']}, '2':{'1':['p2c']}}
-        # state = {'1':{'1':['p2p']}}
-        # state = {'1': {'1': ['c2p'],'2':['c2p']}}
         state = {'1':{'1':['p2p', 'p2c', 'c2p'],'2':['c2p']}, \
             '2':{'1':['p2c']}}
         with open(self.dsn_path + '.begin_hash_dict.json', 'r') as f:
@@ -410,9 +393,6 @@ class FindOptimizeLink():
                                 count_dict[_nodes] = 0
                             count_dict[_nodes] += v
 
-                    #     for _as in set(self.begin_hash_dict[str(begin_as)][begin_state]):
-                    #         if _as not in count_dict: count_dict[_as] = 0
-                    #         count_dict[_as]+=1
                     left_as, left_max_benefit = '', -1
 
                     
@@ -486,10 +466,6 @@ class FindOptimizeLink():
             
             state = {'1':{'1':['p2p', 'p2c', 'c2p'],'2':['c2p']}, \
                 '2':{'1':['p2c']}}
-            # with open(self.dsn_path + '.begin_hash_dict.json', 'r') as f:
-            #     self.begin_hash_dict = json.load(f)
-            # with open(self.dsn_path + '.end_hash_dict.json', 'r') as f:
-            #     self.end_hash_dict = json.load(f)
 
             country_name = os.path.basename(self.dsn_path).split('_')[0]
             if NODE_VALUE != 'basic':
@@ -546,7 +522,6 @@ class FindOptimizeLink():
                 return cost
             
 
-            # for _ in self.break_link:
             for begin_state in state:
                 for end_state in state[begin_state]:
                     
@@ -557,7 +532,6 @@ class FindOptimizeLink():
                         else:
                             my_index = 1
                         for _nodes in self.as_topo[_as][my_index]:
-                        # for _nodes in set(self.begin_hash_dict[str(begin_as)][begin_state]):
                             
                             if _nodes not in count_dict:
                                 count_dict[_nodes] = 0
@@ -566,15 +540,6 @@ class FindOptimizeLink():
                             count_dict[_nodes] += cal_node_value(_as)
                             count_dict[_as] += cal_node_value(_nodes)
 
-
-                    # # right_count_dict: Dict[AsnType, int] = {}
-                    # for end_as in self.begin_hash_dict: 
-                    #     # if str(end_as) not in self.end_hash_dict:
-                    #     #     continue
-                    #     for _as in set(self.end_hash_dict[str(end_as)][end_state]):
-                    #         if _as not in count_dict:
-                    #             count_dict[_as] = 0
-                    #         count_dict[_as] += cal_node_value(end_as)
 
                     for left_as in self.all_as_list:
                         
@@ -612,37 +577,23 @@ class FindOptimizeLink():
                             benefit =left_as_value + right_as_value - cost
                             res.append([[left_as, right_as], [begin_state, end_state],benefit]) 
                             #[优化链接左节点, 优化链接右节点], [优化链接左节点连begin_as关系,优化链接右节点连end_as关系,优化成本],收益
-                    # for begin_as, end_as in self.break_link: 
-                    #     cost = cal_cost(begin_as, end_as, begin_state, end_state)
-                    #     benefit =cal_node_value(begin_as) + cal_node_value(end_as) - cost
-                    #     res.append([[begin_as, end_as], [begin_state, end_state],benefit]) 
 
 
-            # res.sort(key=lambda x:x[2],reverse=True)   
-            
-            # print('len(res)',len(res))
-            # print(res)
             return res
 
 @record_launch_time_and_param(1)
 def find_optimize_link_pool(output_path,m, cname):
     global as_rel, as_customer, as_peer, numberAsns
-    # q, cname = s.split(' ')
     _dsn_path = os.path.join(output_path,m)
     optimize_link_path = os.path.join(_dsn_path, 'optimize_link')
     dsn_path = os.path.join(optimize_link_path, 'floyed/')
     rtree_path = os.path.join(_dsn_path, 'rtree')
-    old_break_dsn_path = dsn_path
     opt_add_link_rich_path =os.path.join(dsn_path,'opt_add_link_rich',cname) 
     hash_dict_path = os.path.join(dsn_path,'hash_dict')
     mkdir(optimize_link_path)
     mkdir(dsn_path)
     mkdir(opt_add_link_rich_path)
     mkdir(hash_dict_path)
-
-    # os.popen('mkdir '+dsn_floyed_path)
-    # if cname in ['BR', 'US', 'RU']:
-    #     return
 
     if not os.path.exists(os.path.join(rtree_path, cname, 'as-rel.txt')):
         return
@@ -652,7 +603,7 @@ def find_optimize_link_pool(output_path,m, cname):
 
     fol = FindOptimizeLink(os.path.join(rtree_path, cname),json_data,
                             os.path.join(hash_dict_path, cname),os.path.join(gl_cc2as_path,'%s.json' % cname))
-    # res = fol.new_find_opt_link() 
+
     fol.break_link_begin_rtree_frequency()
     fol.break_link_end_rtree_frequency()
     res = fol.find_opt_link() 
@@ -679,11 +630,8 @@ def find_optimize_link_pool(output_path,m, cname):
 NODE_VALUE = 'basic'  # 'basic' 'user' 'domain'
 as_importance_path = ''
 
-# sample_num = '3'
 
 # [按受影响的节点数量倒序取前多少名,破坏节点数量]
-# sample_num_dict = {'1': [400, 1], '2': [
-#         180, 2], '3': [100, 3], '4': [80, 4]}
 
 # cost
 a, b, c = 0, 0, 0
@@ -700,7 +648,6 @@ def find_optimize_link(txt_path, output_path,_type, cone_path, cc_list, _as_impo
     gl_num_list = num_list
     gl_mine_cone = mine_cone
     as_importance_path = _as_importance_path
-    # input = []
     with open(cone_path, 'r') as f:
         numberAsns = json.load(f)
 

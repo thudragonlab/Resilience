@@ -17,7 +17,6 @@ def as_rela_txt(dsn_path:OUTPUT_PATH, txt_path:str,asn_data:Dict[AS_CODE,int],rt
     '''
     file = open(txt_path, 'r')
     file_name = txt_path.split('/')[-1][:-4]
-    # dsn_path = '/home/peizd01/for_dragon/new_data_pzd/'
     real_dst_path = ''
     result:Dict[AS_CODE,List[AS_CODE]] = {}
     try:

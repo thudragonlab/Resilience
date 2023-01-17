@@ -2,7 +2,6 @@
 # _*_ coding:utf8 _*_
 import multiprocessing
 import os
-# import itertools
 import copy
 import numpy as np
 import json
@@ -53,9 +52,7 @@ class monitor_cut():
                 self.n_node = len(self.graph) // 2
                 self.n_link = len(self.graph) // 2
 
-        # print(file_path + ' monitor node')
         self.monitor_random_node_addDel()
-        # self.monitor_random_link_addDel()
 
     def from_npz_create_graph(self):
         '''
@@ -107,79 +104,6 @@ class monitor_cut():
                         with open(self.tempgraphname, 'r') as ff:
                             self.graph = json.load(ff)
 
-    def monitor_random_link_addDel(self):
-        linklist = list(zip(self.row, self.col))
-        tempG = len(self.graph)
-        # # +
-        # if len(linklist)<1000:
-        #     epoch = len(linklist)
-        # else:
-        #     epoch = 1000
-        # +
-        cut_times = gl_get_cut_num(linklist)
-        with open(self.dsn_path, 'a') as f:
-            for num in range(self.n_link):
-                # size = 500
-                # flag = size-1
-                flag = 0
-                while flag < cut_times:
-                    # while flag<epoch:
-                    flag += 1
-                    link = random.sample(linklist, num)
-                    link = list(set(list(link)))
-                    link.sort()
-                    temp = ' '.join(list(map(str, link)))
-                    linkres = self.monitor_cut_link(link)
-                    # f.write(temp + '|' + str(linkres) + '\n')
-                    f.write(temp + '|' + ' '.join(list(map(str, linkres))) +
-                            '\n')
-                    if len(self.graph) != tempG:
-                        with open(self.tempgraphname, 'r') as ff:
-                            self.graph = json.load(ff)
-
-                # for i in itertools.permutations(linklist, num):
-                #     if flag>=size-1:
-                #         choise = np.random.uniform(0, len(linklist)**num+1, size)
-                #         flag = -1
-                #     flag += 1
-                #     if choise[flag]<=len(linklist):
-                #         link = list(set(list(linklist)))
-                #         link.sort()
-                #         temp = ' '.join(list(map(str, link)))
-                #         linkres = self.monitor_cut_link(link)
-                #         f.write(temp + '|' + ' '.join(linkres) + '\n')
-                #         if len(self.graph) != tempG:
-                #             with open(self.tempgraphname, 'r') as ff:
-                #                 self.graph = json.load(ff)
-
-    def monitor_random_node(self):
-        nodelist = set(self.row)
-        for i in itertools.combinations_with_replacement(
-                nodelist, self.n_node):
-            node = list(set(list(i)))
-            node.sort()
-            # print(node)
-            temp = ' '.join(list(map(str, node)))
-            self.res[temp] = self.monitor_cut_node(node)
-            # if len(self.graph) != len(tempG):
-                #self.graph = copy.deepcopy(tempG)
-            with open(self.tempgraphname, 'r') as f:
-                self.graph = json.load(f)
-
-    def monitor_random_link(self):
-        linklist = list(zip(self.row, self.col))
-        tempG = copy.deepcopy(self.graph)
-        for i in itertools.combinations_with_replacement(
-                linklist, self.n_link):
-            link = list(set(list(i)))
-            link.sort()
-            # print(link)
-            temp = ' '.join(list(map(str, link)))
-            self.res[temp] = self.monitor_cut_link(link)
-            if len(self.graph) != len(tempG):
-                # self.graph = copy.deepcopy(tempG)
-                with open(self.tempgraphname, 'r') as f:
-                    self.graph = json.load(f)
 
     def monitor_cut_node(self, queue):
         '''
@@ -207,39 +131,16 @@ class monitor_cut():
             del self.graph[n]
         return res
 
-    def monitor_cut_link(self, queue):
-        '''
-        queue格式是【[a,b],[c,d]】
-        '''
-        tempQ = []
-        for link in queue:
-            a, b = link
-            self.graph[a][1].remove(b)
-            self.graph[b][0].remove(a)
-            if len(self.graph[a][1]) == 0: tempQ.append(a)
-
-        for link in queue:
-            a, b = link
-            self.graph[a][1].append(b)
-            self.graph[b][0].append(a)
-        return tempQ
-
 
 def monitor_cut_class2func_inter(f):
     '''
     f 具体的.npz rtree文件 
     '''
-    print(f)
-    # index = f.rfind('/')
     monitor_cut(gl_cut_node_depth, 1, f, f[:-4] + '.addDel.txt',f.split('/')[-1][9:-4], True)
-    # if f[index + 1:][:-4] + '.addDel.txt' not in os.listdir(f[:index]):
-        
-    # else:
-    #     print('exist')
+    
     return 0
 
 
-# @record_launch_time
 @record_launch_time_and_param(0)
 def do_cut_by_cc(cc:COUNTRY_CODE, path:RTREE_PATH, asn_data:Dict[AS_CODE, int]):
     '''
@@ -264,8 +165,6 @@ def do_cut_by_cc(cc:COUNTRY_CODE, path:RTREE_PATH, asn_data:Dict[AS_CODE, int]):
     
     # 调用选取破坏节点模块
     for f in gl_get_destroy_trees(node_num):
-        # if f[0][:-4] + '.addDel.txt' in file_name:
-        #     continue
         try:
             thread_pool.apply_async(monitor_cut_class2func_inter,
                               (os.path.join(path, cc, f[0]), ))
@@ -277,7 +176,6 @@ def do_cut_by_cc(cc:COUNTRY_CODE, path:RTREE_PATH, asn_data:Dict[AS_CODE, int]):
 
 
 @record_launch_time
-# def monitor_country_internal(prefix, _type, asn_data,destroy_model_path,cut_rtree_model_path,cut_node_depth,cc_list):
 def monitor_country_internal(prefix:OUTPUT_PATH, _type:TOPO_TPYE, asn_data:Dict[AS_CODE, int],destroy_model_path:str,cut_rtree_model_path:str,cut_node_depth:int,cc_list:List[COUNTRY_CODE]):
     '''
     prefix output 路径

@@ -5,23 +5,17 @@ import json
 import multiprocessing
 from multiprocessing.pool import ThreadPool
 import os
-import random
 from typing import Any, Dict, List, Union
 from scipy import stats, sparse
-import scipy.io
 from statsmodels.stats.multicomp import MultiComparison
 import numpy as np
 import time
 import json
-# from do_Internal.create_routingtree import create_rela_file
 from do_Internal.data_analysis import as_rela_txt_dont_save
 from do_Internal.sort_rank import groud_truth_based_anova_for_single_country, country_internal_rank, internal_survival
 from multiprocessing import Pool
 from other_script.util import mkdir, record_launch_time, record_launch_time_and_param
 
-# from ..base.internal.internal_security import *
-# from base.internal.internal_security import *
-# from ..internal_security import extract_connect_list, groud_truth_based_anova
 '''
 3、量化并排序 (internal_security.py)
 '''
@@ -32,9 +26,6 @@ SORT_DSN_PATH_SUFFIX = RESULT_SUFFIX + '/anova'
 
 
 def add_link_to_npz(add_link_file, old_npz_file, relas_file, dsn_npz_file, add_link_relas_file, add_link_num):
-    # if os.path.exists(dsn_npz_file):
-    #     print(dsn_npz_file + ' exist')
-    #     return
 
     state = {'c2p': 0, 'p2p': 1, 'p2c': 2, 0: 'c2p', 1: 'p2p', 2: 'p2c'}
     match_state = {'1': {'1': 'p2p', '2': 'c2p'}, '2': {'1': 'p2c'}}
@@ -63,8 +54,6 @@ def add_link_to_npz(add_link_file, old_npz_file, relas_file, dsn_npz_file, add_l
     link = list(zip(row, col))
     cur_graph = {}
     for line in link:
-        # if line[0] == line[1]:
-        #     print(1)
         if line[0] not in cur_graph:
             cur_graph[line[0]] = {'pre': [], 'nxt': []}
         if line[1] not in cur_graph:
@@ -113,9 +102,6 @@ def add_link_to_npz(add_link_file, old_npz_file, relas_file, dsn_npz_file, add_l
     add_link_relas = {}
     n = 0
     begin_n = len(add_link)
-    # print('!!!!')
-    # if add_link_num == 8 and add_link_relas_file == '/home/peizd01/for_dragon/pzd_test5_2/output/asRank/optimize_link/new_optimize/KH/rtree/dcomplete9902.8.add_link_relas.json':
-    #     print('add link num:', len(add_link), len(add_link_relas))
     while add_link:
         link = add_link.pop(0)
         if link[0] == link[1]:
@@ -129,17 +115,12 @@ def add_link_to_npz(add_link_file, old_npz_file, relas_file, dsn_npz_file, add_l
             if s0 > s1: link[0], link[1] = link[1], link[0]
             s = min(s0, s1)
         add_link_relas[str(link[0]) + ' ' + str(link[1])] = state[s]
-        # if add_link_num == 8 and add_link_relas_file == '/home/peizd01/for_dragon/pzd_test5_2/output/asRank/optimize_link/new_optimize/KH/rtree/dcomplete9902.8.add_link_relas.json':
-        #     print('add link num:',len(add_link),len(add_link_relas))
         if link[1] not in cur_graph or link[0] not in cur_graph:
             continue
         cur_graph[link[0]]['nxt'].append(link[1])
         try:
             cur_graph[link[1]]['pre'].append(link[0])
         except Exception as e:
-            # print(e)
-            # print(link[1] not in cur_graph)
-            # print(cur_graph[link[1]])
             exit()
 
         n += 1
@@ -149,23 +130,8 @@ def add_link_to_npz(add_link_file, old_npz_file, relas_file, dsn_npz_file, add_l
                         and _node in cur_graph:
                     add_link.append([link[1], _node, _s])
 
-    # row, col = [], []
-    # o = {}
-    # for node in cur_graph:
-    #     for _node in cur_graph[node]['pre']:
-    #         if '%s-%s' % (node, _node) not in o:
-    #             o['%s-%s' % (node, _node)] = 0
-
-    #         if o['%s-%s' % (node, _node)] == 1:
-    #             continue
-    #         row.append(node)
-    #         col.append(_node)
-
-    #         o['%s-%s' % (node, _node)] += 1
-
     with open(add_link_relas_file, 'w') as f:
         json.dump(add_link_relas, f)
-    # np.savez(dsn_npz_file, row=row, col=col)
 
 
 def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc_as_list_path: str, add_link_path: str,
@@ -175,7 +141,6 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
     match_state = {'1': {'1': 'p2p', '2': 'c2p'}, '2': {'1': 'p2c'}}
 
     def create_relas(as_rela: str) -> Dict[int, List[List[int]]]:
-        # global relas
         relas = {}
         with open(cc_as_list_path, 'r') as f:
             cclist = json.load(f)
@@ -199,8 +164,6 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
 
     json_data = as_rela_txt_dont_save(relas_file)
     relas = create_relas(json_data)
-    # for i in relas:
-    #     print(i,relas[i])
     with open(add_link_file, 'r') as f:
         print(add_link_file)
         m = json.load(f)
@@ -208,8 +171,6 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
     for line in m:
         if len(line) < 2:
             continue
-        # if line == '[,]':
-        #     continue
         line = line.split(' ')
         print(line)
         left_as = line[0][1:-1]
@@ -217,25 +178,15 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
         begin_state = line[2][2:-2]
         end_state = line[3][1:-2]
         
-        # as_list, state_list = line
-        # left_as, right_as = as_list
-        # begin_state, end_state = state_list
         link_state = state[match_state[begin_state][end_state]]
         if link_state == 1:
             if int(left_as) > int(right_as):
                 right_as = line[0][1:-1]
                 left_as = line[1][:-1]
-                # right_as, left_as = as_list
 
         add_link.add('-'.join([str(left_as), str(right_as), str(state[match_state[begin_state][end_state]])]))
         if len(add_link) > add_link_num:
             break
-
-    # elif isinstance(m, list):
-    #     for line in m:
-    #         add_link.add([str(left_as), str(right_as), state[match_state[begin_state][end_state]]])
-    #         if len(add_link) > add_link_num:
-    #             break
 
     add_link_list = list(map(lambda x: x.split('-'), add_link))
     with open(os.path.join(add_link_path, f'add_link-{asn}.{add_link_num}.json'), 'w') as f:
@@ -277,7 +228,6 @@ class monitor_cut():
 
         # 创建图
         self.from_npz_create_graph()
-        # print(self.file_name + ' graph created')
         with open(self.tempgraphname, 'w') as f:
             json.dump(self.graph, f)
 
@@ -318,12 +268,6 @@ class monitor_cut():
                         oldbreak = line.split('|')[1].split(' ')
                         linkres = self.monitor_cut_node(queue)
 
-                        # if len(linkres) > len(oldbreak):
-                        #     print(self.tempgraphname, line, linkres, 'bad error\n')
-
-                        # elif len(linkres)<len(oldbreak):
-                        #    print(self.tempgraphname, line, linkres, 'good error\n')
-
                         dsn_f.write(line.split('|')[0] + '|' + ' '.join(list(map(str, linkres))) + '\n')
                         with open(self.tempgraphname, 'r') as graph_f:
                             self.graph = json.load(graph_f)
@@ -332,22 +276,17 @@ class monitor_cut():
     def monitor_cut_node(self, queue):
         res = []
         for node in queue:
-            # print(node)
             for i in self.graph[node][1]:  #找node连了哪些节点
-                # print(i,self.graph[i][0],node)
                 self.graph[i][0].remove(node)  #在node的后向点的前向点中把node删了
 
             self.graph[node][1] = []  # node设置成不链接任何节点
-        # print('--')
         while queue:
             n = queue.pop(0)  #取被影响的节点
-            # print(n,'?')
             res.append(n)  #加入返回结果列表
             if n not in self.graph:
                 continue
 
             for i in self.graph[n][0]:
-                # if n in self.graph[i][1]:
                 self.graph[i][1].remove(n)  # 在被影响节点n的前向点中的后向点中把n删了
                 if len(self.graph[i][1]) == 0:  # 如果n的前向点没有指向其他的节点，那么这个点也列为被影响的节点
                     queue.append(i)
@@ -358,9 +297,6 @@ class monitor_cut():
 class iSecutiry():
 
     def __init__(self, path, connect_dsn_path, sort_dsn_path) -> None:
-        # connect_dsn_path = os.path.join(result_dsn_path, 'count_num/')
-        # sort_dsn_path = os.path.join(result_dsn_path, 'anova/')
-        # rank_dsn_path = os.path.join(result_dsn_path, 'rank/')
 
         self.path = path
         self.connect_dsn_path = connect_dsn_path
@@ -381,13 +317,11 @@ class iSecutiry():
             return [line.count(' ') + 1, res1, res2]
 
         if not os.path.exists(self.path):
-            # print('%s  not exist' % self.path)
             return
         if begin_num < 1: begin_num = 1
         cc_name = os.listdir(self.path)
         for cc in cc_name:
             if cc + '.json' not in os.listdir(as_importance_path):
-                # print(cc + ' not have as_importance')
                 continue
             with open(os.path.join(as_importance_path, cc + '.json'), 'r') as f:
                 _as_importance = json.load(f)
@@ -395,11 +329,9 @@ class iSecutiry():
             for line in _as_importance:
                 as_importance[line[0]] = line[1:]
 
-            # for num in range(begin_num, Num):
             for num in Num_list:
                 file_path = os.path.join(self.path, cc, 'all', str(num))
                 if not os.path.exists(file_path):
-                    # print(file_path + ' del file not exist')
                     continue
                 try:
                     if not os.path.exists(os.path.join(self.connect_dsn_path, cc)):
@@ -410,16 +342,13 @@ class iSecutiry():
                     time.sleep(5)
                 file_name = os.listdir(file_path)
                 file_name = [i for i in os.listdir(file_path) if i[-4:] == '.txt' and i.find('as-rel') == -1 and i[0] != '.']
-                # file_name = [i for i in os.listdir(file_path) if i[-4:]=='.txt' and i.find('as-rel')==-1 and i[0]!='.' and i.find('.'+str(num)+'.')!=-1]
                 if not len(file_name):
-                    # print(num)
                     break
 
                 for file in file_name:
                     res = {}
                     asname = file.split('.')[0]
                     if os.path.exists(os.path.join(self.connect_dsn_path, cc, str(num), asname + '.json')):
-                        # print('connect file exist')
                         continue
                     res[asname] = {}
                     res[asname]['asNum'] = -1
@@ -444,13 +373,10 @@ def cal_anova_change_for_single_country(connect_dsn_path, old_connect_path, num,
     '''
 
     if not os.path.exists(os.path.join(connect_dsn_path, _cc, str(num))):
-        # print(os.path.join(connect_dsn_path, _cc, str(num)) + ' not exist')
         return
     if len(os.listdir(os.path.join(connect_dsn_path, _cc, str(num)))) == 0:
-        # print(os.path.join(connect_dsn_path, _cc, str(num)) + ' file is 0')
         return
 
-    # for value in ['basic', 'user', 'domain']:
     for value in ['basic']:
         new_anova_path = os.path.join(output_path, m, SORT_DSN_PATH_SUFFIX, value + '_' + _cc)
         mkdir(new_anova_path)
@@ -469,15 +395,11 @@ def record_result(topo_list, output_path, type_path, _type):
     '''
     global data_dim
     
-    middle_index_dict = {'asRank': [0, 2], 'problink': [3, 5], 'toposcope': [6, 8], 'toposcope_hidden': [9, 11]}
-
     change_res = {}
     for _cc in cc_list:
-        # print(_cc)
         if _cc in ['BR', 'US', 'RU']:
             continue
         change_res[_cc] = {}
-        # for num in range(1, Num):
         for num in Num_list:
             change_res[_cc][str(num)] = {}
             country_internal_rank(topo_list, output_path, RESULT_SUFFIX, type_path, _type, _cc, str(num), data_dim)
@@ -532,22 +454,15 @@ def peerToPeer(routingTree, BFS, graph, levels):
     purpose:
         connect new nodes to nodes added in step 1 with relationship = 1
     '''
-    oldNodes = []
     old = {}
     allNodes = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
     for node in allNodes:
         old[node] = 0
 
-    # for pair in BFS:
-    #     print(pair)
-    #     oldNodes.extend(pair[1])
-    #     for node in pair[1]:
-    #         old[node] = 1
     newBFS = copy.deepcopy(BFS)
     newLevels = levels
     for pair in BFS:
         level = pair[0]
-        # print "---level---: ",level
         vertices = pair[1]
         for vertex in vertices:
             for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
@@ -574,7 +489,6 @@ def providerToCustomer(routingTree, BFS, graph, levels):
     purpose:
         breadth first search of tree, add nodes with relationship 2
     '''
-    edgesCount = 0
     oldNodes = []
     old = {}
     allNodes = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
@@ -616,8 +530,6 @@ def saveAsNPZ(fileName, matrix, destinationNode):
     col = matrixCOO.col
     data = matrixCOO.data
     shape = matrixCOO.shape
-    # print(row)
-    # print(col)
     np.savez(fileName, row=row, col=col, data=data, shape=shape)
 
 
@@ -631,7 +543,6 @@ def makeRoutingTree(destinationNode, fullGraph, routingTree, new_npz_path):
 
     print("=================" + str(destinationNode) + "=======================")
 
-    # print('routingTree',routingTree)
     stepOneRT, stepOneNodes, lvls = customerToProviderBFS(destinationNode, routingTree, fullGraph)
     stepTwoRT, stepTwoNodes, lvlsTwo = peerToPeer(stepOneRT, stepOneNodes, fullGraph, lvls)
     stepThreeRT = providerToCustomer(stepTwoRT, stepTwoNodes, fullGraph, lvlsTwo)
@@ -643,11 +554,7 @@ def dataConverter(relas_list):
     returned_list = []
 
     for data in relas_list:
-        # while line:
-        # if (line[0] != '#'):
         output_data = []
-        # data = line.split('|')
-        # outString = str(data[0]) + "\t" + str(data[1])
         try:
             if (int(data[0]) not in output_data):
                 output_data.append(data[0])
@@ -655,7 +562,6 @@ def dataConverter(relas_list):
                 output_data.append(data[1])
 
         except Exception as e:
-            # print(e)
             raise e
             exit()
         if (data[2] == 0 or data[2] == "0"):
@@ -672,25 +578,11 @@ def graphGenerator(data_list):
 
     def determineNodeCount(_data_list):
         nodeList = []
-        # with open(fileName, 'r') as f:
-        #     content = f.readlines()
-        # print(fileName)
         for splitLine in _data_list:
-            # if (line[0] != '#'):
-            #     splitLine = line.split("\t", 2)
             if (int(splitLine[0]) not in nodeList):
                 nodeList.append(int(splitLine[0]))
             if (int(splitLine[1]) not in nodeList):
                 nodeList.append(int(splitLine[1]))
-        # print("Node Count: " + str(len(nodeList)))
-        # print("Max Node ID: " + str(max(nodeList)))
-
-        ### Saving the node list ###
-        # outFileList = outName + ".nodeList"
-        # ouf = open(outFileList, 'w')
-        # for node in nodeList:
-        #     ouf.write(str(node) + "\n")
-        # ouf.close()
         return max(nodeList)
 
     def fileToSparse(d_list):
@@ -704,8 +596,6 @@ def graphGenerator(data_list):
 
         numNodes = determineNodeCount(d_list)
 
-        # with open(fileName, 'r') as f:
-        #     content = f.readlines()
         empMatrix = sparse.lil_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
         i = 1
         total = len(d_list)
@@ -713,7 +603,6 @@ def graphGenerator(data_list):
             if i % 1000 == 0:
                 print("completed: " + str((float(i) / float(total)) * 100.0))
             i += 1
-            # splitLine = line.split("\t", 2)
             node1 = int(splitLine[0])
             node2 = int(splitLine[1])
             relationship = splitLine[2][:3]
@@ -724,32 +613,20 @@ def graphGenerator(data_list):
                 empMatrix[node1, node2] = 2
                 empMatrix[node2, node1] = 3
         empMatrix = empMatrix.tocsr()
-        # scipy.io.mmwrite(outName, empMatrix)
-        # start = time.time()
-        # test = scipy.io.mmread(outName).tolil()  # 5.4MB to save sparse matrix
-        # end = time.time()
-        # print(end - start, " seconds to load")  # 2.3 seconds
         return numNodes, empMatrix
 
     return fileToSparse(data_list)
 
 
 def create_rela_file(relas):
-    # sum = 0
     relas_list = []
-    # with open(relaFile, 'w') as f:
     for c in relas:
-        # sum += 1
         for b in relas[c][1]:
             relas_list.append([str(c), str(b), -1])
-            # f.write(str(c) + '|' + str(b) + '|-1\n')
         for b in relas[c][2]:
             if c <= b:
                 relas_list.append([str(c), str(b), 0])
-                # f.write(str(c) + '|' + str(b) + '|0\n')
-    # relas_list = []
     return relas_list
-    # print(sum)
 
 
 @record_launch_time_and_param(2, 1)
@@ -766,7 +643,6 @@ def add_npz_and_monitor_cut_pool(output_path, m, cname):
     floyed_path = os.path.join(dst_path, SUFFIX, 'floyed')
     rtree_path = os.path.join(dst_path, 'rtree/')
     add_link_path = os.path.join(floyed_path, 'add_link', cname)
-    # print('?')
     mkdir(new_path)
     mkdir(os.path.join(new_path, cname))
     mkdir(os.path.join(new_path, cname, 'rtree'))
@@ -798,17 +674,12 @@ def add_npz_and_monitor_cut_pool(output_path, m, cname):
         mkdir(new_del_path)
         mkdir(temp_path)
 
-        # if os.path.exists(old_npz_file) and not os.path.exists(new_del_file):
         if os.path.exists(old_npz_file):
             asn = file.split('.')[0][9:]
             rela = generate_new_rela(add_link_file, relas_file, add_link_num, cc_as_list_path, add_link_path,
                                      asn)  # 把优化的节点加入到rtree连接文件中
-            # for i in rela:
-            #     print(i,rela[i])
             relas_list = create_rela_file(rela)
-            # print(relas_list)
             data_list = dataConverter(relas_list)
-            # print(len(data_list),file,add_link_num)
             maxNum, fullGraph = graphGenerator(data_list)
             routingTree = sparse.dok_matrix((maxNum + 1, maxNum + 1), dtype=np.int8)
 
@@ -819,12 +690,7 @@ def add_npz_and_monitor_cut_pool(output_path, m, cname):
     for _file in os.listdir(os.path.join(rtree_path, cname)):
         if _file.find('addDel') == -1:
             continue
-        # for _add_link_num in range(1, Num):
         for _add_link_num in Num_list:
-            # add_npz_and_monitor_cut_thread (
-            #     _file,
-            #     _add_link_num,
-            # )
             thread_pool_inner.apply(add_npz_and_monitor_cut_thread, (
                 _file,
                 _add_link_num,
@@ -873,8 +739,6 @@ def judge_var(target_list, result):
     if len(target_list) == 0:
         return
     for ii in target_list:
-        # F = np.var(source_list['list']) / np.var(ii['list'])
-        # p = 1 - stats.f.cdf(F, 60, 60)
         stat, p = stats.levene(source_list['list'], ii['list'])
         if ii['key'] == source_list['key']:
             continue
@@ -1051,21 +915,15 @@ def part3(topo_list, output_path):
     global data_dim
     pool = Pool(multiprocessing.cpu_count())
     for _cc in cc_list:
-        # if _cc in ['BR', 'US', 'RU']: continue
-        # new_cal_anova_for_single_cc_pool (topo_list, _cc, output_path, data_dim)
 
         pool.apply_async(new_cal_anova_for_single_cc_pool, (topo_list, _cc, output_path, data_dim))
 
         for m in topo_list:
-            # print(m)
             connect_dsn_path = os.path.join(output_path, m, SUFFIX, 'new_optimize_result', 'count_num')
-            # for num in range(1, Num):
             for num in Num_list:
                 if not os.path.exists(os.path.join(connect_dsn_path, _cc, str(num))):
-                    # print(os.path.join(connect_dsn_path, _cc, str(num)) + ' not exist')
                     continue
                 if len(os.listdir(os.path.join(connect_dsn_path, _cc, str(num)))) == 0:
-                    # print(os.path.join(connect_dsn_path, _cc, str(num)) + ' file is 0')
                     continue
 
         
@@ -1093,18 +951,14 @@ def new_cal_anova_for_single_cc_pool(topo_list, _cc, output_path, data_dim):
     value_dict = {'basic': 0, 'user': 1, 'domain': 2}
     
     for m in topo_list:
-            # print(m)
             super_connect_dsn_path = os.path.join(output_path, m, SUFFIX, 'new_optimize_result', 'count_num')
-            # for num in range(1, Num):
             for _num in Num_list:
                 
                 num = str(_num)
                 print(num)
                 if not os.path.exists(os.path.join(super_connect_dsn_path, _cc, num)):
-                    # print(os.path.join(connect_dsn_path, _cc, str(num)) + ' not exist')
                     continue
                 if len(os.listdir(os.path.join(super_connect_dsn_path, _cc, num))) == 0:
-                    # print(os.path.join(connect_dsn_path, _cc, str(num)) + ' file is 0')
                     continue
                 num = str(_num)
                 connect_dsn_path = os.path.join(output_path, m, SUFFIX, 'new_optimize_result', 'count_num', _cc, num)
@@ -1114,9 +968,6 @@ def new_cal_anova_for_single_cc_pool(topo_list, _cc, output_path, data_dim):
                 for value in data_dim:
                     
                     new_anova_path = os.path.join(output_path, m, SORT_DSN_PATH_SUFFIX, value + '_' + _cc)
-
-                    # if os.path.exists(os.path.join(new_anova_path, f'sorted_country_{value}.{num}.json')):
-                    #     continue
 
                     mkdir(new_anova_path)
                     if numIndex == 0:
@@ -1141,14 +992,12 @@ def new_cal_anova_for_single_cc_pool(topo_list, _cc, output_path, data_dim):
                                 continue
 
                             new_anova_data[-1].append(old_as)
-                    # print(new_as_list)
 
                     for new_as in new_as_list: # 循环优化后的节点
                         if new_as not in old_rank_map:
                             continue
                         if old_rank_map[new_as] == 0:
                             new_anova_data[old_rank_map[new_as]].append(new_as)
-                            # print(f'still {new_as}')
                             continue
                         new_rank = old_rank_map[new_as]
                         for i in range(new_rank - 1, -1, -1): #从优化后的节点排名往0循环
@@ -1196,7 +1045,6 @@ def new_cal_anova_for_single_cc_pool(topo_list, _cc, output_path, data_dim):
                             result = mc.tukeyhsd()
 
                             line  =result._results_table.data[1]
-                            # for line in result._results_table.data[1:]:
                             print(f'newAs -> {new_as} compare_as -> {compare_as} line => {line} ')
                             if new_as == line[0]:
                                 if not line[-1] or line[2] < 0:
@@ -1221,12 +1069,8 @@ def new_cal_anova_for_single_cc_pool(topo_list, _cc, output_path, data_dim):
                     with open(os.path.join(new_anova_path, f'sorted_country_{value}.{num}.json'), 'w') as result_f:
                         json.dump(new_anova_data, result_f)
 
-
-# Num = 6
 cc_list = []
 as_importance_path = None
-# old_rank_file = None
-
 
 @record_launch_time
 def train_routing_tree(topo_list, _cc_list, output_path, _as_importance_path, optimize_link_num_list, _data_dim):
@@ -1249,11 +1093,8 @@ def train_routing_tree(topo_list, _cc_list, output_path, _as_importance_path, op
     cc_list = _cc_list
     as_importance_path = _as_importance_path
     data_dim = _data_dim
-    # old_rank_file = os.path.join(output_path, 'public', 'med_rank.json')
     part1(topo_list, output_path)
     part2(output_path, topo_list)
     part3(topo_list, output_path)
-    # # print(topo_list)
     record_result(topo_list, output_path, 'anova', 'med')
     record_result(topo_list, output_path, 'var', 'var')
-    # print(output_path)

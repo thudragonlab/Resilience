@@ -3,12 +3,9 @@
 import multiprocessing
 import os
 import json
-import csv
-from math import floor
 from typing import Callable, Dict, List
 import numpy as np
 from scipy import stats
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from statsmodels.stats.multicomp import MultiComparison
 from multiprocessing.pool import ThreadPool
 from pyecharts.globals import WarningType
@@ -28,8 +25,6 @@ def anova(dict_l, dsn_path, VALUE, num):
     '''
     输入L:[[],...,[]]，列表每个元素为国家所有的破坏性度量
     '''
-    # if os.path.exists(os.path.join(dsn_path, 'anova_'+VALUE+'_multi_comparison.'+num+'.json')):
-    #     return
     l = [v for _, v in dict_l.items()]
     f, p = stats.f_oneway(*l)
     print('One-way ANOVA')
@@ -38,7 +33,6 @@ def anova(dict_l, dsn_path, VALUE, num):
     print('P value:', p, '\n')
     if p > 0.05:
         print('无显著性差异 p>0.05')
-        # return
     else:
         print('有显著性差异')
 
@@ -56,9 +50,6 @@ def anova(dict_l, dsn_path, VALUE, num):
         else:
             res.append([line[0], line[1], 0])
 
-    # with open(os.path.join(dsn_path, 'anova_'+VALUE+'_multi_comparison.'+num+'.json'), 'w')  as f:
-    #     json.dump(res, f)
-    # print(os.path.join(dsn_path, 'anova_'+VALUE+'_multi_comparison.'+num+'.json')+' created')
     anova_sort(dsn_path, VALUE, num, res)
 
 
@@ -134,15 +125,6 @@ def cal_rank_weight(_cc: str, rtree_path: str, as_dict: Dict[str, int]) -> int:
             else:
                 ans[_as] = 0
         temp = gl_cal_rank_model(as_dict,ans)
-    #     for _as in as_dict:
-    #         if ans[_as] == 0: continue
-    #         temp += as_dict[_as]*ans[_as] #sum(国家下所有AS的排名 * 各自链接数量)
-    #         # temp += as_dict[_as]
-    #     if sum(list(ans.values())) == 0:
-    #         temp = 0
-    #     else:
-    #         temp /= sum(list(ans.values())) # 再除这个国家的所有连接数
-    #         # temp /= len(as_dict)  # 再除这个国家的AS数量
     if temp < 1: temp = 1
     return temp
 
@@ -185,7 +167,6 @@ def country_internal_rank( topo_list, output_path, RESULT_SUFFIX, type_path, _ty
                     if not _as[0].isdigit(): _as = _as[9:]
                     res[_as] = index + 1 #记录国家内所有AS的排名
 
-            # print(res)
             temp = cal_rank_weight(country_name, old_graph_path, res)
             new_cc_rank_weight[f'{value2}-{m}'] = temp
 
@@ -196,7 +177,6 @@ def country_internal_rank( topo_list, output_path, RESULT_SUFFIX, type_path, _ty
 
 def groud_truth_based_anova_for_single_country(single_country_path, single_country_name, old_connect_path, dsn_path, value,
                                                num):
-    # if os.path.exists(os.path.join(dsn_path, 'sorted_country_'+value+'.'+num+'.json')): return
     num = str(num)
     file_name = os.listdir(old_connect_path)
     l = {}
@@ -220,7 +200,6 @@ def groud_truth_based_anova_for_single_country(single_country_path, single_count
             for _as in r:
                 N = r[_as]['asNum']
                 if N < 0: continue
-                # if N < 20: continue
                 for i in r[_as]['connect']:
                     if value == 'basic':
                         _l += [_i[value_dict[value]] / N for _i in i]
@@ -237,7 +216,6 @@ def groud_truth_based_anova_for_single_country(single_country_path, single_count
             r = json.load(f)
         for _as in r:
             N = r[_as]['asNum']
-            # if N < 20: continue
             for i in r[_as]['connect']:
                 if value == 'basic':
                     _l += [_i[value_dict[value]] / N for _i in i]
@@ -262,7 +240,6 @@ def groud_truth_based_anova_for_single_country(single_country_path, single_count
     thread_pool.join()
 
     anova(l, dsn_path, value, num)
-    # anova_sort(dsn_path, value, num)
 
 
 def internal_survival(rank_file, begin_index, end_index):
@@ -274,9 +251,6 @@ def internal_survival(rank_file, begin_index, end_index):
     for _k in k:
         if len(r[_k]) == 0: del r[_k]
     r = list(r.items())
-    # rank_file数据格式 asrank_basic asrank_user asrank_domain problink_basic problink_user problink_domain toposcope_basic toposcope_user toposcope_domain toposcope-h_basic toposcope-h_user toposcope-h_domain
-    # locate 映射 basic->[asRank problink，toposcope toposcope-h] user->[asRank problink，toposcope toposcope-h] domain->[asRank problink，toposcope toposcope-h]
-    # locate = [0,3,6,9,1,4,7,10,2,5,8,11]
     ccres = []
     for i in range(len(r)):
         ccres.append([])
@@ -296,12 +270,10 @@ def internal_survival(rank_file, begin_index, end_index):
                 ccres[index][locate + 1] = ccres[index - 1][locate + 1]
             else:
                 temp = ccres[index][locate + 1]
-                # ccres[index][locate+1] = index+1
                 if index > 0:
                     ccres[index][locate + 1] = ccres[index - 1][locate + 1] + 1
                 else:
                     ccres[index][locate + 1] = 1
-            # ccres[index][locate+1] = index+1
 
     ccres = sorted(ccres, key=(lambda x: sum(x[1:])), reverse=False)
     return ccres

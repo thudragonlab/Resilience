@@ -11,11 +11,8 @@ import json
 import copy
 from other_script.my_types import *
 import numpy as np
-import time
-from mpi4py import MPI
 from scipy import sparse
 import scipy.io
-import itertools
 import multiprocessing
 from multiprocessing.pool import ThreadPool
 from importlib import import_module
@@ -79,8 +76,6 @@ def dataConverter(in_relaFile_path, out_temp_text_file):
             else:
                 line = fp.readline()
 
-        # print("number of unique nodes: " + str(len(nodeList)))
-
     of.close()
 
     ### Saving the node list ###
@@ -106,7 +101,6 @@ def graphGenerator(in_temp_text_file:str, out_mtx_file:str):
         nodeList:List[AS_CODE] = []
         with open(in_temp_text_file, 'r') as f:
             content = f.readlines()
-            # print(fileName)
         for line in content:
             if (line[0] != '#'):
                 splitLine:List[Union[AS_CODE,str]] = line.split("\t", 2)
@@ -114,8 +108,6 @@ def graphGenerator(in_temp_text_file:str, out_mtx_file:str):
                     nodeList.append(int(splitLine[0]))
                 if (int(splitLine[1]) not in nodeList):
                     nodeList.append(int(splitLine[1]))
-        # print("Node Count: " + str(len(nodeList)))
-        # print("Max Node ID: " + str(max(nodeList)))
 
         ### Saving the node list ###
         # 这里存就是看看数据，后面没有用到
@@ -165,10 +157,6 @@ def graphGenerator(in_temp_text_file:str, out_mtx_file:str):
         
         #转换格式存入文件
         scipy.io.mmwrite(out_mtx_file, empMatrix.tocsr())
-        # start = time.time()
-        # test = scipy.io.mmread(out_mtx_file).tolil()  # 5.4MB to save sparse matrix
-        # end = time.time()
-        # print(end - start, " seconds to load")  # 2.3 seconds
         return numNodes
 
     return fileToSparse(in_temp_text_file, out_mtx_file)
@@ -218,8 +206,6 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
             level:int = pair[0]
             vertices:List[AS_CODE] = pair[1]
             for vertex in vertices:
-                # print(vertex)
-                # print(fullGraph)
                 for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
                     # 找当前节点的provider，并且不在矩阵中，并且层数不大于当前节点
                     if (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0) and (
@@ -265,7 +251,6 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
         newLevels:Dict[AS_CODE,int] = levels
         for pair in BFS:
             level = pair[0]
-            # print "---level---: ",level
             vertices = pair[1]
             for vertex in vertices:
                 for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
@@ -290,7 +275,6 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
         purpose:
             breadth first search of tree, add nodes with relationship 2
         '''
-        # edgesCount = 0
         oldNodes:List[AS_CODE] = []
         old:Dict[AS_CODE,int] = {}
         allNodes:List[AS_CODE] = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
@@ -394,8 +378,6 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
 
 
 def create_rela_file(relas:Dict[AS_CODE,List[List[AS_CODE]]], relaFile_path:str):
-    # sum = 0
-    # print('relaFile',relas)
     '''
     relas:as关系字典
     relaFile_path:as-rel.txt存储路径
@@ -405,7 +387,6 @@ def create_rela_file(relas:Dict[AS_CODE,List[List[AS_CODE]]], relaFile_path:str)
     '''
     with open(relaFile_path, 'w') as f:
         for c in relas:
-            # sum += 1
             for b in relas[c][1]:
                 # p2c关系存-1
                 f.write(str(c) + '|' + str(b) + '|-1\n')
@@ -413,7 +394,7 @@ def create_rela_file(relas:Dict[AS_CODE,List[List[AS_CODE]]], relaFile_path:str)
                 if c <= b:
                     # peer关系存0
                     f.write(str(c) + '|' + str(b) + '|0\n')
-    # print(sum)
+
 
 
 def start_create_routingTree(dsn_file:RTREE_CC_PATH, relaFile_path:str, cc:COUNTRY_CODE) -> None:
@@ -471,8 +452,6 @@ def create_relas(file:CC_PATH) -> Dict[AS_CODE,List[List[AS_CODE]]]:
     relas:Dict[AS_CODE,List[List[AS_CODE]]] = {}
     with open(gl_as_rela_file_path, 'r') as f:
         as_rela:Dict[AS_CODE,List[AS_CODE]] = json.load(f)
-        # print('len(as_rela.keys())',len(as_rela.keys()))
-        # print(as_rela.keys())
     with open(file, 'r') as f:
         cclist:List[AS_CODE] = json.load(f)
     for c in cclist:

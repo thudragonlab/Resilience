@@ -3,20 +3,13 @@
 
 import os
 import json
-import copy
-import matplotlib.pyplot as plt
-from collections import deque, Counter
 from other_script.my_types import *
-import time
 import numpy as np
-import itertools
-from multiprocessing import Pool
 from importlib import import_module
 from multiprocessing.pool import ThreadPool
 
 import random
 
-# only_cc_list = ['AF', 'PH']
 '''
 传输AS影响+AS霸权思想
 上面都是想法一的处理过程，想法二由增加了计算国内所有AS的数据，所以得重新写所有相关代码
@@ -24,232 +17,11 @@ import random
 
 N = 10
 gl_get_cut_num:Callable[[List[AS_CODE]],List[AS_CODE]] = None
-class user_radio_v2():
-
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def extract_country_broad_path(Path, dsn_path):
-        res = {}
-        ccas = {}
-        ccasfile = os.listdir(prefix + '/ccInternal/cc2as')
-        for _file in ccasfile:
-            with open(prefix + '/ccInternal/cc2as/' + _file, 'r') as f:
-                ccas[_file[:2]] = json.load(f)
-
-        for path in Path:
-            file_name = os.listdir(path)
-            for file in file_name:
-                try:
-                    with open(path + file, 'r') as f:
-                        reader = json.load(f)
-                except:
-                    print(file + ' error')
-                for aslist in reader:
-                    value = reader[aslist][0].split('|')
-                    value[1] = value[1].split(' ')
-                    value[2] = value[2].split(' ')
-                    tempas = []
-                    tempcc = []
-                    for i in range(len(value[2])):
-                        value[2][i] = value[2][i].split('-')
-                        for cc in value[2][i]:
-                            tempas.append(value[1][i])
-                            tempcc.append(cc)
-                    # c = Counter(tempcc).most_common()
-
-                    # if len(c) == 1 or (len(c) == 2 and 'None' in tempcc):
-                    #     continue
-
-                    bindex = 0  #记录观测点
-                    for bindex in range(len(tempcc)):
-                        if tempcc[bindex] != 'None' and tempas[bindex] != 'None':
-                            break
-                    for i in range(len(tempcc) - 1):
-                        if tempcc[i] != tempcc[i+1] and 'None' not in tempcc[i:i+2]\
-                                and 'None' not in tempas[i:i+2]:
-                            if tempcc[i] not in ccas:
-                                print('not have ' + tempcc[i])
-                                continue
-                            if tempcc[i] not in res:
-                                res[tempcc[i]] = {}
-                            if tempas[bindex] not in res[tempcc[i]]:
-                                res[tempcc[i]][tempas[bindex]] = {}
-                            _bindex = i
-                            while i >= 0 and (tempcc[_bindex] == tempcc[i] or
-                                              (tempcc[_bindex] == 'None' and tempcc[_bindex] in ccas[tempcc[i]])):
-                                _bindex -= 1
-                            _bindex += 1
-                            if ' '.join(tempas[_bindex:i + 2]) + '|' + ' '.join(tempcc[_bindex:i + 2]) not in \
-                                    res[tempcc[i]][tempas[bindex]]:
-                                res[tempcc[i]][tempas[bindex]][' '.join(tempas[_bindex:i + 2]) + '|' +
-                                                               ' '.join(tempcc[_bindex:i + 2])] = 0
-                            res[tempcc[i]][tempas[bindex]][' '.join(tempas[_bindex:i + 2]) + '|' +
-                                                           ' '.join(tempcc[_bindex:i + 2])] += reader[aslist][1]
-        for cc in res:
-            with open(dsn_path + cc + '.json', 'w') as f:
-                json.dump(res[cc], f)
-
-    @staticmethod
-    def calculate_ratio(Path, dsn_path):
-        #从上面函数提取的出国路由中，提取出每个边界AS在各个观测点出现的次数、观测点的总路径、观测点观察到的AS数量
-        #每个观测点记录：‘broadAS’broadAS信息：(‘num’:各个broad AS的次数, 'interASnum'各个broadAS出现国内AS出现的数量)、'pathSum'观察的总路径、'asSum'观测点的AS数量、
-        file_name = os.listdir(Path)
-        for file in file_name:
-            # try:
-            with open(Path + file, 'r') as f:
-                reader = json.load(f)
-            # except:
-            #     print(file)
-            #     continue
-            res = {}
-            res['all'] = {}
-            res['all']['asSum'] = set()
-            for a in reader:
-                res[a] = {}
-                res[a]['broadAS'] = {}
-                res[a]['broadAS']['num'] = {}
-                res[a]['broadAS']['interASnum'] = {}
-                res[a]['pathSum'] = 0
-                res[a]['asSum'] = set()
-                for path in reader[a]:
-                    aslist = path.split('|')[0].split(' ')
-                    cclist = path.split('|')[1].split(' ')
-                    if len(aslist) < 2: continue
-                    if aslist[-2] not in res[a]['broadAS']['num']:
-                        res[a]['broadAS']['num'][aslist[-2]] = 0
-                    res[a]['broadAS']['num'][aslist[-2]] += reader[a][path]
-                    res[a]['pathSum'] += reader[a][path]
-                    res[a]['asSum'] = res[a]['asSum'] | set(aslist)
-                    res['all']['asSum'] = res['all']['asSum'] | set(aslist)
-
-                    # 增加的部分 记录国内AS的次数
-                    if aslist[-2] not in res[a]['broadAS']['interASnum']:
-                        res[a]['broadAS']['interASnum'][aslist[-2]] = {}
-
-                    for index in range(len(aslist) - 2):
-                        if a == aslist[index] or aslist[index] == 'None': continue
-                        if aslist[index] not in res[a]['broadAS']['interASnum'][aslist[-2]]:
-                            res[a]['broadAS']['interASnum'][aslist[-2]][aslist[index]] = 0
-                        res[a]['broadAS']['interASnum'][aslist[-2]][aslist[index]] += reader[a][path]
-
-                res[a]['asSum'] = len(res[a]['asSum'])
-            res['all']['asSum'] = len(res['all']['asSum'])
-
-            with open(dsn_path + file, 'w') as f:
-                json.dump(res, f)
-
-    @staticmethod
-    def user_radio(path, dsn_path, alpha1, alpha2):
-        file_name = os.listdir(path)
-        res = {}
-        for file in file_name:
-            res[file[:2]] = {}
-            with open(path + file, 'r') as f:
-                reader = json.load(f)
-                f.close()
-
-            if file not in os.listdir(prefix + '/prefix_weight/as_importance/'):
-                print(file + ' not have user ratio')
-                continue
-
-            with open(prefix + '/prefix_weight/as_importance/' + file, 'r') as f:
-                as_importance = json.load(f)
-            uratio = {}
-            for line in as_importance:
-                uratio[line[0]] = line[1]
-
-            # 对于每个测量点
-            # 1、先计算保存各个边界AS的BC值：‘BC’
-            # 2、计算每个边界AS下，国内AS经过这个边界AS的比例：‘interASratio’
-            # 3、计算vp观测到的边界AS比例：‘bdASratio’
-
-            vp = {}
-            bdAS = set()
-            interAS = set()
-            for _vp in reader:
-                if len(reader[_vp]) <= 2: continue
-                vp[_vp] = {}
-                vp[_vp]['BC'] = {}
-                vp[_vp]['interASratio'] = {}
-                vp[_vp]['bdASratio'] = len(reader[_vp]['broadAS']['num'])
-
-                bdAS |= set(reader[_vp]['broadAS']['interASnum'].keys())
-
-                for bdas in reader[_vp]['broadAS']['interASnum']:
-                    vp[_vp]['interASratio'][bdas] = {}
-                    for _interas in reader[_vp]['broadAS']['interASnum'][bdas]:
-                        vp[_vp]['interASratio'][bdas][_interas] = reader[_vp]['broadAS']['interASnum'][bdas][_interas] / sum(
-                            list(reader[_vp]['broadAS']['interASnum'][bdas].values()))
-                    interAS |= set(reader[_vp]['broadAS']['interASnum'][bdas].keys())
-
-                    vp[_vp]['BC'][bdas] = reader[_vp]['broadAS']['num'][bdas] / reader[_vp]['pathSum']
-
-            for _vp in vp:
-                vp[_vp]['bdASratio'] = vp[_vp]['bdASratio'] / len(bdAS)
-
-            # 对每个边界AS
-            # 1、提取每个观测点下国内AS的比例
-            # 2、每个观测点下，该边界AS的BC值
-            # 3、按照alpha过滤边界AS的观测点信息
-            # 4、计算边界AS对国内AS的传输影响
-            # 5、国内AS获取用户比例，计算边界AS安全性
-
-            res = {}
-            for _bdas in bdAS:
-                res[_bdas] = {}
-
-            for _vp in vp:
-                for _bdas in vp[_vp]['BC']:
-                    res[_bdas][_vp] = {}
-                    res[_bdas][_vp]['BC'] = vp[_vp]['BC'][_bdas]
-                for _bdas in vp[_vp]['interASratio']:
-                    res[_bdas][_vp]['interASratio'] = vp[_vp]['interASratio'][_bdas]
-
-            # 存储UR(_baas,_interas)
-            Res = {}
-            # 存储AUR
-            AUR = {}
-            for _bdas in res:
-                Res[_bdas] = {}
-                AUR[_bdas] = 0
-                for _interas in interAS:
-                    Res[_bdas][_interas] = 0
-
-                    # 获取一个List：某个观测点下BC值，路径比例，测量点观察到的边界AS比例
-                    temp = []
-                    for _vp in res[_bdas]:
-                        temp.append([])
-                        temp[-1].append(res[_bdas][_vp]['BC'])
-                        if _interas in res[_bdas][_vp]['interASratio']:
-                            temp[-1].append(res[_bdas][_vp]['interASratio'][_interas])
-                        else:
-                            temp[-1].append(0.0)
-                        temp[-1].append(vp[_vp]['bdASratio'])
-                    temp = sorted(temp, key=(lambda x: x[0]), reverse=True)
-                    bindex = int((len(temp) - 1) * alpha1)
-                    eindex = int((len(temp) - 1) * alpha2)
-
-                    #计算UR(_baas,_interas)
-                    for i in range(bindex, eindex + 1):
-                        # Res[_bdas][_interas] += temp[i][-1]*temp[i][-2]
-                        Res[_bdas][_interas] += max(temp[i][-2], 0.05)
-
-                    Res[_bdas][_interas] = Res[_bdas][_interas] / (eindex - bindex + 1)
-
-                    if _interas in uratio:
-                        AUR[_bdas] += uratio[_interas] * Res[_bdas][_interas]
-
-            with open(dsn_path + file[:2] + '_UR.json', 'w') as f:
-                json.dump(Res, f)
-            with open(dsn_path + file[:2] + '_AUR.json', 'w') as f:
-                json.dump(AUR, f)
 
 
 '''
 分析国家边界AS的安全性
-STEP1 计算国家边界AS的routingTree，加入各个国家内部的拓扑，以及各个国家边界之间的拓扑
+STEP1 计算国家边界AS的routingTree,加入各个国家内部的拓扑,以及各个国家边界之间的拓扑
 STEP2 去除国家内部的边，只保留国家边界之间的连接，增加国家内部国家边界之间连接的虚拟边
 STEP3 模拟断开
 '''
@@ -276,7 +48,6 @@ class broad_as_routingtree():
         self.make_country_code()
         self.add_internal_link()
         self.add_external_link()
-        # print(self.as_country_code_path)
         with open(self.as_country_code_path, 'w') as f:
             json.dump(self.country_code, f)
 
@@ -306,10 +77,8 @@ class broad_as_routingtree():
             r.append(a)
             with open(os.path.join(self.path, b + '.json'), 'w') as f:
                 json.dump(r, f)
-            # print(a, b)
             self.country_code[a + '-' + b] = str(self.code)
             self.code += 1
-            # self.country_code[a + '-' + b] = 'new'
             return self.country_code[a + '-' + b]
         return self.country_code[a]
 
@@ -319,11 +88,9 @@ class broad_as_routingtree():
         txt中把as号替换成新生成的as号
         '''
         with open(os.path.join(self.as_rela_file), 'r') as f:
-            # with open('/data3/lyj/shiyan_database/basicData/as_rela_from_asInfo.json', 'r') as f:
             as_rela = json.load(f)
 
         cc2as = os.listdir(self.path)
-        # print(self.file_name)
         with open(self.file_name, 'a') as f_dsn:
             for cc_file in cc2as:
                 with open(os.path.join(self.path, cc_file), 'r') as f:
@@ -350,7 +117,6 @@ class broad_as_routingtree():
         txt中把as号替换成新生成的as号
         '''
         with open(self.as_rela_file, 'r') as f:
-            # with open('/data3/lyj/shiyan_database/basicData/as_rela_from_asInfo.json', 'r') as f:
             as_rela = json.load(f)
 
         file_name = os.listdir('static/broadPath_v2/')
@@ -361,19 +127,10 @@ class broad_as_routingtree():
             for k in reader:
                 for i in reader[k].keys():
                     a_c, b_c = i.split('|')[1].split(' ')
-                    # print(a_c,b_c)
                     if a_c not in self.only_cc_list or b_c not in self.only_cc_list:
                         continue
-                    # temp+=list(reader[k].keys())
                     temp.append(i)
-                # print(temp)
-        with open('/home/peizd01/for_dragon/ccExternal/hiddenLink/hidden_link.json', 'r') as ff:
-            reader = json.load(ff)
-        for k in reader:
-            a1, c1, a2, c2 = k.split(' ')[0].split('-')[1], k.split(' ')[0].split('-')[0], k.split(' ')[1].split(
-                '-')[1], k.split(' ')[1].split('-')[0]
-            if 'None' in [a1, c1, a2, c2] or not a1.isdigit() or not a2.isdigit(): continue
-            temp.append(a1 + ' ' + a2 + '|' + c1 + ' ' + c2)
+
         temp = set(temp)
         with open(self.file_name, 'a') as f:
             for line in temp:
@@ -412,7 +169,6 @@ class broad_as_routingtree():
 
             f.close()
 
-    # @staticmethod
     def cal_rtree_code(self):
         '''
         生成边界as
@@ -424,9 +180,9 @@ class broad_as_routingtree():
         res = []
         Res = []
 
-        file_name = os.listdir('/home/peizd01/for_dragon/beginAsFile/broadPath_v2/')
+        file_name = os.listdir('static/broadPath_v2/')
         for file in file_name:
-            with open('/home/peizd01/for_dragon/beginAsFile/broadPath_v2/' + file, 'r') as f:
+            with open('static/broadPath_v2/' + file, 'r') as f:
                 r = json.load(f)
             for p in r:
                 for line in r[p]:
@@ -434,30 +190,14 @@ class broad_as_routingtree():
                     c1, c2 = line.split('|')[1].split(' ')
                     if c1 == '' or c2 == '' or f'{a1}-{c1}' not in code or c1 not in self.only_cc_list: continue
                     res.append(a1 + '-' + c1)
-        with open('/home/peizd01/for_dragon/ccExternal/hiddenLink/hidden_link.json', 'r') as ff:
-            reader = json.load(ff)
-        for k in reader:
-            a1, c1, a2, c2 = k.split(' ')[0].split('-')[1], k.split(' ')[0].split('-')[0], k.split(' ')[1].split(
-                '-')[1], k.split(' ')[1].split('-')[0]
-            if c1 == '' or c2 == '' or c1 not in self.only_cc_list: continue
-            res.append(a1 + '-' + c1)
-        # print(len(set(res)))
-        # with open('E:/Study/实验室/沙盘最新数据/mergeIP_1013/国家边界-相同AS-1020.json', 'r') as f:
-        #     r2 = json.load(f)
-        # for line in r2:
-        #     if line['begin']['CY'] != '' and line['end']['CY'] != '':
-        #         res.append(line['begin']['AS'] + '-' + line['begin']['CY'])
-        #         res.append(line['end']['AS'] + '-' + line['end']['CY'])
 
         res = list(set(res))
-        # print('len(res)',len(res))
         for i in res:
             Res.append(code[i])
 
         with open(self.cal_rtree_code_v2_path, 'w') as f:
             json.dump(Res, f)
 
-    # @staticmethod
     def remove_cc_internal_link(self,source_path):
         
         encoder_path = os.path.join(source_path,'as-country-code.json')
@@ -469,8 +209,6 @@ class broad_as_routingtree():
         file_name = os.listdir(npz_path)
         for file in file_name:
             # 过滤条件，只破坏我想破坏的
-
-            # if file.find('2.npz')==-1: continue
             remove_internal_link(source_path, incoder, file)
 
 def remove_internal_link(source_path, incoder, file):
@@ -489,7 +227,6 @@ def remove_internal_link(source_path, incoder, file):
         as1, cy1 = resolve(incoder[str(a)])
         as2, cy2 = resolve(incoder[str(b)])
         if cy1 != cy2 and 'None' not in [as1, as2, cy1, cy2]:
-                # if cy1!=cy2:
             broad.append(str(a))
             broad.append(str(b))
 
@@ -530,10 +267,6 @@ def remove_internal_link(source_path, incoder, file):
     with open(os.path.join(json_path, file[:-4] + '.cc_rela.json'), 'w') as f:
         json.dump(cc_rela, f)
 
-        # for key in cc_pair_link:
-        #     a, b = key.split(' ')
-        #     if a not in cc_rela[b][0] or b not in cc_rela[a][1]:
-        #         print('error')
 
 
 class monitor_remove_as():
@@ -546,6 +279,8 @@ class monitor_remove_as():
 
     def remove_country_link(self, queue:List[COUNTRY_CODE]) -> List[COUNTRY_CODE]:
         '''
+        queue 破坏的节点列表
+        删除国家内部链接
         '''
         res:List[COUNTRY_CODE] = []
         # 删除边
@@ -595,8 +330,6 @@ class monitor_remove_as():
         return self.remove_country_link(remove_cc_link)
 
     def remove_as(self, file):
-        # print(self.file_path)
-        # print(file)
         with open(os.path.join(self.file_path, file), 'r') as f:
             # 读取国家的前后向国家
             self.cc_rela = json.load(f)
@@ -612,15 +345,13 @@ class monitor_remove_as():
         nodelist = list(nodelist)
 
         # 挑选出只有某个国家的nodelist
-        with open(prefix + '/basicData/asn-iso.json', 'r') as f:
+        with open('static/asn-iso.json', 'r') as f:
             asn_iso = json.load(f)
 
         if self.specific_country:
             for i in range(len(nodelist) - 1, -1, -1):
                 if nodelist[i] not in asn_iso or asn_iso[nodelist[i]] != self.specific_country:
                     nodelist.pop(i)
-
-        # print(len(nodelist))
 
         # 就最多破坏500次
 
@@ -649,11 +380,8 @@ class monitor_remove_as():
             
             # 破坏N次，每次破坏1-N个节点
             for num in N:
-                # num += 1
-                # num = 1
                 flag = 0
                 cut_times:int = gl_get_cut_num(nodelist)
-                # cut_times:int = len(nodelist) * num
                 print(cut_times,flag)
                 while flag < cut_times:
                     # 每次破坏时最多破坏epoch次
@@ -680,30 +408,9 @@ class monitor_remove_as():
                     if linklist:
                         # 受影响的节点
                         res:List[COUNTRY_CODE] = self.remove_country_link(linklist)
-                    # res = self._remove_as(node)
-                    # print(node)
                     dsn_f.write(' '.join(node) + '|' + ' '.join(res) + '\n')
-                # break
 
         print(file + ' success')
-        # size = 1000
-        # flag = size-1
-        # for i in itertools.permutations(nodelist, num):
-        #     if flag>=size-1:
-        #         choise = np.random.uniform(0, len(nodelist)**num+1, size)
-        #         flag = -1
-        #     flag += 1
-        #     if choise[flag]<=len(nodelist):
-        #         node = list(set(list(i)))
-        #         node.sort()
-        #         # print(node)
-        #         with open(os.path.join(self.file_path, file), 'r') as f:
-        #             self.cc_rela = json.load(f)
-        #         res = self._remove_as(node)
-        #         dsn_f.write(' '.join(node)+'|'+' '.join(res)+'\n')
-
-
-
 
 
 def _monitor_remove_as(source_path,cut_node_depth,cut_rtree_model_path):
@@ -721,7 +428,6 @@ def _monitor_remove_as(source_path,cut_node_depth,cut_rtree_model_path):
     os.makedirs(dsn_path,exist_ok=True)
 
     def pool_monitor_as(file):
-        # N = 10
         if file.split('.')[0] + '.del.txt' in os.listdir(dsn_path):
             print(file + ' exist')
             return
@@ -739,7 +445,6 @@ def _monitor_remove_as(source_path,cut_node_depth,cut_rtree_model_path):
             file_run[-1].append(file)
         else:
             file_run.append([file])
-    #file_run.reverse()
     for _file_run in file_run:
         pool = ThreadPool()
         pool.map(pool_monitor_as, _file_run)
@@ -751,20 +456,6 @@ def _monitor_remove_as(source_path,cut_node_depth,cut_rtree_model_path):
 def create_nonconnect(source_path):
     # 已存在的所有国家
     exist = list(map(lambda x:x[:2],os.listdir(os.path.join(source_path,'cc2as'))))
-    # exist = [
-    #     "PG", "HN", "GP", "PR", "LU", "KG", "CG", "GG", "ST", "ME", "CN", "TT", "KY", "BV", "GR", "MQ", "VU", "IT", "UA", "EG",
-    #     "BS", "PK", "RE", "LR", "MF", "PM", "CW", "BN", "VA", "BD", "UG", "BT", "IL", "SN", "HK", "KW", "HT", "JM", "AT", "SC",
-    #     "IE", "BZ", "UY", "ES", "SZ", "RS", "AS", "GF", "NI", "JE", "MX", "AI", "WF", "BL", "BJ", "TZ", "CL", "CD", "AX", "BQ",
-    #     "NZ", "BE", "AU", "BW", "KH", "ZM", "TK", "PE", "JO", "ER", "NF", "GM", "CI", "MA", "NA", "CM", "NC", "RO", "KZ", "BF",
-    #     "SR", "GW", "AW", "SK", "AG", "DK", "ET", "GQ", "MU", "NP", "UZ", "VI", "SM", "FO", "KI", "CK", "GA", "IR", "PW", "CV",
-    #     "VE", "MN", "PY", "MV", "GI", "ZA", "MP", "TJ", "MS", "BM", "SB", "MM", "MH", "TO", "CA", "BB", "KN", "CF", "BH", "TD",
-    #     "NG", "DJ", "EE", "HU", "TR", "KR", "DO", "TG", "MG", "RU", "MW", "JP", "HR", "DM", "GU", "EC", "TC", "TW", "BO", "TV",
-    #     "PS", "IM", "BI", "GT", "AE", "SI", "ML", "FR", "VN", "BR", "DE", "GD", "VG", "MD", "CU", "BY", "LC", "SS", "MO", "CZ",
-    #     "CH", "PA", "DZ", "FJ", "SD", "US", "FI", "WS", "GY", "TH", "TL", "RW", "CR", "SO", "LV", "FM", "AR", "BA", "LT", "AL",
-    #     "CO", "GH", "IS", "BG", "LA", "TN", "IQ", "MZ", "LK", "LI", "PT", "LY", "ZW", "AD", "NR", "MT", "LB", "KE", "SG", "KM",
-    #     "TM", "PL", "AM", "GE", "OM", "AZ", "GL", "MR", "SX", "YE", "AF", "ID", "QA", "IN", "PH", "SA", "NE", "MY", "GN", "VC",
-    #     "NO", "NL", "GB", "FK", "LS", "MC", "SV", "SL", "KP", "NU", "SE", "CY", "MK", "AO", "PF"
-    # ]
     file_path = os.path.join(source_path,'json')
     dsn_path = os.path.join(source_path,'json')
     exist = set(exist)
@@ -778,55 +469,3 @@ def create_nonconnect(source_path):
             r:Set[COUNTRY_CODE] = exist - set(m.keys())
             with open(file_path + '/' + file.split('.')[0] + '.nonconnect.json', 'w') as f:
                 json.dump(list(r), f)
-
-
-# 计算边界AS所属组织的分布，具体为各个国家管理的边界AS数量、分布的广泛情况
-# 国家：{国家1：数量， 国家2：数量。。。}
-def broad_as_isp_basic():
-    res = {}
-    with open(prefix + '/basicData/asn-iso.json', 'r') as f:
-        asn_iso = json.load(f)
-    path = prefix + '/ccExternal/user_influence/AUR/'
-    for file in os.listdir(path):
-        if file.find('AUR') == -1: continue
-        _cc = file.split('_')[0]
-        with open(os.path.join(path, file), 'r') as f:
-            reader = json.load(f)
-        for _as in reader:
-            if _as in asn_iso:
-                if asn_iso[_as] not in res: res[asn_iso[_as]] = {}
-                if _cc not in res[asn_iso[_as]]: res[asn_iso[_as]][_cc] = 0
-                res[asn_iso[_as]][_cc] += 1
-
-    with open(prefix + '/ccExternal/analyse/asn_own_bdas_num.json', 'w') as f:
-        json.dump(res, f)
-
-
-prefix = '/home/peizd01/for_dragon/'
-# # 跑全局抗毁性前期计算
-# bar = broad_as_routingtree(os.path.join(prefix, \
-#                 'ccExternal/globalCountryLabel/add_hidden_link/as_rela_code.txt'))
-# broad_as_routingtree.cal_rtree_code()
-
-# #create rtree
-
-# # # 优化生成rtree
-
-# broad_as_routingtree.remove_cc_internal_link(
-#     '/home/peizd01/for_dragon/pzd_external_2/rtree',
-#     os.path.join(prefix, 'ccExternal/globalCountryLabel/add_hidden_link/as-country-code.json'),
-#     '/home/peizd01/for_dragon/pzd_external_2/json')
-
-# # # # 跑全局抗毁性
-# # # 模拟破坏
-# file_path = '/home/peizd01/for_dragon/pzd_external_2/json'
-# dsn_path = '/home/peizd01/for_dragon/pzd_external_2/monitor'
-# os.makedirs(dsn_path,exist_ok=True)
-# _monitor_remove_as(source_path)
-
-# # 计算边界AS用户影响力
-# # ur = user_radio_v2()
-# # Path = [os.path.join(prefix,'beginAsFile/mergeData4_bgp/'),os.path.join(prefix+'beginAsFile/mergeData4/')]
-# # ur.extract_country_broad_path(Path, os.path.join(prefix,'ccExternal/user_influence/path/'))
-# # ur.calculate_ratio(os.path.join(prefix,'ccExternal/user_influence/path/'), os.path.join(prefix,'ccExternal/user_influence/info/'))
-# # ur.user_radio(os.path.join(prefix,'ccExternal/user_influence/info/'), os.path.join(prefix,'ccExternal/user_influence/AUR/'), 0.1, 0.9)

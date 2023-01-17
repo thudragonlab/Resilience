@@ -64,17 +64,11 @@ def peerToPeer(routingTree, BFS, graph, levels):
     purpose:
         connect new nodes to nodes added in step 1 with relationship = 1
     '''
-    oldNodes = []
     old = {}
     allNodes = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
     for node in allNodes:
         old[node] = 0
 
-    # for pair in BFS:
-    #     print(pair)
-    #     oldNodes.extend(pair[1])
-    #     for node in pair[1]:
-    #         old[node] = 1
     newBFS = copy.deepcopy(BFS)
     newLevels = levels
     for pair in BFS:
@@ -106,7 +100,6 @@ def providerToCustomer(routingTree, BFS, graph, levels):
     purpose:
         breadth first search of tree, add nodes with relationship 2
     '''
-    edgesCount = 0
     oldNodes = []
     old = {}
     allNodes = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
@@ -114,9 +107,6 @@ def providerToCustomer(routingTree, BFS, graph, levels):
         old[node] = 0
     for pair in BFS:
         oldNodes.extend(pair[1])
-
-    # for node in oldNodes:
-    #     old[node] = 1
 
     for pair in BFS:
         level = pair[0]
@@ -148,8 +138,6 @@ def saveAsNPZ(fileName, matrix, destinationNode):
     col = matrixCOO.col
     data = matrixCOO.data
     shape = matrixCOO.shape
-    # print(row)
-    # print(col)
     np.savez(fileName, row=row, col=col, data=data, shape=shape)
 
 
@@ -163,7 +151,6 @@ def makeRoutingTree(destinationNode, fullGraph, routingTree, new_npz_path):
 
     print("=================" + str(destinationNode) + "=======================")
 
-    # print('routingTree',routingTree)
     stepOneRT, stepOneNodes, lvls = customerToProviderBFS(destinationNode, routingTree, fullGraph)
     stepTwoRT, stepTwoNodes, lvlsTwo = peerToPeer(stepOneRT, stepOneNodes, fullGraph, lvls)
     stepThreeRT = providerToCustomer(stepTwoRT, stepTwoNodes, fullGraph, lvlsTwo)
@@ -172,32 +159,21 @@ def makeRoutingTree(destinationNode, fullGraph, routingTree, new_npz_path):
 
 
 def create_rela_file(relas):
-    # sum = 0
     relas_list = []
-    # with open(relaFile, 'w') as f:
     for c in relas:
-        # sum += 1
         for b in relas[c][1]:
             relas_list.append([str(c), str(b), -1])
-            # f.write(str(c) + '|' + str(b) + '|-1\n')
         for b in relas[c][2]:
             if c <= b:
                 relas_list.append([str(c), str(b), 0])
-                # f.write(str(c) + '|' + str(b) + '|0\n')
-    # relas_list = []
     return relas_list
-    # print(sum)
 
 
 def dataConverter(relas_list):
     returned_list = []
 
     for data in relas_list:
-        # while line:
-        # if (line[0] != '#'):
         output_data = []
-        # data = line.split('|')
-        # outString = str(data[0]) + "\t" + str(data[1])
         try:
             if (int(data[0]) not in output_data):
                 output_data.append(data[0])
@@ -205,7 +181,6 @@ def dataConverter(relas_list):
                 output_data.append(data[1])
 
         except Exception as e:
-            # print(e)
             raise e
             exit()
         if (data[2] == 0 or data[2] == "0"):
@@ -222,25 +197,12 @@ def graphGenerator(data_list):
 
     def determineNodeCount(_data_list):
         nodeList = []
-        # with open(fileName, 'r') as f:
-        #     content = f.readlines()
-        # print(fileName)
         for splitLine in _data_list:
-            # if (line[0] != '#'):
-            #     splitLine = line.split("\t", 2)
             if (int(splitLine[0]) not in nodeList):
                 nodeList.append(int(splitLine[0]))
             if (int(splitLine[1]) not in nodeList):
                 nodeList.append(int(splitLine[1]))
-        # print("Node Count: " + str(len(nodeList)))
-        # print("Max Node ID: " + str(max(nodeList)))
 
-        ### Saving the node list ###
-        # outFileList = outName + ".nodeList"
-        # ouf = open(outFileList, 'w')
-        # for node in nodeList:
-        #     ouf.write(str(node) + "\n")
-        # ouf.close()
         return max(nodeList)
 
     def fileToSparse(d_list):
@@ -254,16 +216,11 @@ def graphGenerator(data_list):
 
         numNodes = determineNodeCount(d_list)
 
-        # with open(fileName, 'r') as f:
-        #     content = f.readlines()
         empMatrix = sparse.lil_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
         i = 1
         total = len(d_list)
         for splitLine in d_list:
-            # if i % 1000 == 0:
-                # print("completed: " + str((float(i) / float(total)) * 100.0))
             i += 1
-            # splitLine = line.split("\t", 2)
             node1 = int(splitLine[0])
             node2 = int(splitLine[1])
             relationship = splitLine[2][:3]
@@ -274,43 +231,31 @@ def graphGenerator(data_list):
                 empMatrix[node1, node2] = 2
                 empMatrix[node2, node1] = 3
         empMatrix = empMatrix.tocsr()
-        # scipy.io.mmwrite(outName, empMatrix)
-        # start = time.time()
-        # test = scipy.io.mmread(outName).tolil()  # 5.4MB to save sparse matrix
-        # end = time.time()
-        # print(end - start, " seconds to load")  # 2.3 seconds
         return numNodes, empMatrix
 
     return fileToSparse(data_list)
 
 
 def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc_as_list_path: str, add_link_path: str,
-                      asn: str,old_as_data:Set[AS_CODE],numberAsns:Dict[AS_CODE,int]) -> Dict[int, List[List[int]]]:
+                      asn: str, old_as_data: Set[AS_CODE], numberAsns: Dict[AS_CODE, int]) -> Dict[int, List[List[int]]]:
 
     state = {'c2p': 0, 'p2p': 1, 'p2c': 2, 0: 'c2p', 1: 'p2p', 2: 'p2c'}
     match_state = {'1': {'1': 'p2p', '2': 'c2p'}, '2': {'1': 'p2c'}}
+
     def filter_opt_link(as_list, state_list):
-        
+
         left_as, right_as = as_list
         begin_state, end_state = state_list
         s = state[match_state[begin_state][end_state]]
 
-        # 如果优化的节点在原来的路由树中不存在，就跳过
-        # if left_as not in old_as_data:
-        #     return False
-
-        # 如果优化的节点在原来的topo数据中不存在，就跳过
-        # if left_as not in relas or right_as not in relas:
-        #     return False
-        
         # 如果set里面已经有了两个链接，只是链接类型不一样，则跳过
-        if '-'.join([str(left_as), str(right_as)]) in list(map(lambda x : '-'.join(x.split('-')[:-1]),add_link)):
+        if '-'.join([str(left_as), str(right_as)]) in list(map(lambda x: '-'.join(x.split('-')[:-1]), add_link)):
             return False
-        if '-'.join([str(right_as), str(left_as)]) in list(map(lambda x : '-'.join(x.split('-')[:-1]),add_link)):
+        if '-'.join([str(right_as), str(left_as)]) in list(map(lambda x: '-'.join(x.split('-')[:-1]), add_link)):
             return False
-        
+
         if right_as in numberAsns and left_as in numberAsns:
-            
+
             # 如果作为provider的cone比customer的要小3倍，跳过
 
             #c2p
@@ -320,74 +265,73 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
             if numberAsns[left_as] * 3 < numberAsns[right_as] and s == 2:
                 return False
 
-
         else:
-            return False            
+            return False
 
         return True
 
-        
     def add_opt_link():
-            old_set_len = len(add_link)
-            for line in m:
-                as_list, state_list = line[:-1]
-                if not filter_opt_link(as_list, state_list):
-                    continue
+        old_set_len = len(add_link)
+        for line in m:
+            as_list, state_list = line[:-1]
+            if not filter_opt_link(as_list, state_list):
+                continue
 
-                left_as, right_as = as_list
+            left_as, right_as = as_list
 
-                begin_state, end_state = state_list
-                link_state = state[match_state[begin_state][end_state]]
+            begin_state, end_state = state_list
+            link_state = state[match_state[begin_state][end_state]]
 
-                # 统一p2p链接格式
-                if link_state == 1:
-                    if int(left_as) > int(right_as):
-                        right_as, left_as = as_list
+            # 统一p2p链接格式
+            if link_state == 1:
+                if int(left_as) > int(right_as):
+                    right_as, left_as = as_list
 
+            add_link.add('-'.join([str(left_as), str(right_as), str(state[match_state[begin_state][end_state]])]))
+            # 如果set变化了
+            if old_set_len != len(add_link):
+                find_rtree_list(right_as)
+                break
 
-                add_link.add('-'.join([str(left_as), str(right_as), str(state[match_state[begin_state][end_state]])]))
-                # 如果set变化了
-                if old_set_len != len(add_link):
-                    find_rtree_list(right_as)
-                    # old_as_data.add(right_as)
-                    break
     def create_relas(as_rela: str) -> Dict[int, List[List[int]]]:
-            # global relas
-            relas = {}
-            with open(cc_as_list_path, 'r') as f:
-                cclist = json.load(f)
-            for c in cclist:
-                #[provider、customer、peer]
-                relas[c] = [[], [], []]
+        relas = {}
+        with open(cc_as_list_path, 'r') as f:
+            cclist = json.load(f)
+        for c in cclist:
+            #[provider、customer、peer]
+            relas[c] = [[], [], []]
 
-            for c in relas:
-                if c in as_rela:
-                    relas[c][2] += [i for i in as_rela[c][0] if i in cclist]
-                    for i in relas[c][2]:
-                        relas[i][2].append(c)
-                    relas[c][1] += [i for i in as_rela[c][1] if i in cclist]
-                    for i in relas[c][1]:
-                        relas[i][0].append(c)
+        for c in relas:
+            if c in as_rela:
+                relas[c][2] += [i for i in as_rela[c][0] if i in cclist]
+                for i in relas[c][2]:
+                    relas[i][2].append(c)
+                relas[c][1] += [i for i in as_rela[c][1] if i in cclist]
+                for i in relas[c][1]:
+                    relas[i][0].append(c)
 
-            for c in list(relas.keys()):
-                if relas[c] == [[], [], []]:
-                    del relas[c]
+        for c in list(relas.keys()):
+            if relas[c] == [[], [], []]:
+                del relas[c]
 
-            return relas
+        return relas
+
 
 # 递归寻找新加入的节点和其子节点
+
     def find_rtree_list(asn):
-        as_list =  []
+        as_list = []
         old_as_data.add(asn)
         if asn not in relas:
             return
         for i in relas[asn]:
             as_list += i
-        
+
         for ii in set(as_list):
             if ii in old_as_data:
                 continue
             find_rtree_list(ii)
+
     json_data = as_rela_txt_dont_save(relas_file)
     relas = create_relas(json_data)
     with open(add_link_file, 'r') as f:
@@ -395,26 +339,7 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
 
     add_link = set()
     for i in range(add_link_num):
-            add_opt_link()
-
-   
-    
-    
-    # for i in relas:
-    #     print(i,relas[i])
-    
-    
-
-    # print(old_as_data)
-    # print(m)
-    
-    
-    # print(add_link)
-    # elif isinstance(m, list):
-    #     for line in m:
-    #         add_link.add([str(left_as), str(right_as), state[match_state[begin_state][end_state]]])
-    #         if len(add_link) > add_link_num:
-    #             break
+        add_opt_link()
 
     add_link_list = list(map(lambda x: x.split('-'), add_link))
     with open(os.path.join(add_link_path, f'add_link-{asn}.{add_link_num}.json'), 'w') as f:
@@ -442,7 +367,7 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
 class monitor_cut():
     # 3、读取旧的.addDel文件 计算新routingTree下模拟的结果 （37服务器 routingTree.py）
 
-    def __init__(self, file_path, old_del_path, dsn_path, asn,all_as_list):
+    def __init__(self, file_path, old_del_path, dsn_path, asn, all_as_list):
         self.file_name = file_path
         self.graph = {}
         self.asn = asn
@@ -456,7 +381,6 @@ class monitor_cut():
 
         # 创建图
         self.from_npz_create_graph()
-        # print(self.file_name + ' graph created')
         with open(self.tempgraphname, 'w') as f:
             json.dump(self.graph, f)
 
@@ -497,36 +421,23 @@ class monitor_cut():
                         oldbreak = line.split('|')[1].split(' ')
                         linkres = self.monitor_cut_node(queue)
 
-                        # if len(linkres) > len(oldbreak):
-                        #     print(self.tempgraphname, line, linkres, 'bad error\n')
-
-                        # elif len(linkres)<len(oldbreak):
-                        #    print(self.tempgraphname, line, linkres, 'good error\n')
-
                         dsn_f.write(line.split('|')[0] + '|' + ' '.join(list(map(str, linkres))) + '\n')
                         with open(self.tempgraphname, 'r') as graph_f:
                             self.graph = json.load(graph_f)
                     line = fp.readline()
 
     def monitor_cut_node(self, queue):
-        # res = []
         for node in queue:
-            # print(node)
             for i in self.graph[node][1]:  #找node连了哪些节点
-                # print(i,self.graph[i][0],node)
                 self.graph[i][0].remove(node)  #在node的后向点的前向点中把node删了
 
             self.graph[node][1] = []  # node设置成不链接任何节点
-        # print('--')
         while queue:
             n = queue.pop(0)  #取被影响的节点
-            # print(n,'?')
-            # res.append(n)  #加入返回结果列表
             if n not in self.graph:
                 continue
 
             for i in self.graph[n][0]:
-                # if n in self.graph[i][1]:
                 self.graph[i][1].remove(n)  # 在被影响节点n的前向点中的后向点中把n删了
                 if len(self.graph[i][1]) == 0:  # 如果n的前向点没有指向其他的节点，那么这个点也列为被影响的节点
                     queue.append(i)
@@ -535,14 +446,14 @@ class monitor_cut():
 
 
 @record_launch_time_and_param(2, 1)
-def add_npz_and_monitor_cut(output_path, m, cname, num_list,cc2as_list_path,numberAsns):
+def add_npz_and_monitor_cut(output_path, m, cname, num_list, cc2as_list_path, numberAsns):
     dst_path = os.path.join(output_path, m)
     new_path = os.path.join(dst_path, SUFFIX, 'new_optimize')
     floyed_path = os.path.join(dst_path, SUFFIX, 'floyed')
     rtree_path = os.path.join(dst_path, 'rtree/')
     add_link_path = os.path.join(floyed_path, 'add_link', cname)
 
-    with open(cc2as_list_path,'r') as f:
+    with open(cc2as_list_path, 'r') as f:
         all_as_list = json.load(f)
 
     mkdir(new_path)
@@ -569,30 +480,28 @@ def add_npz_and_monitor_cut(output_path, m, cname, num_list,cc2as_list_path,numb
         mkdir(new_del_path)
         mkdir(temp_path)
 
-        # if os.path.exists(old_npz_file) and not os.path.exists(new_del_file):
         if os.path.exists(old_npz_file):
             asn = file.split('.')[0][9:]
             old_npz_data = np.load(old_npz_file)
-            
+
             old_as_data = [asn]
             old_as_data += list(old_npz_data['row'])
             old_as_data += list(old_npz_data['col'])
-            rela = generate_new_rela(add_link_file, relas_file, add_link_num, cc_as_list_path, add_link_path,
-                                     asn,set(old_as_data),numberAsns)  # 把优化的节点加入到rtree连接文件中
-            
+            rela = generate_new_rela(add_link_file, relas_file, add_link_num, cc_as_list_path, add_link_path, asn,
+                                     set(old_as_data), numberAsns)  # 把优化的节点加入到rtree连接文件中
+
             maxNum, fullGraph = graphGenerator(dataConverter(create_rela_file(rela)))
             routingTree = sparse.dok_matrix((maxNum + 1, maxNum + 1), dtype=np.int8)
 
             makeRoutingTree(int(asn), fullGraph, routingTree, new_npz_path)
-            monitor_cut(new_npz_file, old_del_path, new_del_file, asn,all_as_list)
+            monitor_cut(new_npz_file, old_del_path, new_del_file, asn, all_as_list)
 
     thread_pool_inner = ThreadPool(multiprocessing.cpu_count() * 10)
     for _file in os.listdir(os.path.join(rtree_path, cname)):
         if _file.find('addDel') == -1:
             continue
-        # for _add_link_num in range(1, Num):
         for _add_link_num in num_list:
-            add_npz_and_monitor_cut_thread (
+            add_npz_and_monitor_cut_thread(
                 _file,
                 _add_link_num,
             )

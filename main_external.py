@@ -90,9 +90,7 @@ if __name__ == '__main__':
     extract_connect_list(dst_dir_path,cut_node_depth)
     groud_truth_based_anova(dst_dir_path)
     groud_truth_based_var(dst_dir_path)
-    
-    # # # # groud_truth_based_anova 内部调用 anova_sort
-    # # # ## anova_sort(os.path.join(source_path,'result','anova'), 'democracy')
+
 
 
     country_broadas_rank(os.path.join(dst_dir_path,'result/anova/sorted_country_democracy.json'),\

@@ -8,9 +8,6 @@ def get_random_index(node2):
     random_index = randint(0,len(node2) - 1)
     result = node2[random_index]
     node2.remove(result)
-    # if random_index in old_index_list:
-    #     return get_random_index(node2)
-    # old_index_list.append(random_index)
     return result
 
 

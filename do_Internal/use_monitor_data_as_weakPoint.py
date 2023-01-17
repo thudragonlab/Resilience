@@ -12,7 +12,6 @@ def make_weak_point(rtree_path:str, cc:str, dst_path:str):
     sample_result = {}
     result = {}
     for file_name in files_list:
-        # print(file_name)
         if 'addDel' in file_name:
             asn = file_name[9:-11]
             with open(os.path.join(rtree_path, cc, file_name)) as f:

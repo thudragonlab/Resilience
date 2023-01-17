@@ -5,20 +5,14 @@
 生成国家内部routingTree
 
 '''
-from ast import Lambda
 import os
 import json
 import copy
 from other_script.my_types import *
 import numpy as np
 import time
-from mpi4py import MPI
 from scipy import sparse
 import scipy.io
-import itertools
-# from itertools import izip
-from multiprocessing.pool import ThreadPool
-from importlib import import_module
 import multiprocessing
 izip=zip
 relas = {}
@@ -66,7 +60,7 @@ def dataConverter(inFile, outFile):
         ouf.write(str(node) + "\n")
     ouf.close()
 
-def graphGenerator(inFile, outFile,v2_path):
+def graphGenerator(inFile, outFile):
     def determineNodeCount(fileName, outName):
         nodeList = []
         with open(fileName, 'r') as f:
@@ -99,7 +93,6 @@ def graphGenerator(inFile, outFile,v2_path):
         usage: fileToSparse("Cyclops_caida_cons.txt")
         '''
 
-        # numNodes = determineNodeCount(fileName, outName)
         with open(fileName,'r') as ff:
             numNodes = -1
             for i in ff.readlines():
@@ -110,11 +103,7 @@ def graphGenerator(inFile, outFile,v2_path):
                 numNodes = max(int(as1),numNodes)
                 numNodes = max(int(as2),numNodes)
                 
-            # asns = json.load(ff)
-            # asns_list = list(map(lambda x : int(x),asns))
-            # numNodes = max(asns_list)
             print('max(asns_list)',numNodes)
-        # numNodes = determineNodeCount(fileName, outName)
 
         with open(fileName, 'r') as f:
             content = f.readlines()
@@ -128,8 +117,6 @@ def graphGenerator(inFile, outFile,v2_path):
             splitLine = line.split("\t", 2)
             node1 = int(splitLine[0])
             node2 = int(splitLine[1])
-            # if node1 not in asns or node2 not in asns:
-            #     continue
             relationship = splitLine[2][:3]
             if relationship == "p2p":
                 empMatrix[node1, node2] = 1
@@ -170,7 +157,6 @@ def customerToProviderBFS(destinationNode, routingTree, graph):
         level = pair[0]
         vertices = pair[1]
         for vertex in vertices:
-            # print(vertex)
             
             for node, relationship in izip(graph[vertex].nonzero()[1], graph[vertex].data):
                 if (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0) and (
@@ -211,7 +197,6 @@ def peerToPeer(routingTree, BFS, graph, levels):
     newLevels = levels
     for pair in BFS:
         level = pair[0]
-        # print "---level---: ",level
         vertices = pair[1]
         for vertex in vertices:
             for node, relationship in izip(graph[vertex].nonzero()[1], graph[vertex].data):
@@ -236,7 +221,6 @@ def providerToCustomer(routingTree, BFS, graph, levels):
     purpose:
         breadth first search of tree, add nodes with relationship 2
     '''
-    edgesCount = 0
     oldNodes = []
     old = {}
     allNodes = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
@@ -273,8 +257,6 @@ def saveAsNPZ(del_path,destinationNode, matrix):
     data = matrixCOO.data
     
     shape = matrixCOO.shape
-    # if len(data) == 0:
-    #     return
     np.savez(os.path.join(del_path, "dcomplete" + str(destinationNode)), row=row, col=col, data=data, shape=shape)
     remove_internal_link(destinationNode,matrixCOO)
 
@@ -378,77 +360,17 @@ def makeRoutingTree(destinationNode,fullGraph,file_name,numNodes,del_path):
 
 
 def speedyGET(args):
-    # def checkPreviousLevelsAlt(BFS, node, level):
-    #     '''
-    #     check if node is in BFS at given level or any previous level
-    #     '''
-    #     while level >= 0:
-    #         if node in BFS[level][1]:
-    #             return True
-    #         level -= 1
-    #     return False
-
-
     ### Helper Functions ###
-
-    ### getRankBounds
-    ### Input:
-    ###   nodeListFile, a file holding list of ASNode IDs
-    ### Output:
-    ###   bounds, a dictionary describing the bounds of the rank
-    def getRankBounds(nodeList):
-        comm = MPI.COMM_WORLD
-        rank = comm.Get_rank()
-        numRanks = comm.Get_size()
-
-        dataSize = len(nodeList)
-
-        if (verbose):
-            print("Node Count: " + str(dataSize))
-
-        dataSizePerRank = dataSize / numRanks
-        leftOver = dataSize % numRanks
-        startIndex = dataSizePerRank * rank
-        lastIndex = (dataSizePerRank * (rank + 1)) - 1
-        if (rank < leftOver):
-            dataSizePerRank += 1
-            if (rank != 0):
-                startIndex += 1
-                lastIndex += 2
-            else:
-                lastIndex += 1
-        else:
-            startIndex += leftOver
-            lastIndex += leftOver
-
-        return startIndex, lastIndex
 
     # Interpret User Input
     verbose = False
     if (args[2] == 'v'):
         verbose = True
-    # interpretArgs(args) #TODO
 
     ### initialization phase ###
     fullGraph = scipy.io.mmread(str(args[1])).tocsr()  # read the graph on all ranks
     
     file_name = os.listdir(str(args[3]))
-    # if (verbose):  ### Printing MPI Status for debugging purposes
-    #     print("MPI STATUS... rank " + str(rank) + " reporting... working on nodes " + str(firstIndex) + " to " + str(
-    #         lastIndex))
-
-    # comm.Barrier()  ## Synchronize here, then continue ##
-
-    # timer = {'start': 0.0, 'end': 0.0}
-    # timer['start'] = time.time()
-
-    ### Primary Loop, executed distrubitively in parallel
-    
-    # for index in range(int(firstIndex), int(lastIndex) + 1):
-    #    file_name = os.listdir(str(args[3]))
-    #    destinationNode = nodeList[index]
-    #    routingTree = makeRoutingTree(destinationNode)  ### Calculate the routing tree for this node
-
 
     pool = multiprocessing.Pool(20)
     
@@ -458,47 +380,15 @@ def speedyGET(args):
     numNodes = args[5]
     print('max(asns_list)',numNodes)
     for index in asns_list:
-        # file_name = os.listdir(str(args[3]))
         destinationNode = index
-        # routingTree = makeRoutingTree(destinationNode,fullGraph,file_name,int(numNodes),str(args[3]))  ### Calculate the routing tree for this node
         pool.apply_async(makeRoutingTree,(destinationNode,fullGraph,file_name,numNodes,str(args[3],)))
     pool.close()
     pool.join()
-    # try:
-    #     for index in asns_list:
-    #         # file_name = os.listdir(str(args[3]))
-    #         destinationNode = index
-    #         # routingTree = makeRoutingTree(destinationNode,fullGraph,file_name,int(numNodes),str(args[3]))  ### Calculate the routing tree for this node
-    #         pool.apply_async(makeRoutingTree,(destinationNode,fullGraph,file_name,numNodes,str(args[3],)))
-    #     pool.close()
-    #     pool.join()
-    # except Exception as e:
-    #     print('Exception',e)
-    
         
-
-    # with open('/data/lyj/shiyan_database/ccExternal/globalCountryLabel/add_hidden_link/cal_rtree_code_v2.json', 'r') as f:
-    #     cal_node = json.load(f)
-    # cal_node.reverse()
-    # cal_node = cal_node[int(len(cal_node)/2):]
-    # with open('/data/lyj/shiyan_database/ccExternal/globalCountryLabel/add_hidden_link/rtree/errorfile.txt', 'a') as err_f:
-    #     for nodename in cal_node:
-    #         file_name = os.listdir(str(args[3]))
-    #         try:
-    #             routingTree = makeRoutingTree(int(nodename))
-    #         except:
-    #             err_f.write(nodename+'\n')
-    
-    ### wait for all ranks to check time
-    # comm.Barrier()
-    # timer['end'] = time.time()
-    # if (rank == 0):
-    #     print("All Routing Trees Completed. Elapsed Time: " + str((timer['end'] - timer['start'])))
-
 
 def create_rela_file(relas, relaFile):
     '''
-    从国家的as，以及as关系文件，提取出国家内部拓扑的relas [provider、customer、peer]
+    从国家的as,以及as关系文件,提取出国家内部拓扑的relas [provider、customer、peer]
     '''
     sum = 0
     with open(relaFile, 'w') as f:
@@ -513,8 +403,7 @@ def create_rela_file(relas, relaFile):
 
 def run_routingTree(dsn_file,v2_path, relaFile):
     dataConverter(relaFile, 'bgp-sas.npz')
-    # print(relaFile)
-    maxNum = graphGenerator('bgp-sas.npz', 'routingTree.mtx',v2_path)
+    maxNum = graphGenerator('bgp-sas.npz', 'routingTree.mtx')
     speedyGET(['','routingTree.mtx', 'v', dsn_file, 'routingTree.mtx.nodeList', str(maxNum),v2_path])
 
 
@@ -522,7 +411,6 @@ def run_routingTree(dsn_file,v2_path, relaFile):
 
 def monitor_routingTree(as_rela_file,v2_path,dsn_path):
     global relas
-    
     run_routingTree(dsn_path, v2_path,as_rela_file)
 
 
@@ -554,25 +442,4 @@ def main(prefix,v2_path,as_rela_file):
     if not os.path.exists(p2): os.makedirs(p2)
     cces = list(temp.keys())
     cces.reverse()
-    # for cc in cces:
-    #     # if cc == 'US':
-    #     #     continue
-    #     # if cc in ['BR', 'US', 'RU']: continue
-    #     relas = {}
     monitor_routingTree(as_rela_file,v2_path, p2)
-
-
-
-
-# 需要定义old_rank_file、p1、p2、as_rela_file
-# 从old_rank_file拿到需要计算的区域，可以自己定义，具体在main()使用
-# p1是存储每个国家的AS
-# p2是结果输出路径，生成每个AS的routingTree 
-# as_rela_file存储全球的as关系
-
-# p1 = os.path.join(prefix,'public/cc2as/')
-# as_rela_file = '/home/peizd01/for_dragon/new_data_pzd/as_rela_code-as_rela_from_toposcope_hidden.json'
-
-
-# main(prefix,as_rela_file)
-# [36344,21326,19368,6621,33004]

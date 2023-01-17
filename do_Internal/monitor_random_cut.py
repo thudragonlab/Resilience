@@ -41,22 +41,15 @@ class monitor_cut():
 
         #创建图
         self.from_npz_create_graph()
-        # print(file_path + ' graph created')
-        # print(self.res[''])
         with open(self.tempgraphname, 'w') as f:
             json.dump(self.graph, f)
 
         with open(self.dsn_path, 'w') as f:
-            # f.write('#|' + str(len(self.graph)) + '\n')
             f.write('#|' + str(len(self.all_as_list)) + '\n')
-        # if del_n:
         if len(self.graph) < self.n_node:
             self.n_node = len(self.graph) // 2
-                # self.n_link = len(self.graph) // 2
 
-        # print(file_path + ' monitor node')
         self.monitor_random_node_addDel()
-        # self.monitor_random_link_addDel()
 
     def from_npz_create_graph(self):
         '''
@@ -72,8 +65,6 @@ class monitor_cut():
             if b not in self.graph: self.graph[b] = [[], []]
             self.graph[a][1].append(b)
             self.graph[b][0].append(a)
-        #monitor_cut_node(self.graph, list(self.graph.keys())[2])
-        # self.res[''] = len(self.graph)
         for i in self.graph[self.asn][1]:
             self.graph[i][0].remove(self.asn)
             self.graph[self.asn][1].clear()
@@ -85,23 +76,18 @@ class monitor_cut():
         '''
         nodelist:List[AS_CODE] = set(self.row)
         tempG:int = len(self.graph)
-        # print(self.dsn_path)
         
         cut_times:int = gl_get_cut_num(nodelist)
         with open(self.dsn_path, 'a') as f:
             for num in range(1, self.n_node):
                 flag = 0
                 while flag < cut_times:
-                    # while flag<epoch:
                     flag += 1
                     node:List[AS_CODE] = random.sample(nodelist, num)
                     node = list(set(list(node)))
                     node.sort()
                     temp:str = ' '.join(list(map(str, node)))
                     linkres:List[AS_CODE] = self.monitor_cut_node(node)
-                    # if '6471' in node:
-                    
-                    # f.write(temp + '|' + str(linkres) + '\n')
                     f.write(temp + '|' + ' '.join(list(map(str, linkres))) +
                             '\n')
                     if len(self.graph) != tempG:
@@ -132,9 +118,6 @@ class monitor_cut():
                 self.graph[i][1].remove(n)
                 if len(self.graph[i][1]) == 0: queue.append(i)
             del self.graph[n]
-        
-        # self.all_as_list
-        # self.graph.keys()
         return [ii for ii in self.all_as_list if ii not in self.graph.keys()]
 
 
@@ -155,12 +138,8 @@ def do_cut_by_cc(cc:COUNTRY_CODE, path:RTREE_PATH, asn_data:Dict[AS_CODE, int]):
         if f[9:-4] not in asn_data:
             continue
         node_num.append((f, asn_data[f[9:-4]]))
-    # file = sorted(node_num, key=lambda x: x[1], reverse=True)
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
-    # file_name = os.listdir(os.path.join(path, cc))
     for f in gl_get_destroy_trees(node_num):
-        # if f[0][:-4] + '.addDel.txt' in file_name:
-        #     continue
         try:
             thread_pool.apply_async(monitor_cut_class2func_inter,
                               (os.path.join(path, cc, f[0]), os.path.join(gl_cc2as_path,'%s.json' % cc)))
