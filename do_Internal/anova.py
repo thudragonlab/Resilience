@@ -2,18 +2,11 @@
 # _*_ coding:utf8 _*_
 import os
 import json
-import csv
-from math import floor
-from sklearn import linear_model
 from do_Internal.sort_rank import cal_rank_weight
 from other_script.my_types import *
 import numpy as np
 from scipy import stats
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from statsmodels.stats.multicomp import MultiComparison
-from pyecharts import options as opts
-from importlib import import_module
-from pyecharts.charts import Page, Tree, Bar, Line
 from other_script.util import mkdir, record_launch_time, record_launch_time_and_param
 from pyecharts.globals import WarningType
 import multiprocessing
@@ -30,12 +23,13 @@ value索引为i存储破坏i个节点的所有连通性结果
 as_importance_pat: WEIGHT_PATH = ''
 gl_cut_node_depth: int
 cc_list: List[COUNTRY_CODE] = []
-gl_cal_rank_model:Callable[[Dict[AS_CODE,int],Dict[AS_CODE,int]],int] = None
+gl_cal_rank_model: Callable[[Dict[AS_CODE, int], Dict[AS_CODE, int]], int] = None
+
 
 def extract_connect_list_async(
-    cc: COUNTRY_CODE,
-    path: RTREE_PATH,
-    dsn_path: COUNT_NUM_PATH,
+        cc: COUNTRY_CODE,
+        path: RTREE_PATH,
+        dsn_path: COUNT_NUM_PATH,
 ):
     '''
     cc: country code
@@ -44,6 +38,7 @@ def extract_connect_list_async(
 
     计算as对应的权重数据
     '''
+
     def basic_user_domain(line: str) -> Tuple[AFFECTED_AS_NUMBER, USER_IMPORTANT_WEIGHT, DOMAIN_IMPORTANT_WEIGHT]:
         '''
         line addDel.txt的每行记录(第一行除外)
@@ -114,7 +109,7 @@ def extract_connect_list(path: RTREE_PATH, dsn_path: COUNT_NUM_PATH):
     pool.join()
 
 
-def anova_sort(dsn_path:ANOVA_NUM_PATH, VALUE:ASPECT_TPYE, reader:List[Tuple[str,str,int]]):
+def anova_sort(dsn_path: ANOVA_NUM_PATH, VALUE: ASPECT_TPYE, reader: List[Tuple[str, str, int]]):
     '''
     dsn_path: anova存储路径
     VALUE : basic|user|domain 维度类型
@@ -122,7 +117,7 @@ def anova_sort(dsn_path:ANOVA_NUM_PATH, VALUE:ASPECT_TPYE, reader:List[Tuple[str
 
     进行最终排序,结果存到dsn_path
     '''
-    res:Dict[str,Tuple[List[str],List[str],List[str]]] = {}  # 记录{AS:【比其更安全的AS】【无差异AS】【更不安全的AS】}
+    res: Dict[str, Tuple[List[str], List[str], List[str]]] = {}  # 记录{AS:【比其更安全的AS】【无差异AS】【更不安全的AS】}
     for line in reader:
         if line[0] not in res: res[line[0]] = ([], [], [])
         if line[1] not in res: res[line[1]] = ([], [], [])
@@ -136,34 +131,34 @@ def anova_sort(dsn_path:ANOVA_NUM_PATH, VALUE:ASPECT_TPYE, reader:List[Tuple[str
             res[line[0]][2].append(line[1])
             res[line[1]][0].append(line[0])
 
-    sorted_country:List[List[str]] = [[]]
+    sorted_country: List[List[str]] = [[]]
     for k in res:
         # 如果没有比其更安全的AS（找最安全的AS）
         if len(res[k][0]) == 0:
-            #排第一名
+            # 排第一名
             sorted_country[-1].append(k)
 
     while len(res):
         for cc in sorted_country[-1]:
             for _cc in res[cc][2]:
                 try:
-                    #把 在排名里面的AS 从 比其更不安全的AS 列表对应的 比其更安全的AS列表中删除
+                    # 把 在排名里面的AS 从 比其更不安全的AS 列表对应的 比其更安全的AS列表中删除
                     res[_cc][0].remove(cc)
                 except:
                     print(_cc)
                     print(cc)
                     exit()
-                    #把 在排名里面的AS 从 无差异AS 列表对应的 无差异AS列表中删除
+                    # 把 在排名里面的AS 从 无差异AS 列表对应的 无差异AS列表中删除
             for _cc in res[cc][1]:
                 res[_cc][1].remove(cc)
-            
-            #把在排名中的AS从所有AS列表中删除
+
+            # 把在排名中的AS从所有AS列表中删除
             del res[cc]
-        temp:List[str] = []
+        temp: List[str] = []
         for cc in res:
-            #如果此时 没有比其更安全的AS（找最安全的AS）
+            # 如果此时 没有比其更安全的AS（找最安全的AS）
             if len(res[cc][0]) == 0:
-                #则往下继续排名
+                # 则往下继续排名
                 temp.append(cc)
         if len(temp) != 0:
             sorted_country.append(temp)
@@ -200,7 +195,7 @@ def anova(dict_l: Dict[str, List[float]], dsn_path: ANOVA_NUM_PATH, VALUE: ASPEC
     mc = MultiComparison(nums, groups)
     result = mc.tukeyhsd()
 
-    res: List[Tuple[str,str,int]] = []
+    res: List[Tuple[str, str, int]] = []
     for line in result._results_table.data[1:]:
         if line[-1]:
             res.append((line[0], line[1], line[2]))
@@ -222,6 +217,7 @@ def groud_truth_based_anova(path: COUNT_NUM_PATH, dsn_path: ANOVA_NUM_PATH, valu
     从basic,user,domain,三个维度进行anova排序
 
     '''
+
     def groud_truth_based_anova_thread(_cc: COUNTRY_CODE):
         '''
         cc: country code
@@ -259,14 +255,14 @@ def groud_truth_based_anova(path: COUNT_NUM_PATH, dsn_path: ANOVA_NUM_PATH, valu
     value_dict = {'basic': 0, 'user': 1, 'domain': 2}
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
     for _cc in cc_list:
-        thread_pool.apply(groud_truth_based_anova_thread, (_cc, ))
+        thread_pool.apply(groud_truth_based_anova_thread, (_cc,))
     thread_pool.close()
     thread_pool.join()
     anova(l, dsn_path, value)
 
 
 @record_launch_time
-def country_internal_rank(path:OUTPUT_PATH, rank_path, _type, topo_list:List[TOPO_TPYE], data_dim:List[ASPECT_TPYE]):
+def country_internal_rank(path: OUTPUT_PATH, rank_path, _type, topo_list: List[TOPO_TPYE], data_dim: List[ASPECT_TPYE]):
     '''
     path output 路径
     rank_path : 最终排序文件存储路径
@@ -274,6 +270,7 @@ def country_internal_rank(path:OUTPUT_PATH, rank_path, _type, topo_list:List[TOP
     topo_list : topo类型
     data_dim basic|user|domain 维度列表
     '''
+
     def country_internal_rank_thread(value2, value):
         '''
         value2: basic|user|domain 维度类型
@@ -284,7 +281,7 @@ def country_internal_rank(path:OUTPUT_PATH, rank_path, _type, topo_list:List[TOP
         anova_path = os.path.join(path, value, 'result', _type, 'sorted_country_' + value2 + '.json')
         with open(anova_path, 'r') as f:
             reader = json.load(f)
-        res:Dict[COUNTRY_CODE,Dict[AS_CODE,int]] = {}
+        res: Dict[COUNTRY_CODE, Dict[AS_CODE, int]] = {}
         for index in range(len(reader)):
             for _v in reader[index]:
                 _cc, _as = _v.split('-')
@@ -294,8 +291,8 @@ def country_internal_rank(path:OUTPUT_PATH, rank_path, _type, topo_list:List[TOP
                 res[_cc][_as] = index + 1  # 每个国家下每个AS的排名
         for _cc in res:
             if _cc not in rank: continue
-            temp = cal_rank_weight(_cc,del_path,res[_cc])
-           
+            temp = cal_rank_weight(_cc, del_path, res[_cc])
+
             if _cc in rank:
                 if temp < 1:
                     temp = 1
@@ -345,18 +342,20 @@ def judge_var(target_list, result):
 
 
 @record_launch_time_and_param(1)
-def groud_truth_based_var(path:RESULT_PATH, _type:ASPECT_TPYE):
+def groud_truth_based_var(path: RESULT_PATH, _type: ASPECT_TPYE):
     '''
     path result文件夹路径
     _type basic|user|domain 维度路径
 
     计算方差排名结果，结果存储在本地文件
     '''
+
     def groud_truth_based_var_thread(cc):
         '''
         cc: country code
 
         '''
+
         def basic_value_map(x):
             if _type == 'basic':
                 return x[value_dict[_type]] / N
@@ -384,15 +383,15 @@ def groud_truth_based_var(path:RESULT_PATH, _type:ASPECT_TPYE):
                                 'key': '%s-%s' % (cc, as_file_name[:-5])
                             }
 
-    var_result:Dict[str,Dict] = {}
-    result:List[List[str]] = []
+    var_result: Dict[str, Dict] = {}
+    result: List[List[str]] = []
     value_dict = {'basic': 0, 'user': 1, 'domain': 2}
     count_num_path = os.path.join(path, 'count_num')
     cc_list = os.listdir(count_num_path)
 
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
     for cc in cc_list:
-        thread_pool.apply(groud_truth_based_var_thread, (cc, ))
+        thread_pool.apply(groud_truth_based_var_thread, (cc,))
     thread_pool.close()
     thread_pool.join()
     var_list = list(var_result.values())
@@ -406,7 +405,6 @@ def groud_truth_based_var(path:RESULT_PATH, _type:ASPECT_TPYE):
 
     with open(os.path.join(var_path, 'sorted_country_%s.json' % _type), 'w') as sorted_var_f:
         json.dump(result, sorted_var_f)
-
 
 
 @record_launch_time
@@ -426,6 +424,7 @@ def do_extract_connect_list(prefix: OUTPUT_PATH, rela: TOPO_TPYE, weight_data_pa
     as_importance_path = weight_data_path
     gl_cut_node_depth = cut_node_depth
     extract_connect_list(rtree_path, count_path)
+
 
 @record_launch_time
 def do_groud_truth_based_anova(prefix: OUTPUT_PATH, rela: TOPO_TPYE, _cc_list: List[COUNTRY_CODE]):
@@ -454,7 +453,7 @@ def do_groud_truth_based_anova(prefix: OUTPUT_PATH, rela: TOPO_TPYE, _cc_list: L
 
 
 @record_launch_time
-def do_groud_truth_based_var(prefix:OUTPUT_PATH, rela:TOPO_TPYE, _cc_list: List[COUNTRY_CODE]):
+def do_groud_truth_based_var(prefix: OUTPUT_PATH, rela: TOPO_TPYE, _cc_list: List[COUNTRY_CODE]):
     '''
     prefix: output 路径
     rela : topo类型
@@ -462,7 +461,7 @@ def do_groud_truth_based_var(prefix:OUTPUT_PATH, rela:TOPO_TPYE, _cc_list: List[
     '''
     global cc_list
     cc_list = _cc_list
-    path:RESULT_PATH = os.path.join(prefix, rela, 'result')
+    path: RESULT_PATH = os.path.join(prefix, rela, 'result')
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
     for value in ['basic', 'user', 'domain']:
         pool.apply_async(groud_truth_based_var, (
@@ -474,7 +473,7 @@ def do_groud_truth_based_var(prefix:OUTPUT_PATH, rela:TOPO_TPYE, _cc_list: List[
 
 
 @record_launch_time
-def do_country_internal_rank(path:OUTPUT_PATH, _cc_list:List[COUNTRY_CODE], topo_list:List[TOPO_TPYE], data_dim:List[ASPECT_TPYE]):
+def do_country_internal_rank(path: OUTPUT_PATH, _cc_list: List[COUNTRY_CODE], topo_list: List[TOPO_TPYE], data_dim: List[ASPECT_TPYE]):
     '''
     path output路径
     _cc_list 国家列表
@@ -486,7 +485,7 @@ def do_country_internal_rank(path:OUTPUT_PATH, _cc_list:List[COUNTRY_CODE], topo
 
     new_rank_path = os.path.join(path, 'public/med_rank.json')
     var_rank_path = os.path.join(path, 'public/var_rank.json')
-    
+
     # 函数country_internal_rank内部的del_path、npz_file_name、anova_path需要定义
     # del_path和monitor_random_cut.py中的path含义相当
     # npz_file_name和create_routingtree.py中p2的含义相当

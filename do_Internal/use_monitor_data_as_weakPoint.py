@@ -2,7 +2,7 @@ import os
 import json
 
 
-def make_weak_point(rtree_path:str, cc:str, dst_path:str):
+def make_weak_point(rtree_path: str, cc: str, dst_path: str):
     '''
     rtree_path  rtree路径
     dst_path    floyed 存储路径
@@ -32,8 +32,6 @@ def make_weak_point(rtree_path:str, cc:str, dst_path:str):
         for an in i[1].split(' '):
             result[break_node].append([asn, an])
 
-
     with open(os.path.join(dst_path, '%s.break_link.json' % cc), 'w') as f:
         json.dump(result, f)
     return result
-

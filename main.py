@@ -119,6 +119,7 @@ if __name__ == '__main__':
             asn_data: Dict[AS_CODE, int] = json.load(asn_f)
         time_stamp.write('load asns.json %s  \n' % (datetime.now() - start_time))
 
+
         def make_model_path(model_path: str) -> str:
             '''
             model_path:自定义模块的路径
@@ -129,6 +130,7 @@ if __name__ == '__main__':
                 return model_map[model_path]
             else:
                 return '.'.join(['input', model_path])
+
 
         build_rtree_model_path = make_model_path(build_rtree_model)
         destroy_rtree_model_path = make_model_path(destroy_rtree_model)
@@ -156,7 +158,7 @@ if __name__ == '__main__':
                 monitorCountryInternal(dst_dir_path, _type, asn_data, destroy_rtree_model_path, cut_rtree_model_path,
                                        cut_node_depth, cc_list)
             elif monitor_model == 'RECORD_COUNTRY_AS':
-                #不在树中也算被影响的节点
+                # 不在树中也算被影响的节点
                 monitorCountryInternal(dst_dir_path, _type, asn_data, destroy_rtree_model_path, cut_rtree_model_path,
                                        cut_node_depth, cc_list, cc2as_path)
             else:
@@ -166,9 +168,9 @@ if __name__ == '__main__':
             do_extract_connect_list(dst_dir_path, _type, weight_data_path, cut_node_depth)
             do_groud_truth_based_anova(dst_dir_path, _type, cc_list)
             do_groud_truth_based_var(dst_dir_path, _type, cc_list)
-            find_optimize_link(type_map[_type]['txt_path'], dst_dir_path,_type, cone_path, opt_cc_list,
+            find_optimize_link(type_map[_type]['txt_path'], dst_dir_path, _type, cone_path, opt_cc_list,
                                weight_data_path)
             ###### find_optimize_link(type_map[_type]['txt_path'], dst_dir_path,_type, cone_path, opt_cc_list,
             ######                    weight_data_path,optimize_link_list,cc2as_path,rtree_node_min_cone)
         do_country_internal_rank(dst_dir_path, cc_list, topo_list, data_aspect)
-        train_routing_tree(topo_list, opt_cc_list, dst_dir_path, weight_data_path, optimize_link_list,data_aspect)
+        train_routing_tree(topo_list, opt_cc_list, dst_dir_path, weight_data_path, optimize_link_list, data_aspect)

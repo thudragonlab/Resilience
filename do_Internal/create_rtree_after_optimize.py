@@ -40,7 +40,7 @@ def customerToProviderBFS(destinationNode, routingTree, graph):
         for vertex in vertices:
             for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
                 if (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0) and (
-                    (not levels[node] <= level) or (levels[node] == -1)):
+                        (not levels[node] <= level) or (levels[node] == -1)):
                     routingTree[node, vertex] = 3
                     if BFS[-1][0] == level:
                         BFS.append((level + 1, [node]))
@@ -128,7 +128,6 @@ def providerToCustomer(routingTree, BFS, graph, levels):
 
 
 def saveAsNPZ(fileName, matrix, destinationNode):
-
     # 生成路由树的时候排除到root的连接
     for i in matrix[destinationNode].nonzero()[1]:
         matrix[destinationNode, i] = 0
@@ -194,7 +193,6 @@ def dataConverter(relas_list):
 
 
 def graphGenerator(data_list):
-
     def determineNodeCount(_data_list):
         nodeList = []
         for splitLine in _data_list:
@@ -238,7 +236,6 @@ def graphGenerator(data_list):
 
 def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc_as_list_path: str, add_link_path: str,
                       asn: str, old_as_data: Set[AS_CODE], numberAsns: Dict[AS_CODE, int]) -> Dict[int, List[List[int]]]:
-
     state = {'c2p': 0, 'p2p': 1, 'p2c': 2, 0: 'c2p', 1: 'p2p', 2: 'p2c'}
     match_state = {'1': {'1': 'p2p', '2': 'c2p'}, '2': {'1': 'p2c'}}
 
@@ -258,10 +255,10 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
 
             # 如果作为provider的cone比customer的要小3倍，跳过
 
-            #c2p
+            # c2p
             if numberAsns[right_as] * 3 < numberAsns[left_as] and s == 0:
                 return False
-            #p2c
+            # p2c
             if numberAsns[left_as] * 3 < numberAsns[right_as] and s == 2:
                 return False
 
@@ -298,7 +295,7 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
         with open(cc_as_list_path, 'r') as f:
             cclist = json.load(f)
         for c in cclist:
-            #[provider、customer、peer]
+            # [provider、customer、peer]
             relas[c] = [[], [], []]
 
         for c in relas:
@@ -316,8 +313,7 @@ def generate_new_rela(add_link_file: str, relas_file: str, add_link_num: int, cc
 
         return relas
 
-
-# 递归寻找新加入的节点和其子节点
+    # 递归寻找新加入的节点和其子节点
 
     def find_rtree_list(asn):
         as_list = []
@@ -428,12 +424,12 @@ class monitor_cut():
 
     def monitor_cut_node(self, queue):
         for node in queue:
-            for i in self.graph[node][1]:  #找node连了哪些节点
-                self.graph[i][0].remove(node)  #在node的后向点的前向点中把node删了
+            for i in self.graph[node][1]:  # 找node连了哪些节点
+                self.graph[i][0].remove(node)  # 在node的后向点的前向点中把node删了
 
             self.graph[node][1] = []  # node设置成不链接任何节点
         while queue:
-            n = queue.pop(0)  #取被影响的节点
+            n = queue.pop(0)  # 取被影响的节点
             if n not in self.graph:
                 continue
 

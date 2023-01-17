@@ -14,9 +14,10 @@ from other_script.util import record_launch_time, record_launch_time_and_param
 
 izip = zip
 
+
 class monitor_cut():
 
-    def __init__(self, n_node, n_link, file_path, dsn_path, asn,del_n=False):
+    def __init__(self, n_node, n_link, file_path, dsn_path, asn, del_n=False):
         '''
         n_node 最多破坏节点个数
         n_link 最多破坏链接个树 (没用)
@@ -34,10 +35,10 @@ class monitor_cut():
         self.dsn_path = dsn_path
         self.tempgraphname = file_path + '.graph.json'
 
-        #存储结果：{[]:节点总数量，[queue]:节点数量}
+        # 存储结果：{[]:节点总数量，[queue]:节点数量}
         self.res = {}
 
-        #创建图
+        # 创建图
         self.from_npz_create_graph()
         # print(file_path + ' graph created')
         # print(self.res[''])
@@ -68,12 +69,11 @@ class monitor_cut():
             if b not in self.graph: self.graph[b] = [[], []]
             self.graph[a][1].append(b)
             self.graph[b][0].append(a)
-        #monitor_cut_node(self.graph, list(self.graph.keys())[2])
+        # monitor_cut_node(self.graph, list(self.graph.keys())[2])
         self.res[''] = len(self.graph)
         for i in self.graph[self.asn][1]:
             self.graph[i][0].remove(self.asn)
             self.graph[self.asn][1].clear()
-        
 
     def monitor_random_node_addDel(self):
         '''
@@ -82,7 +82,7 @@ class monitor_cut():
         nodelist = set(self.row)
         tempG = len(self.graph)
         # print(self.dsn_path)
-        
+
         cut_times = gl_get_cut_num(nodelist)
         with open(self.dsn_path, 'a') as f:
             for num in range(1, self.n_node):
@@ -96,14 +96,13 @@ class monitor_cut():
                     temp = ' '.join(list(map(str, node)))
                     linkres = self.monitor_cut_node(node)
                     # if '6471' in node:
-                    
+
                     # f.write(temp + '|' + str(linkres) + '\n')
                     f.write(temp + '|' + ' '.join(list(map(str, linkres))) +
                             '\n')
                     if len(self.graph) != tempG:
                         with open(self.tempgraphname, 'r') as ff:
                             self.graph = json.load(ff)
-
 
     def monitor_cut_node(self, queue):
         '''
@@ -118,8 +117,6 @@ class monitor_cut():
 
             self.graph[node][1] = []
 
-            
-        
         while queue:
             n = queue.pop(0)
             res.append(n)
@@ -136,13 +133,13 @@ def monitor_cut_class2func_inter(f):
     '''
     f 具体的.npz rtree文件 
     '''
-    monitor_cut(gl_cut_node_depth, 1, f, f[:-4] + '.addDel.txt',f.split('/')[-1][9:-4], True)
-    
+    monitor_cut(gl_cut_node_depth, 1, f, f[:-4] + '.addDel.txt', f.split('/')[-1][9:-4], True)
+
     return 0
 
 
 @record_launch_time_and_param(0)
-def do_cut_by_cc(cc:COUNTRY_CODE, path:RTREE_PATH, asn_data:Dict[AS_CODE, int]):
+def do_cut_by_cc(cc: COUNTRY_CODE, path: RTREE_PATH, asn_data: Dict[AS_CODE, int]):
     '''
     cc country code
     path  rtree 路径
@@ -160,14 +157,14 @@ def do_cut_by_cc(cc:COUNTRY_CODE, path:RTREE_PATH, asn_data:Dict[AS_CODE, int]):
             continue
         if f[9:-4] not in asn_data:
             continue
-        m = np.load(path+cc+'/'+f)
-        node_num.append([f,asn_data[f[9:-4]],len(set(list(m['row'])))])
-    
+        m = np.load(path + cc + '/' + f)
+        node_num.append([f, asn_data[f[9:-4]], len(set(list(m['row'])))])
+
     # 调用选取破坏节点模块
     for f in gl_get_destroy_trees(node_num):
         try:
             thread_pool.apply_async(monitor_cut_class2func_inter,
-                              (os.path.join(path, cc, f[0]), ))
+                                    (os.path.join(path, cc, f[0]),))
         except Exception as e:
             print(e)
             raise e
@@ -176,7 +173,8 @@ def do_cut_by_cc(cc:COUNTRY_CODE, path:RTREE_PATH, asn_data:Dict[AS_CODE, int]):
 
 
 @record_launch_time
-def monitor_country_internal(prefix:OUTPUT_PATH, _type:TOPO_TPYE, asn_data:Dict[AS_CODE, int],destroy_model_path:str,cut_rtree_model_path:str,cut_node_depth:int,cc_list:List[COUNTRY_CODE]):
+def monitor_country_internal(prefix: OUTPUT_PATH, _type: TOPO_TPYE, asn_data: Dict[AS_CODE, int], destroy_model_path: str, cut_rtree_model_path: str,
+                             cut_node_depth: int, cc_list: List[COUNTRY_CODE]):
     '''
     prefix output 路径
     _type topo类型

@@ -1,12 +1,12 @@
 import json
 import os
-from typing import Dict,List
+from typing import Dict, List
 from other_script.util import record_launch_time
 from other_script.my_types import *
 
 
 @record_launch_time
-def as_rela_txt(dsn_path:OUTPUT_PATH, txt_path:str,asn_data:Dict[AS_CODE,int],rtree_node_min_cone:int) -> str:
+def as_rela_txt(dsn_path: OUTPUT_PATH, txt_path: str, asn_data: Dict[AS_CODE, int], rtree_node_min_cone: int) -> str:
     '''
     dsn_path:output路径
     txt_path:原始txt文件路径
@@ -18,7 +18,7 @@ def as_rela_txt(dsn_path:OUTPUT_PATH, txt_path:str,asn_data:Dict[AS_CODE,int],rt
     file = open(txt_path, 'r')
     file_name = txt_path.split('/')[-1][:-4]
     real_dst_path = ''
-    result:Dict[AS_CODE,List[AS_CODE]] = {}
+    result: Dict[AS_CODE, List[AS_CODE]] = {}
     try:
         for line in file:
             if line[0] != '#':
@@ -30,7 +30,7 @@ def as_rela_txt(dsn_path:OUTPUT_PATH, txt_path:str,asn_data:Dict[AS_CODE,int],rt
                     continue
                 if line[-1] == '1': continue
                 if a not in result.keys():
-                # 第一个存与a时peer关系的，第二个存a的customer
+                    # 第一个存与a时peer关系的，第二个存a的customer
                     result[a] = [[], []]
                 # -1 表示 a 是 b 的provider
                 if line[-1] == '-1':
@@ -47,14 +47,13 @@ def as_rela_txt(dsn_path:OUTPUT_PATH, txt_path:str,asn_data:Dict[AS_CODE,int],rt
     return real_dst_path
 
 
-
-def as_rela_txt_dont_save(txt_path:str) -> str:
+def as_rela_txt_dont_save(txt_path: str) -> str:
     '''
     处理AS关系数据
     {as:[peer, customor], ......}
     '''
     file = open(txt_path, 'r')
-    result:Dict[str,List[str]] = {}
+    result: Dict[str, List[str]] = {}
     try:
         for line in file:
             if line[0] != '#':

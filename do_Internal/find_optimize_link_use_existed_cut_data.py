@@ -141,7 +141,7 @@ class FindOptimizeLink():
     '''
 
     # def __init__(self, rtpath, break_link, week_point, raw_graph, node_index, dsn_path) -> None:
-    def __init__(self, rtpath: str,as_topo, dsn_path: str,cc2as_list_path:str) -> None:
+    def __init__(self, rtpath: str, as_topo, dsn_path: str, cc2as_list_path: str) -> None:
         '''
         rtpath: 存放npz的路径
         break_link: [[begin_as, end_as],...]
@@ -149,21 +149,20 @@ class FindOptimizeLink():
         self.rtpath: str = rtpath
         self.file_name = os.listdir(self.rtpath)
         self.dsn_path: str = dsn_path
-        with open(cc2as_list_path,'r') as ff:
+        with open(cc2as_list_path, 'r') as ff:
             self.all_as_list = json.load(ff)
         self.as_topo = as_topo
         self.graph = self.create_graph(as_topo)
-        
-    
-    def create_graph(self,as_topo):
+
+    def create_graph(self, as_topo):
         graph = {}
         for _as in as_topo:
             peer, customer = as_topo[_as]
             if _as not in graph:
-                graph[_as] = [[],customer]
+                graph[_as] = [[], customer]
             for i in customer:
                 if i not in graph:
-                    graph[i] = [[],[]]
+                    graph[i] = [[], []]
                 graph[i][0].append(_as)
 
                 if i not in graph[_as][1]:
@@ -171,7 +170,7 @@ class FindOptimizeLink():
 
             for pi in peer:
                 if pi not in graph:
-                    graph[pi] = [[],[]]
+                    graph[pi] = [[], []]
                 if pi < _as:
                     graph[_as][1].append(pi)
                     graph[pi][0].append(_as)
@@ -286,7 +285,6 @@ class FindOptimizeLink():
         # hash_dict[end_as][1]表示和end_as是p2c关系的AS列表
         # hash_dict[end_as][2]表示和end_as是p2p关系的AS列表
 
-        
         with open(self.dsn_path + '.end_hash_dict.json', 'w') as f:
             json.dump(self.end_hash_dict, f)
 
@@ -340,20 +338,20 @@ class FindOptimizeLink():
                     if 0.5 <= float(numberAsns[_as]) / float(numberAsns[_as2]) <= 2:
                         cost = min(cost, a)
                     else:
-                        if _as in as_peer and numberAsns[_as2] <= as_peer[_as][0]*1.2 and \
-                            numberAsns[_as2] >= as_peer[_as][1]*0.8:
+                        if _as in as_peer and numberAsns[_as2] <= as_peer[_as][0] * 1.2 and \
+                                numberAsns[_as2] >= as_peer[_as][1] * 0.8:
                             cost = min(cost, b)
-                        elif _as2 in as_peer and numberAsns[_as] <= as_peer[_as2][0]*1.2 and \
-                            numberAsns[_as] >= as_peer[_as2][1]*0.8:
+                        elif _as2 in as_peer and numberAsns[_as] <= as_peer[_as2][0] * 1.2 and \
+                                numberAsns[_as] >= as_peer[_as2][1] * 0.8:
                             cost = min(cost, b)
                 elif relation == 'p2c' and numberAsns[_as] >= numberAsns[_as2] * 0.95:
                     cost = min(cost, c)
                 elif relation == 'c2p' and numberAsns[_as2] >= numberAsns[_as] * 0.95:
                     cost = min(cost, c)
             return cost
-        
-        state = {'1':{'1':['p2p', 'p2c', 'c2p'],'2':['c2p']}, \
-            '2':{'1':['p2c']}}
+
+        state = {'1': {'1': ['p2p', 'p2c', 'c2p'], '2': ['c2p']}, \
+                 '2': {'1': ['p2c']}}
         with open(self.dsn_path + '.begin_hash_dict.json', 'r') as f:
             self.begin_hash_dict = json.load(f)
         with open(self.dsn_path + '.end_hash_dict.json', 'r') as f:
@@ -395,7 +393,6 @@ class FindOptimizeLink():
 
                     left_as, left_max_benefit = '', -1
 
-                    
                     # 寻找价值最大的能连上begin_as的左节点
                     if count_dict:
                         for _nodes, _value in count_dict.items():
@@ -415,11 +412,10 @@ class FindOptimizeLink():
                                     count_dict[_as] = 0
                                 count_dict[_as] += (cal_node_value(begin_as) + cal_node_value(end_as))
 
-
                     right_max_benefit, right_as = float('-inf'), ''
                     for _as in count_dict:
                         cost = cal_cost(left_as, _as, begin_state, end_state)
-                        if '%s %s' % (left_as,_as) in as_rel:
+                        if '%s %s' % (left_as, _as) in as_rel:
                             continue
                         if right_max_benefit <= count_dict[_as] - cost:
                             right_max_benefit, right_as = count_dict[_as] - cost, _as
@@ -443,7 +439,7 @@ class FindOptimizeLink():
             if opt_right_as == '' or opt_left_as == '':
                 break
             n = len(self.break_link)
-            opt_re_link:Tuple[str,str] = []
+            opt_re_link: Tuple[str, str] = []
             for i in range(n - 1, -1, -1):
                 begin_as, end_as = self.break_link[i]
                 if str(begin_as) not in self.begin_hash_dict or str(end_as) not in self.end_hash_dict:
@@ -457,139 +453,134 @@ class FindOptimizeLink():
                     opt_re_link.append([self.break_link[i][1], self.break_link[i][0]])
                     del self.break_link[i]
 
-            res.append([[opt_left_as, opt_right_as], [opt_begin_state, opt_end_state, opt_cost], opt_re_link, n, len(self.break_link)]) 
-             #          [优化链接左节点, 优化链接右节点], [优化链接左节点连begin_as关系,优化链接右节点连end_as关系,优化成本],重新连接的链接,原来断开链接数,优化后断开链接数
+            res.append([[opt_left_as, opt_right_as], [opt_begin_state, opt_end_state, opt_cost], opt_re_link, n, len(self.break_link)])
+            #          [优化链接左节点, 优化链接右节点], [优化链接左节点连begin_as关系,优化链接右节点连end_as关系,优化成本],重新连接的链接,原来断开链接数,优化后断开链接数
+        return res
+
+    def new_find_opt_link(self):
+
+        state = {'1': {'1': ['p2p', 'p2c', 'c2p'], '2': ['c2p']}, \
+                 '2': {'1': ['p2c']}}
+
+        country_name = os.path.basename(self.dsn_path).split('_')[0]
+        if NODE_VALUE != 'basic':
+            with open(os.path.join(as_importance_path, country_name + '.json'), 'r') as f:
+                as_importance_weight: List[Tuple[str, int, int]] = json.load(f)
+            as_importance_weight: Dict[str, Tuple[UserWeightType, DomainWeightType]] = {
+                line[0]: [line[1], line[2]]
+                for line in as_importance_weight
+            }
+            if NODE_VALUE == 'user':
+                as_importance_weight_min = min([as_importance_weight[k][0] for k in as_importance_weight])  # 最小的user权重值
+            else:
+                as_importance_weight_min = min([as_importance_weight[k][1] for k in as_importance_weight])  # 最小的domain权重值
+        else:
+            as_importance_weight_min = 0.5
+
+        res = []
+
+        def cal_node_value(_as):
+            if isinstance(_as, int):
+                _as = str(_as)
+            if NODE_VALUE != 'basic':
+                if _as in as_importance_weight:
+                    if NODE_VALUE == 'user':
+                        return as_importance_weight[_as][0]
+                    else:
+                        return as_importance_weight[_as][1]
+                else:
+                    return as_importance_weight_min
+            return 0.5
+
+        def cal_cost(_as, _as2, begin_state, end_state):
+            global numberAsns, as_peer
+            _as, _as2 = str(_as), str(_as2)
+            cost = float('inf')
+            for relation in state[begin_state][end_state]:
+                if _as not in numberAsns:
+                    numberAsns[_as] = 1
+                if _as2 not in numberAsns:
+                    numberAsns[_as2] = 1
+                if relation == 'p2p':
+                    if 0.5 <= float(numberAsns[_as]) / float(numberAsns[_as2]) <= 2:
+                        cost = min(cost, a)
+                    else:
+                        if _as in as_peer and numberAsns[_as2] <= as_peer[_as][0] * 1.2 and \
+                                numberAsns[_as2] >= as_peer[_as][1] * 0.8:
+                            cost = min(cost, b)
+                        elif _as2 in as_peer and numberAsns[_as] <= as_peer[_as2][0] * 1.2 and \
+                                numberAsns[_as] >= as_peer[_as2][1] * 0.8:
+                            cost = min(cost, b)
+                elif relation == 'p2c' and numberAsns[_as] >= numberAsns[_as2] * 0.95:
+                    cost = min(cost, c)
+                elif relation == 'c2p' and numberAsns[_as2] >= numberAsns[_as] * 0.95:
+                    cost = min(cost, c)
+            return cost
+
+        for begin_state in state:
+            for end_state in state[begin_state]:
+
+                count_dict: Dict[AsnType, int] = {}  # 所有和被破坏连接有关的AS的value
+                for _as in self.as_topo:  # 遍历这个国家下所有被模拟破坏路由树的所有被破坏链接的左节点
+                    if begin_state == '1' and end_state == '1':  # p2p
+                        my_index = 0
+                    else:
+                        my_index = 1
+                    for _nodes in self.as_topo[_as][my_index]:
+
+                        if _nodes not in count_dict:
+                            count_dict[_nodes] = 0
+                        if _as not in count_dict:
+                            count_dict[_as] = 0
+                        count_dict[_nodes] += cal_node_value(_as)
+                        count_dict[_as] += cal_node_value(_nodes)
+
+                for left_as in self.all_as_list:
+
+                    # 如果cone小于5的话，就不能作为优化路径
+
+                    if left_as not in numberAsns or numberAsns[left_as] < max(2, gl_mine_cone):
+                        continue
+
+                    for right_as in self.all_as_list:
+
+                        if right_as not in numberAsns or numberAsns[right_as] < max(2, gl_mine_cone):
+                            continue
+
+                        # 如果left和right一样或者在原来的topo里面存在 就跳过
+                        if left_as == right_as or '%s %s' % (left_as, right_as) in as_rel:
+                            continue
+
+                        # 如果left和right一样或者在原来的topo里面存在 就跳过
+                        if left_as == right_as or '%s %s' % (left_as, right_as) in as_rel:
+                            continue
+
+                        if left_as not in count_dict or right_as not in count_dict:  # cc2as里面的某个节点不在input的topo数据中
+                            continue
+
+                        cost = cal_cost(left_as, right_as, begin_state, end_state)
+                        # 如果成本无限大
+                        if cost == float('inf'):
+                            continue
+
+                        left_as_value = count_dict[left_as]
+                        right_as_value = count_dict[right_as]
+                        benefit = left_as_value + right_as_value - cost
+                        res.append([[left_as, right_as], [begin_state, end_state], benefit])
+                        # [优化链接左节点, 优化链接右节点], [优化链接左节点连begin_as关系,优化链接右节点连end_as关系,优化成本],收益
+
         return res
 
 
-    def new_find_opt_link(self):
-            
-            state = {'1':{'1':['p2p', 'p2c', 'c2p'],'2':['c2p']}, \
-                '2':{'1':['p2c']}}
-
-            country_name = os.path.basename(self.dsn_path).split('_')[0]
-            if NODE_VALUE != 'basic':
-                with open(os.path.join(as_importance_path, country_name + '.json'), 'r') as f:
-                    as_importance_weight: List[Tuple[str, int, int]] = json.load(f)
-                as_importance_weight: Dict[str, Tuple[UserWeightType, DomainWeightType]] = {
-                    line[0]: [line[1], line[2]]
-                    for line in as_importance_weight
-                }
-                if NODE_VALUE == 'user':
-                    as_importance_weight_min = min([as_importance_weight[k][0] for k in as_importance_weight])  # 最小的user权重值
-                else:
-                    as_importance_weight_min = min([as_importance_weight[k][1] for k in as_importance_weight])  # 最小的domain权重值
-            else:
-                as_importance_weight_min = 0.5
-
-            res = []
-            def cal_node_value(_as):
-                if isinstance(_as, int):
-                    _as = str(_as)
-                if NODE_VALUE != 'basic':
-                    if _as in as_importance_weight:
-                        if NODE_VALUE == 'user':
-                            return as_importance_weight[_as][0]
-                        else:
-                            return as_importance_weight[_as][1]
-                    else:
-                        return as_importance_weight_min
-                return 0.5
-
-            def cal_cost(_as, _as2, begin_state, end_state):
-                global numberAsns, as_peer
-                _as, _as2 = str(_as), str(_as2)
-                cost = float('inf')
-                for relation in state[begin_state][end_state]:
-                    if _as not in numberAsns:
-                        numberAsns[_as] = 1
-                    if _as2 not in numberAsns:
-                        numberAsns[_as2] = 1
-                    if relation == 'p2p':
-                        if 0.5 <= float(numberAsns[_as]) / float(numberAsns[_as2]) <= 2:
-                            cost = min(cost, a)
-                        else:
-                            if _as in as_peer and numberAsns[_as2] <= as_peer[_as][0]*1.2 and \
-                                numberAsns[_as2] >= as_peer[_as][1]*0.8:
-                                cost = min(cost, b)
-                            elif _as2 in as_peer and numberAsns[_as] <= as_peer[_as2][0]*1.2 and \
-                                numberAsns[_as] >= as_peer[_as2][1]*0.8:
-                                cost = min(cost, b)
-                    elif relation == 'p2c' and numberAsns[_as] >= numberAsns[_as2] * 0.95:
-                        cost = min(cost, c)
-                    elif relation == 'c2p' and numberAsns[_as2] >= numberAsns[_as] * 0.95:
-                        cost = min(cost, c)
-                return cost
-            
-
-            for begin_state in state:
-                for end_state in state[begin_state]:
-                    
-                    count_dict: Dict[AsnType, int] = {}  # 所有和被破坏连接有关的AS的value
-                    for _as in self.as_topo:  # 遍历这个国家下所有被模拟破坏路由树的所有被破坏链接的左节点
-                        if begin_state == '1' and end_state == '1': # p2p
-                            my_index = 0
-                        else:
-                            my_index = 1
-                        for _nodes in self.as_topo[_as][my_index]:
-                            
-                            if _nodes not in count_dict:
-                                count_dict[_nodes] = 0
-                            if _as not in count_dict:
-                                count_dict[_as] = 0
-                            count_dict[_nodes] += cal_node_value(_as)
-                            count_dict[_as] += cal_node_value(_nodes)
-
-
-                    for left_as in self.all_as_list:
-                        
-                        #如果cone小于5的话，就不能作为优化路径
-
-                        if left_as not in numberAsns or numberAsns[left_as] < max(2,gl_mine_cone):
-                            continue
-
-
-                        for right_as in self.all_as_list:
-                            
-                            if right_as not in numberAsns or numberAsns[right_as] < max(2,gl_mine_cone):
-                                continue
-
-                            #如果left和right一样或者在原来的topo里面存在 就跳过
-                            if left_as == right_as or '%s %s' % (left_as,right_as) in as_rel :
-                                continue
-                            
-                            #如果left和right一样或者在原来的topo里面存在 就跳过
-                            if left_as == right_as or '%s %s' % (left_as,right_as) in as_rel :
-                                continue
-
-                            
-                            
-                            if left_as not in count_dict or right_as not in count_dict: # cc2as里面的某个节点不在input的topo数据中
-                                continue
-                            
-                            cost = cal_cost(left_as, right_as, begin_state, end_state)    
-                            # 如果成本无限大
-                            if cost == float('inf'):
-                                continue
-                            
-                            left_as_value = count_dict[left_as]
-                            right_as_value = count_dict[right_as]
-                            benefit =left_as_value + right_as_value - cost
-                            res.append([[left_as, right_as], [begin_state, end_state],benefit]) 
-                            #[优化链接左节点, 优化链接右节点], [优化链接左节点连begin_as关系,优化链接右节点连end_as关系,优化成本],收益
-
-
-            return res
-
 @record_launch_time_and_param(1)
-def find_optimize_link_pool(output_path,m, cname):
+def find_optimize_link_pool(output_path, m, cname):
     global as_rel, as_customer, as_peer, numberAsns
-    _dsn_path = os.path.join(output_path,m)
+    _dsn_path = os.path.join(output_path, m)
     optimize_link_path = os.path.join(_dsn_path, 'optimize_link')
     dsn_path = os.path.join(optimize_link_path, 'floyed/')
     rtree_path = os.path.join(_dsn_path, 'rtree')
-    opt_add_link_rich_path =os.path.join(dsn_path,'opt_add_link_rich',cname) 
-    hash_dict_path = os.path.join(dsn_path,'hash_dict')
+    opt_add_link_rich_path = os.path.join(dsn_path, 'opt_add_link_rich', cname)
+    hash_dict_path = os.path.join(dsn_path, 'hash_dict')
     mkdir(optimize_link_path)
     mkdir(dsn_path)
     mkdir(opt_add_link_rich_path)
@@ -597,39 +588,35 @@ def find_optimize_link_pool(output_path,m, cname):
 
     if not os.path.exists(os.path.join(rtree_path, cname, 'as-rel.txt')):
         return
-    Res_set:Set[str] = set()
+    Res_set: Set[str] = set()
     json_data = as_rela_txt_dont_save(os.path.join(rtree_path, cname, 'as-rel.txt'))
-     
 
-    fol = FindOptimizeLink(os.path.join(rtree_path, cname),json_data,
-                            os.path.join(hash_dict_path, cname),os.path.join(gl_cc2as_path,'%s.json' % cname))
+    fol = FindOptimizeLink(os.path.join(rtree_path, cname), json_data,
+                           os.path.join(hash_dict_path, cname), os.path.join(gl_cc2as_path, '%s.json' % cname))
 
     fol.break_link_begin_rtree_frequency()
     fol.break_link_end_rtree_frequency()
-    res = fol.find_opt_link() 
+    res = fol.find_opt_link()
     for line in res:
         state_list = line[1]
-        l_as,r_as = line[0]
-        if state_list == ['1','1'] and str([[r_as,l_as],state_list]) in Res_set:
+        l_as, r_as = line[0]
+        if state_list == ['1', '1'] and str([[r_as, l_as], state_list]) in Res_set:
             continue
         Res_set.add(str(line))
 
-    
-    res_list = list(map(lambda x:eval(x) , Res_set))
-    res_list.sort(key=lambda x:x[2],reverse=True)
+    res_list = list(map(lambda x: eval(x), Res_set))
+    res_list.sort(key=lambda x: x[2], reverse=True)
 
     max_num = max(gl_num_list)
     res_list = res_list[:max_num]
     with open(os.path.join(dsn_path, cname + '.opt_add_link_rich.json'), 'w') as f:
         json.dump(res_list, f)
-    
 
-    add_npz_and_monitor_cut(output_path, m, cname, gl_num_list,os.path.join(gl_cc2as_path,'%s.json' % cname),numberAsns)
+    add_npz_and_monitor_cut(output_path, m, cname, gl_num_list, os.path.join(gl_cc2as_path, '%s.json' % cname), numberAsns)
 
 
 NODE_VALUE = 'basic'  # 'basic' 'user' 'domain'
 as_importance_path = ''
-
 
 # [按受影响的节点数量倒序取前多少名,破坏节点数量]
 
@@ -638,7 +625,7 @@ a, b, c = 0, 0, 0
 
 
 @record_launch_time
-def find_optimize_link(txt_path, output_path,_type, cone_path, cc_list, _as_importance_path,num_list,cc2as_path,mine_cone):
+def find_optimize_link(txt_path, output_path, _type, cone_path, cc_list, _as_importance_path, num_list, cc2as_path, mine_cone):
     global as_importance_path
     global gl_num_list
     global gl_cc2as_path
@@ -681,8 +668,8 @@ def find_optimize_link(txt_path, output_path,_type, cone_path, cc_list, _as_impo
             line = fp.readline().strip()
     pool = Pool(multiprocessing.cpu_count())
     for cname in cc_list:
-        find_optimize_link_pool (
-              output_path,
+        find_optimize_link_pool(
+            output_path,
             _type,
             cname,
         )

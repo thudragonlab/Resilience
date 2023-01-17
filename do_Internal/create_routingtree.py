@@ -19,13 +19,13 @@ from importlib import import_module
 from other_script.util import mkdir, record_launch_time, record_launch_time_and_param
 
 # as-cone关系数据
-gl_asn_data:Dict[AS_CODE, int]
-#创建rtree时过滤器
-gl_filter_rtree:Callable
-#输出output路径
-gl_dst_dir_path:OUTPUT_PATH
-#输入json文件路径
-gl_as_rela_file_path:str
+gl_asn_data: Dict[AS_CODE, int]
+# 创建rtree时过滤器
+gl_filter_rtree: Callable
+# 输出output路径
+gl_dst_dir_path: OUTPUT_PATH
+# 输入json文件路径
+gl_as_rela_file_path: str
 
 '''
 把inFile里面的所有AS号写入到outFile中
@@ -51,12 +51,12 @@ def dataConverter(in_relaFile_path, out_temp_text_file):
         line = fp.readline()
         cnt = 1
         nodeList = []
-        
+
         while line:
             # 现在逻辑不会有‘#’开头
             if (line[0] != '#'):
-                data:List[AS_CODE or str] = line.split('|')
-                outString:str = str(data[0]) + "\t" + str(data[1])
+                data: List[AS_CODE or str] = line.split('|')
+                outString: str = str(data[0]) + "\t" + str(data[1])
                 try:
                     if (int(data[0]) not in nodeList):
                         nodeList.append(int(data[0]))
@@ -86,9 +86,7 @@ def dataConverter(in_relaFile_path, out_temp_text_file):
     ouf.close()
 
 
-
-
-def graphGenerator(in_temp_text_file:str, out_mtx_file:str):
+def graphGenerator(in_temp_text_file: str, out_mtx_file: str):
     '''
     in_temp_text_file 临时输出文件-1路径
     out_mtx_file : 二维矩阵路径 大小为as最大值
@@ -96,14 +94,15 @@ def graphGenerator(in_temp_text_file:str, out_mtx_file:str):
     将临时输出文件-1转为矩阵存到out_mtx_file
     同时存下矩阵所有节点,路径为out_mtx_file.nodeList
     '''
-    def determineNodeCount(in_temp_text_file:str, out_mtx_file:str) -> int:
+
+    def determineNodeCount(in_temp_text_file: str, out_mtx_file: str) -> int:
         # 所有AS列表
-        nodeList:List[AS_CODE] = []
+        nodeList: List[AS_CODE] = []
         with open(in_temp_text_file, 'r') as f:
             content = f.readlines()
         for line in content:
             if (line[0] != '#'):
-                splitLine:List[Union[AS_CODE,str]] = line.split("\t", 2)
+                splitLine: List[Union[AS_CODE, str]] = line.split("\t", 2)
                 if (int(splitLine[0]) not in nodeList):
                     nodeList.append(int(splitLine[0]))
                 if (int(splitLine[1]) not in nodeList):
@@ -118,7 +117,7 @@ def graphGenerator(in_temp_text_file:str, out_mtx_file:str):
         ouf.close()
         return max(nodeList)
 
-    def fileToSparse(in_temp_text_file:str, out_mtx_file:str):
+    def fileToSparse(in_temp_text_file: str, out_mtx_file: str):
         '''
         reads the full AS graph in as a text file of relationships,
         converts it to a sparse matrix (note that row x or column x is for AS x)
@@ -127,35 +126,34 @@ def graphGenerator(in_temp_text_file:str, out_mtx_file:str):
         usage: fileToSparse("Cyclops_caida_cons.txt")
         '''
 
-        numNodes:int = determineNodeCount(in_temp_text_file, out_mtx_file)
+        numNodes: int = determineNodeCount(in_temp_text_file, out_mtx_file)
 
         with open(in_temp_text_file, 'r') as f:
             content = f.readlines()
-        
-        #用最大的AS号创建 numNodes行 numNodes列矩阵
-        empMatrix:MATRIX = sparse.lil_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
+
+        # 用最大的AS号创建 numNodes行 numNodes列矩阵
+        empMatrix: MATRIX = sparse.lil_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
         i = 1
         total = len(content)
-        
+
         for line in content:
             if i % 1000 == 0:
                 # 记录进度
                 print("completed: " + str((float(i) / float(total)) * 100.0))
             i += 1
 
-
-            splitLine:List[AS_CODE] = line.split("\t", 2)
+            splitLine: List[AS_CODE] = line.split("\t", 2)
             node1 = int(splitLine[0])
             node2 = int(splitLine[1])
-            relationship:str = splitLine[2][:3]
+            relationship: str = splitLine[2][:3]
             if relationship == "p2p":
                 empMatrix[node1, node2] = 1
                 empMatrix[node2, node1] = 1
             if relationship == "p2c":
                 empMatrix[node1, node2] = 2
                 empMatrix[node2, node1] = 3
-        
-        #转换格式存入文件
+
+        # 转换格式存入文件
         scipy.io.mmwrite(out_mtx_file, empMatrix.tocsr())
         return numNodes
 
@@ -163,13 +161,14 @@ def graphGenerator(in_temp_text_file:str, out_mtx_file:str):
 
 
 # 准备工作及创建路由树
-def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes:int) -> None:
+def speedyGET(mtx_path: str, dsn_file: RTREE_CC_PATH, mtx_nodeList_file: str, numNodes: int) -> None:
     '''
     mtx_path 矩阵路径
     dsn_file rtree/cc路径
     mtx_nodeList_file:矩阵节点列表文件路径
     numNodes:最大AS号
     '''
+
     def checkPreviousLevelsAlt(BFS, node, level):
         '''
         check if node is in BFS at given level or any previous level
@@ -180,8 +179,8 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
             level -= 1
         return False
 
-    
-    def customerToProviderBFS(destinationNode:AS_CODE, routingTree:MATRIX, graph:MATRIX) -> Tuple[MATRIX,List[Tuple[int,List[AS_CODE]]],Dict[AS_CODE,int]]:
+    def customerToProviderBFS(destinationNode: AS_CODE, routingTree: MATRIX, graph: MATRIX) -> Tuple[
+        MATRIX, List[Tuple[int, List[AS_CODE]]], Dict[AS_CODE, int]]:
         '''
         input:
             destinationNode (the root of routing tree)
@@ -192,41 +191,42 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
         what it does:
             perform a bfs from destinationNode and only add relationship = 3
         '''
-        BFS:List[Tuple[int,List[AS_CODE]]] = [(0, [destinationNode])]
-        levels:Dict[AS_CODE,int] = {}  # Dictionary returning the highest level of each key
+        BFS: List[Tuple[int, List[AS_CODE]]] = [(0, [destinationNode])]
+        levels: Dict[AS_CODE, int] = {}  # Dictionary returning the highest level of each key
 
         # get all Node
-        allNodes:List[AS_CODE] = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
+        allNodes: List[AS_CODE] = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
         for node in allNodes:
             levels[node] = -1
 
         levels[destinationNode] = 0
 
         for pair in BFS:
-            level:int = pair[0]
-            vertices:List[AS_CODE] = pair[1]
+            level: int = pair[0]
+            vertices: List[AS_CODE] = pair[1]
             for vertex in vertices:
                 for node, relationship in zip(graph[vertex].nonzero()[1], graph[vertex].data):
                     # 找当前节点的provider，并且不在矩阵中，并且层数不大于当前节点
                     if (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0) and (
-                        (not levels[node] <= level) or (levels[node] == -1)):
-                        #设置矩阵节点
+                            (not levels[node] <= level) or (levels[node] == -1)):
+                        # 设置矩阵节点
                         routingTree[node, vertex] = 3
-                        #如果当前是BFS的最后一层
+                        # 如果当前是BFS的最后一层
                         if BFS[-1][0] == level:
-                            #把这个点加入到BFS的下一层
+                            # 把这个点加入到BFS的下一层
                             BFS.append((level + 1, [node]))
                             levels[node] = level + 1
                         else:
-                            #否则记录到同一层中
+                            # 否则记录到同一层中
                             BFS[-1][1].append(node)
                             levels[node] = BFS[-1][0]
                     elif (relationship == 3) and (routingTree[node, vertex] == 0 and routingTree[vertex, node] == 0):
-                        #在其他层出现过的节点也记录到矩阵
+                        # 在其他层出现过的节点也记录到矩阵
                         routingTree[node, vertex] = 3
         return routingTree, BFS, levels
 
-    def peerToPeer(routingTree:MATRIX, BFS:List[Tuple[int,List[AS_CODE]]], graph:MATRIX, levels:Dict[AS_CODE,int]) -> Tuple[MATRIX,List[Tuple[int,List[AS_CODE]]],Dict[AS_CODE,int]]:
+    def peerToPeer(routingTree: MATRIX, BFS: List[Tuple[int, List[AS_CODE]]], graph: MATRIX, levels: Dict[AS_CODE, int]) -> Tuple[
+        MATRIX, List[Tuple[int, List[AS_CODE]]], Dict[AS_CODE, int]]:
         '''
         input:
             routing tree which is sparse also
@@ -237,9 +237,9 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
         purpose:
             connect new nodes to nodes added in step 1 with relationship = 1
         '''
-        oldNodes:List[AS_CODE] = []
-        old:Dict[AS_CODE,int] = {}
-        allNodes:List[AS_CODE] = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
+        oldNodes: List[AS_CODE] = []
+        old: Dict[AS_CODE, int] = {}
+        allNodes: List[AS_CODE] = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
         for node in allNodes:
             old[node] = 0
 
@@ -247,8 +247,8 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
             oldNodes.extend(pair[1])
             for node in pair[1]:
                 old[node] = 1
-        newBFS:List[Tuple[int,List[AS_CODE]]] = copy.deepcopy(BFS)
-        newLevels:Dict[AS_CODE,int] = levels
+        newBFS: List[Tuple[int, List[AS_CODE]]] = copy.deepcopy(BFS)
+        newLevels: Dict[AS_CODE, int] = levels
         for pair in BFS:
             level = pair[0]
             vertices = pair[1]
@@ -264,7 +264,7 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
                             newLevels[node] = newBFS[-1][0]
         return routingTree, newBFS, newLevels
 
-    def providerToCustomer(routingTree:MATRIX, BFS:List[Tuple[int,List[AS_CODE]]], graph:MATRIX, levels:Dict[AS_CODE,int]) -> MATRIX:
+    def providerToCustomer(routingTree: MATRIX, BFS: List[Tuple[int, List[AS_CODE]]], graph: MATRIX, levels: Dict[AS_CODE, int]) -> MATRIX:
         '''
         input:
             routing tree which is sparse also
@@ -275,9 +275,9 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
         purpose:
             breadth first search of tree, add nodes with relationship 2
         '''
-        oldNodes:List[AS_CODE] = []
-        old:Dict[AS_CODE,int] = {}
-        allNodes:List[AS_CODE] = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
+        oldNodes: List[AS_CODE] = []
+        old: Dict[AS_CODE, int] = {}
+        allNodes: List[AS_CODE] = set(np.append(graph.nonzero()[1], graph.nonzero()[0]))
         for node in allNodes:
             old[node] = 0
         for pair in BFS:
@@ -304,7 +304,7 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
                         routingTree[node, vertex] = 2
         return routingTree
 
-    def saveAsNPZ(fileName:str, matrix:MATRIX):
+    def saveAsNPZ(fileName: str, matrix: MATRIX):
         matrixCOO = matrix.tocoo()
         row = matrixCOO.row
         col = matrixCOO.col
@@ -312,7 +312,7 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
         shape = matrixCOO.shape
         np.savez(fileName, row=row, col=col, data=data, shape=shape)
 
-    def makeRoutingTree(destinationNode:AS_CODE, fullGraph:MATRIX):
+    def makeRoutingTree(destinationNode: AS_CODE, fullGraph: MATRIX):
         '''
         input:
             destination AS
@@ -324,33 +324,32 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
         if "dcomplete" + str(destinationNode) + '.npz' in os.listdir(dsn_file):
             print('exist')
             return
-        routingTree:MATRIX = sparse.dok_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
-        
+        routingTree: MATRIX = sparse.dok_matrix((numNodes + 1, numNodes + 1), dtype=np.int8)
 
         # 找是 destinationNode 的 provider 的节点
         stepOneRT, stepOneNodes, lvls = customerToProviderBFS(destinationNode, routingTree, fullGraph)
         # 找是 destinationNode 的 peer 的节点
         stepTwoRT, stepTwoNodes, lvlsTwo = peerToPeer(stepOneRT, stepOneNodes, fullGraph, lvls)
         # 找是 destinationNode 的 customer 的节点
-        stepThreeRT:MATRIX = providerToCustomer(stepTwoRT, stepTwoNodes, fullGraph, lvlsTwo)
+        stepThreeRT: MATRIX = providerToCustomer(stepTwoRT, stepTwoNodes, fullGraph, lvlsTwo)
         saveAsNPZ(os.path.join(dsn_file, "dcomplete" + str(destinationNode)), stepThreeRT)
 
-    fullGraph:MATRIX = scipy.io.mmread(str(mtx_path)).tocsr()  # read the graph on all ranks
+    fullGraph: MATRIX = scipy.io.mmread(str(mtx_path)).tocsr()  # read the graph on all ranks
 
-    nodeList:List[AS_CODE] = []
+    nodeList: List[AS_CODE] = []
     print('nodeListFile', mtx_nodeList_file)
     with open(mtx_nodeList_file) as fp:
-        line:AS_CODE = fp.readline()
+        line: AS_CODE = fp.readline()
         while line:
             if (line[-1] == '\n'):
                 line = line[:-1]
             nodeList.append(int(line))
             line = fp.readline()
     print("Max ASNode ID: " + str(max(nodeList)))
-    
-    #按照需求过滤节点
+
+    # 按照需求过滤节点
     nodeList = gl_filter_rtree(nodeList, gl_asn_data)
-    print('len(nodeList)',len(gl_filter_rtree(nodeList, gl_asn_data)))
+    print('len(nodeList)', len(gl_filter_rtree(nodeList, gl_asn_data)))
     thread_pool = ThreadPool(processes=multiprocessing.cpu_count() * 10)
     for destinationNode in nodeList:
         try:
@@ -367,17 +366,17 @@ def speedyGET(mtx_path:str,dsn_file:RTREE_CC_PATH,mtx_nodeList_file:str,numNodes
         except Exception as e:
             print('Exception', e)
             raise e
-    
+
     thread_pool.close()
     thread_pool.join()
-    
+
 
 '''
     从国家的as，以及as关系文件，提取出国家内部拓扑的relas [provider、customer、peer]
     '''
 
 
-def create_rela_file(relas:Dict[AS_CODE,List[List[AS_CODE]]], relaFile_path:str):
+def create_rela_file(relas: Dict[AS_CODE, List[List[AS_CODE]]], relaFile_path: str):
     '''
     relas:as关系字典
     relaFile_path:as-rel.txt存储路径
@@ -396,8 +395,7 @@ def create_rela_file(relas:Dict[AS_CODE,List[List[AS_CODE]]], relaFile_path:str)
                     f.write(str(c) + '|' + str(b) + '|0\n')
 
 
-
-def start_create_routingTree(dsn_file:RTREE_CC_PATH, relaFile_path:str, cc:COUNTRY_CODE) -> None:
+def start_create_routingTree(dsn_file: RTREE_CC_PATH, relaFile_path: str, cc: COUNTRY_CODE) -> None:
     '''
     dsn_file:rtree/cc路径
     relaFile_path:as-rel.txt存储路径
@@ -408,9 +406,8 @@ def start_create_routingTree(dsn_file:RTREE_CC_PATH, relaFile_path:str, cc:COUNT
     dataConverter(relaFile_path, os.path.join(gl_dst_dir_path, 'temp', '%s_bgp-sas.npz' % cc))
 
     # 将 cc 下所有AS全路径图的文本文件转为矩阵文件
-    maxNum:int = graphGenerator(os.path.join(gl_dst_dir_path, 'temp', '%s_bgp-sas.npz' % cc),
-                            os.path.join(gl_dst_dir_path, 'temp', '%s_routingTree.mtx' % cc))
-
+    maxNum: int = graphGenerator(os.path.join(gl_dst_dir_path, 'temp', '%s_bgp-sas.npz' % cc),
+                                 os.path.join(gl_dst_dir_path, 'temp', '%s_routingTree.mtx' % cc))
 
     speedyGET(
         os.path.join(gl_dst_dir_path, 'temp', '%s_routingTree.mtx' % cc), dsn_file,
@@ -422,14 +419,14 @@ def start_create_routingTree(dsn_file:RTREE_CC_PATH, relaFile_path:str, cc:COUNT
 '''生成一个国家内的排名前10的AS的路由树'''
 
 
-def rTree(relas:Dict[AS_CODE,List[List[AS_CODE]]], dsn_file:RTREE_CC_PATH, cc:COUNTRY_CODE) -> None:
+def rTree(relas: Dict[AS_CODE, List[List[AS_CODE]]], dsn_file: RTREE_CC_PATH, cc: COUNTRY_CODE) -> None:
     '''
     relas:as关系字典
     dsn_file :存储rtree路径
     cc:Country code
     创建路由树
     '''
-    relaFile_path:str = os.path.join(dsn_file, 'as-rel.txt')
+    relaFile_path: str = os.path.join(dsn_file, 'as-rel.txt')
     # 创建 cc 下所有AS全路径图
     create_rela_file(relas, relaFile_path)
     # 开始准备创建路由树
@@ -441,7 +438,7 @@ def rTree(relas:Dict[AS_CODE,List[List[AS_CODE]]], dsn_file:RTREE_CC_PATH, cc:CO
     '''
 
 
-def create_relas(file:CC_PATH) -> Dict[AS_CODE,List[List[AS_CODE]]]:
+def create_relas(file: CC_PATH) -> Dict[AS_CODE, List[List[AS_CODE]]]:
     '''
     file:cc2as单一json路径
     生成as关系字典
@@ -449,13 +446,13 @@ def create_relas(file:CC_PATH) -> Dict[AS_CODE,List[List[AS_CODE]]]:
     return as关系字典
     '''
     # global relas
-    relas:Dict[AS_CODE,List[List[AS_CODE]]] = {}
+    relas: Dict[AS_CODE, List[List[AS_CODE]]] = {}
     with open(gl_as_rela_file_path, 'r') as f:
-        as_rela:Dict[AS_CODE,List[AS_CODE]] = json.load(f)
+        as_rela: Dict[AS_CODE, List[AS_CODE]] = json.load(f)
     with open(file, 'r') as f:
-        cclist:List[AS_CODE] = json.load(f)
+        cclist: List[AS_CODE] = json.load(f)
     for c in cclist:
-        #[provider、customer、peer]
+        # [provider、customer、peer]
         relas[c] = [[], [], []]
 
     for c in relas:
@@ -481,7 +478,7 @@ gl_as_rela_file_path 国家对应的topo关系文件
 
 
 @record_launch_time_and_param(2)
-def create_route_tree(cc_path:CC_PATH, _dsn_path:RTREE_PATH, country:COUNTRY_CODE) -> None: 
+def create_route_tree(cc_path: CC_PATH, _dsn_path: RTREE_PATH, country: COUNTRY_CODE) -> None:
     '''
     cc_path:cc2as文件夹下单独json文件路径
     _dst_dir_path:output路径
@@ -489,12 +486,12 @@ def create_route_tree(cc_path:CC_PATH, _dsn_path:RTREE_PATH, country:COUNTRY_COD
 
     创建路由树,存在{_dst_dir_path}/rtree
     '''
-    country_name:List[COUNTRY_CODE] = os.listdir(_dsn_path)
-    dsn_path:RTREE_CC_PATH = os.path.join(_dsn_path, country)
+    country_name: List[COUNTRY_CODE] = os.listdir(_dsn_path)
+    dsn_path: RTREE_CC_PATH = os.path.join(_dsn_path, country)
     if country not in country_name:
         mkdir(dsn_path)
     print(country + ' begin')
-    relas:Dict[AS_CODE,List[List[AS_CODE]]] = create_relas(cc_path)
+    relas: Dict[AS_CODE, List[List[AS_CODE]]] = create_relas(cc_path)
 
     # 判断rela是否为空
     relas_is_empty = True
@@ -509,13 +506,12 @@ def create_route_tree(cc_path:CC_PATH, _dsn_path:RTREE_PATH, country:COUNTRY_COD
     if relas_is_empty:
         print('%s end ,relas is empty' % country)
         return
-    
 
     rTree(relas, dsn_path, country)
     print(country + ' end')
 
 
-def set_glabal_variable(as_rela_file:str, asn_data:Dict[AS_CODE, int], model_path:str, _dst_dir_path:OUTPUT_PATH) -> None:
+def set_glabal_variable(as_rela_file: str, asn_data: Dict[AS_CODE, int], model_path: str, _dst_dir_path: OUTPUT_PATH) -> None:
     global gl_asn_data
     global gl_filter_rtree
     global gl_as_rela_file_path
@@ -523,7 +519,7 @@ def set_glabal_variable(as_rela_file:str, asn_data:Dict[AS_CODE, int], model_pat
 
     gl_asn_data = asn_data
     dynamic_module = import_module(model_path)
-    gl_filter_rtree= dynamic_module.filter_rtree
+    gl_filter_rtree = dynamic_module.filter_rtree
     gl_dst_dir_path = _dst_dir_path
     gl_as_rela_file_path = as_rela_file
 
@@ -542,18 +538,18 @@ def create_rtree(as_rela_file: str, _dst_dir_path: OUTPUT_PATH, _type: TOPO_TPYE
 
     创建路由树,存在{_dst_dir_path}/rtree
     '''
-    
+
     set_glabal_variable(as_rela_file, asn_data, model_path, _dst_dir_path)
 
-    rtree_path:RTREE_PATH = os.path.join(_dst_dir_path, _type, 'rtree')
+    rtree_path: RTREE_PATH = os.path.join(_dst_dir_path, _type, 'rtree')
     mkdir(rtree_path)
 
     process_pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     for cc in cc_list:
         try:
-            cc_path:CC_PATH = os.path.join(cc2as_path, cc + '.json')
-            
-            #主体入口
+            cc_path: CC_PATH = os.path.join(cc2as_path, cc + '.json')
+
+            # 主体入口
             # 异步路由树可能会出问题
             create_route_tree(cc_path, rtree_path, cc)
             # process_pool.apply(create_route_tree, (cc_path, rtree_path, cc))

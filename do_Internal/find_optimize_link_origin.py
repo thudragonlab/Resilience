@@ -347,11 +347,11 @@ class FindOptimizeLink():
                     if 0.5 <= float(numberAsns[_as]) / float(numberAsns[_as2]) <= 2:
                         cost = min(cost, a)
                     else:
-                        if _as in as_peer and numberAsns[_as2] <= as_peer[_as][0]*1.2 and \
-                            numberAsns[_as2] >= as_peer[_as][1]*0.8:
+                        if _as in as_peer and numberAsns[_as2] <= as_peer[_as][0] * 1.2 and \
+                                numberAsns[_as2] >= as_peer[_as][1] * 0.8:
                             cost = min(cost, b)
-                        elif _as2 in as_peer and numberAsns[_as] <= as_peer[_as2][0]*1.2 and \
-                            numberAsns[_as] >= as_peer[_as2][1]*0.8:
+                        elif _as2 in as_peer and numberAsns[_as] <= as_peer[_as2][0] * 1.2 and \
+                                numberAsns[_as] >= as_peer[_as2][1] * 0.8:
                             cost = min(cost, b)
                 elif relation == 'p2c' and numberAsns[_as] >= numberAsns[_as2] * 0.95:
                     cost = min(cost, c)
@@ -359,8 +359,8 @@ class FindOptimizeLink():
                     cost = min(cost, c)
             return cost
 
-        state = {'1':{'1':['p2p', 'p2c', 'c2p'],'2':['c2p']}, \
-            '2':{'1':['p2c']}}
+        state = {'1': {'1': ['p2p', 'p2c', 'c2p'], '2': ['c2p']}, \
+                 '2': {'1': ['p2c']}}
         with open(self.dsn_path + '.begin_hash_dict.json', 'r') as f:
             self.begin_hash_dict = json.load(f)
         with open(self.dsn_path + '.end_hash_dict.json', 'r') as f:
@@ -544,7 +544,6 @@ def find_optimize_link_pool(_dsn_path: OUTPUT_PATH, cname: COUNTRY_CODE):
 NODE_VALUE = 'basic'  # 'basic' 'user' 'domain'
 as_importance_path = ''
 
-
 # [按受影响的节点数量倒序取前多少名,破坏节点数量]
 # sample_num_dict = {'1': [400, 1], '2': [
 #         180, 2], '3': [100, 3], '4': [80, 4]}
@@ -554,7 +553,8 @@ a, b, c = 0, 0, 100
 
 
 @record_launch_time
-def find_optimize_link(txt_path: str, _dsn_path: OUTPUT_PATH, _type: TOPO_TPYE, cone_path: str, cc_list: List[COUNTRY_CODE],_as_importance_path: WEIGHT_PATH) -> None:
+def find_optimize_link(txt_path: str, _dsn_path: OUTPUT_PATH, _type: TOPO_TPYE, cone_path: str, cc_list: List[COUNTRY_CODE],
+                       _as_importance_path: WEIGHT_PATH) -> None:
     '''
     txt_path 原始的路由topo数据
     _dsn_path ouput路径
