@@ -437,9 +437,5 @@ def main(prefix,v2_path,as_rela_file):
         incoder = {encoder[i]: i for i in encoder}
     gl_incoder = incoder
     p2 = os.path.join(prefix,'rtree/')
-    old_rank_file = '/home/peizd01/for_dragon/pzd_External/public/rank_2.json'
-    with open(old_rank_file, 'r') as f: temp = json.load(f)
     if not os.path.exists(p2): os.makedirs(p2)
-    cces = list(temp.keys())
-    cces.reverse()
     monitor_routingTree(as_rela_file,v2_path, p2)
