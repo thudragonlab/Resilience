@@ -105,6 +105,14 @@ def anova_sort(dsn_path, VALUE, num, reader):
 
 
 def cal_rank_weight(_cc: str, rtree_path: str, as_dict: Dict[str, int]) -> int:
+    '''
+    _cc: country code
+    rtree_path: 路由树路径
+    as_dict : as排名字典
+
+    计算国家最终排名
+    返回排名权重
+    '''
     file_name = os.listdir(os.path.join(rtree_path, _cc))
     file_name = [i for i in file_name if i.find('.graph') != -1]
     npz_file_name = [i for i in os.listdir(os.path.join(rtree_path, _cc)) if i[-1] == 'z']
@@ -140,6 +148,16 @@ def cal_rank_weight(_cc: str, rtree_path: str, as_dict: Dict[str, int]) -> int:
 
 
 def country_internal_rank( topo_list, output_path, RESULT_SUFFIX, type_path, _type, country_name, num,data_dim):
+    '''
+    topo_list topo类型列表
+    output_path output路径
+    RESULT_SUFFIX 优化后排序结果存储路径
+    type_path : anova var
+    _type : med var
+    country_name : country code
+    num 优化连接数量
+    data_dim : basic|user|domain列表
+    '''
     rank_dir_path = os.path.join(output_path, 'public', 'optimize')
     mkdir(rank_dir_path)
 

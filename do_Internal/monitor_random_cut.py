@@ -18,6 +18,15 @@ gl_cc2as_path:CC2AS_PATH = None
 class monitor_cut():
 
     def __init__(self, n_node:int, file_path:str, dsn_path:ADDDEL_PATH, asn:AS_CODE,cc2as_list_path:CC_PATH):
+        '''
+        n_node 最多破坏节点个数
+        n_link 最多破坏链接个树 (没用)
+        file_path rtree路径
+        dsn_path 记录破坏结果路径
+        asn: as code
+        cc2as_list_path cc2as下的json文件路径
+
+        '''
         self.file_name:str = file_path
         self.n_node:int = n_node
         # self.n_link = n_link
@@ -71,6 +80,9 @@ class monitor_cut():
         
 
     def monitor_random_node_addDel(self):
+        '''
+        随机破坏节点,破坏结果存入addDel.txt
+        '''
         nodelist:List[AS_CODE] = set(self.row)
         tempG:int = len(self.graph)
         # print(self.dsn_path)
@@ -97,6 +109,11 @@ class monitor_cut():
                             self.graph = json.load(ff)
 
     def monitor_cut_node(self, queue:List[AS_CODE]):
+        '''
+        queue 随机破坏的节点列表
+
+        从根据路由树生成的图中计算被影响的节点
+        '''
         res:List[AS_CODE] = []
         for node in queue:
             for i in self.graph[node][1]:

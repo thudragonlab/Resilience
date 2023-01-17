@@ -38,8 +38,17 @@ def extract_connect_list_async(
     path: RTREE_PATH,
     dsn_path: COUNT_NUM_PATH,
 ):
+    '''
+    cc: country code
+    path rtree 路径
+    dsn_path count_num存储路径
 
+    计算as对应的权重数据
+    '''
     def basic_user_domain(line: str) -> Tuple[AFFECTED_AS_NUMBER, USER_IMPORTANT_WEIGHT, DOMAIN_IMPORTANT_WEIGHT]:
+        '''
+        line addDel.txt的每行记录(第一行除外)
+        '''
         as_list: List[AS_CODE] = line.split(' ')
         res1: USER_IMPORTANT_WEIGHT = 0
         res2: DOMAIN_IMPORTANT_WEIGHT = 0
@@ -86,6 +95,10 @@ def extract_connect_list_async(
 
 
 def extract_connect_list(path: RTREE_PATH, dsn_path: COUNT_NUM_PATH):
+    '''
+    path 路由树路径
+    dsn_path count_num存储路径
+    '''
     cc_name: List[COUNTRY_CODE] = os.listdir(path)
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     for cc in cc_name:
@@ -104,6 +117,13 @@ def extract_connect_list(path: RTREE_PATH, dsn_path: COUNT_NUM_PATH):
 
 
 def anova_sort(dsn_path:ANOVA_NUM_PATH, VALUE:ASPECT_TPYE, reader:List[Tuple[str,str,int]]):
+    '''
+    dsn_path: anova存储路径
+    VALUE : basic|user|domain 维度类型
+    reader : as两两比对的结果集
+
+    进行最终排序,结果存到dsn_path
+    '''
     # if os.path.exists(os.path.join(dsn_path, 'sorted_country_'+VALUE+'.json')): return
     # with open(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json'), 'r') as f:
     #     reader = json.load(f)
@@ -159,7 +179,11 @@ def anova_sort(dsn_path:ANOVA_NUM_PATH, VALUE:ASPECT_TPYE, reader:List[Tuple[str
 
 def anova(dict_l: Dict[str, List[float]], dsn_path: ANOVA_NUM_PATH, VALUE: ASPECT_TPYE):
     '''
-    输入L:[[],...,[]]，列表每个元素为国家所有的破坏性度量
+    dict_l 输入L:[[],...,[]]，列表每个元素为国家所有的破坏性度量
+    dsn_path : anova存储路径
+    VALUE : basic|user|domain 维度类型
+
+    对AS进行两两对比,结果存到本地文件
     '''
     # if os.path.exists(os.path.join(dsn_path, 'anova_' + VALUE + '_multi_comparison.json')):
     #     return
@@ -199,8 +223,18 @@ def anova(dict_l: Dict[str, List[float]], dsn_path: ANOVA_NUM_PATH, VALUE: ASPEC
 
 @record_launch_time_and_param(2)
 def groud_truth_based_anova(path: COUNT_NUM_PATH, dsn_path: ANOVA_NUM_PATH, value: ASPECT_TPYE):
+    '''
+    path count_num路径
+    dsn_path anova结果存储路径
+    value user|domain|basic 三个维度类型
 
+    从basic,user,domain,三个维度进行anova排序
+
+    '''
     def groud_truth_based_anova_thread(_cc: COUNTRY_CODE):
+        '''
+        cc: country code
+        '''
         if _cc.find('.json') != -1 or _cc[0] == '.': return
         cc_name: List[str] = os.listdir(os.path.join(path, _cc))
         for file in cc_name:
@@ -244,9 +278,19 @@ def groud_truth_based_anova(path: COUNT_NUM_PATH, dsn_path: ANOVA_NUM_PATH, valu
 
 
 @record_launch_time
-def country_internal_rank(path, rank_path, _type, topo_list, data_dim):
-
+def country_internal_rank(path:OUTPUT_PATH, rank_path, _type, topo_list:List[TOPO_TPYE], data_dim:List[ASPECT_TPYE]):
+    '''
+    path output 路径
+    rank_path : 最终排序文件存储路径
+    _type : 排序类型 (anova var)
+    topo_list : topo类型
+    data_dim basic|user|domain 维度列表
+    '''
     def country_internal_rank_thread(value2, value):
+        '''
+        value2: basic|user|domain 维度类型
+        value:topo类型
+        '''
         del_path = os.path.join(path, value, 'rtree')
         npz_file_name = del_path
         anova_path = os.path.join(path, value, 'result', _type, 'sorted_country_' + value2 + '.json')
@@ -263,43 +307,7 @@ def country_internal_rank(path, rank_path, _type, topo_list, data_dim):
         for _cc in res:
             if _cc not in rank: continue
             temp = cal_rank_weight(_cc,del_path,res[_cc])
-            # file_name = os.listdir(os.path.join(del_path, _cc))
-            # file_name = [i for i in file_name if i.find('.graph') != -1]
-            # if len(file_name) == 0:  # 如果没有找到生成的.graph数据
-            #     temp = 0
-            #     for _as in res[_cc]:
-            #         if _as[0] == 'd': _as = _as[9:]
-            #         temp += res[_cc][_as]  # temp是每个国家下所有AS排名之和
-            #     temp = temp / len(res[_cc])  # temp 再除以这个国家下AS的数量
-            # else:  # 否则
-            #     ans:Dict[AS_CODE,int] = {}
-            #     for _as in res[_cc]:
-            #         if len(_as) == 0: continue
-            #         if _as[0] == 'd': _as = _as[9:]  #格式化每个国家下的AS号
-            #         if 'dcomplete' + _as + '.npz.graph.json' in file_name:  # 如果有graph文件
-            #             with open(os.path.join(del_path, _cc, 'dcomplete' + _as + '.npz.graph.json'), 'r') as f:
-            #                 n = json.load(f)
-            #             ans[_as] = len(set(list(n.keys())))  # 统计每个路由树下的链接个数
-            #         elif 'dcomplete' + _as + '.npz' in os.path.join(npz_file_name, _cc):  #否则解析npz文件
-            #             m = np.load(os.path.join(npz_file_name, _cc, 'dcomplete' + _as + '.npz'))
-            #             ans[_as] = len(set(m['row']))  # 统计每个路由树下的链接个数
-            #         else:
-            #             ans[_as] = 0  # 否则链接数为0
-            #     temp = gl_cal_rank_model(res[_cc],ans)
-                
-                # for _as in res[_cc]:
-                #     if len(_as) == 0: continue
-                #     if _as[0] == 'd': _as = _as[9:]
-                #     if ans[_as] == 0: continue
-                #     # temp += res[_cc][_as] * ans[_as] #  sum(国家下所有AS的排名 * 各自链接数量)
-                #     temp += res[_cc][_as]  #  sum(国家下所有AS的排名 * 各自链接数量)
-
-                #     # print(temp,len(res[_cc]))
-                # # try:
-                # #     temp /= sum(list(ans.values())) # 再除以国家所有链接的个数
-                # # except:
-                # temp = sum(res[_cc].values()) / len(res[_cc])  # 如果ans是空的 每个国家的AS排名之和除以拥有的AS数量
-
+           
             if _cc in rank:
                 if temp < 1:
                     temp = 1
@@ -325,6 +333,14 @@ def country_internal_rank(path, rank_path, _type, topo_list, data_dim):
 
 
 def judge_var(target_list, result):
+    '''
+    target_list 待排序的as列表
+    result 用来存储最终结果
+
+    用递归的方式，按照方差从小到大为数据排序
+    
+
+    '''
     if len(target_list) == 0:
         return
     source_list = target_list[0]
@@ -349,9 +365,17 @@ def judge_var(target_list, result):
 
 @record_launch_time_and_param(1)
 def groud_truth_based_var(path:RESULT_PATH, _type:ASPECT_TPYE):
+    '''
+    path result文件夹路径
+    _type basic|user|domain 维度路径
 
+    计算方差排名结果，结果存储在本地文件
+    '''
     def groud_truth_based_var_thread(cc):
+        '''
+        cc: country code
 
+        '''
         def basic_value_map(x):
             if _type == 'basic':
                 return x[value_dict[_type]] / N
@@ -416,6 +440,14 @@ def groud_truth_based_var(path:RESULT_PATH, _type:ASPECT_TPYE):
 # for rela in ['toposcope', 'toposcope_hidden']:
 @record_launch_time
 def do_extract_connect_list(prefix: OUTPUT_PATH, rela: TOPO_TPYE, weight_data_path: WEIGHT_PATH, cut_node_depth: int):
+    '''
+    prefix output路径
+    rela topo类型
+    weight_data_path 权重数据路径
+    cut_node_depth 破坏节点数量
+
+    创建count_num文件夹,统计所有被破坏As的权重数据
+    '''
     rtree_path: RTREE_PATH = os.path.join(prefix, rela + '/rtree/')
     count_path: COUNT_NUM_PATH = os.path.join(prefix, rela + '/result/count_num')
     global as_importance_path
@@ -432,6 +464,13 @@ def do_extract_connect_list(prefix: OUTPUT_PATH, rela: TOPO_TPYE, weight_data_pa
 # for rela in ['toposcope', 'toposcope_hidden']:
 @record_launch_time
 def do_groud_truth_based_anova(prefix: OUTPUT_PATH, rela: TOPO_TPYE, _cc_list: List[COUNTRY_CODE]):
+    '''
+    prefix output路径
+    rela topo类型
+    _cc_list 国际列表
+
+    用anova排序
+    '''
     global cc_list
     cc_list = _cc_list
     count_path: COUNT_NUM_PATH = os.path.join(prefix, rela + '/result/count_num')
@@ -457,6 +496,11 @@ def do_groud_truth_based_anova(prefix: OUTPUT_PATH, rela: TOPO_TPYE, _cc_list: L
 
 @record_launch_time
 def do_groud_truth_based_var(prefix:OUTPUT_PATH, rela:TOPO_TPYE, _cc_list: List[COUNTRY_CODE]):
+    '''
+    prefix: output 路径
+    rela : topo类型
+    _cc_list : 国家列表
+    '''
     global cc_list
     cc_list = _cc_list
     path:RESULT_PATH = os.path.join(prefix, rela, 'result')
@@ -471,7 +515,13 @@ def do_groud_truth_based_var(prefix:OUTPUT_PATH, rela:TOPO_TPYE, _cc_list: List[
 
 
 @record_launch_time
-def do_country_internal_rank(path, _cc_list, topo_list, data_dim):
+def do_country_internal_rank(path:OUTPUT_PATH, _cc_list:List[COUNTRY_CODE], topo_list:List[TOPO_TPYE], data_dim:List[ASPECT_TPYE]):
+    '''
+    path output路径
+    _cc_list 国家列表
+    topo_list topo类型列表
+    data_dim user|domain|basic 维度列表
+    '''
     # old_prefix = '/home/peizd01/for_dragon/new_data/'
     global cc_list
     # global gl_cal_rank_model
@@ -490,5 +540,7 @@ def do_country_internal_rank(path, _cc_list, topo_list, data_dim):
     # del_path和monitor_random_cut.py中的path含义相当
     # npz_file_name和create_routingtree.py中p2的含义相当
     # anova_path和本文件groud_truth_based_anova函数中anova_path含义相当
+    # 计算anova最终排名
     country_internal_rank(path, new_rank_path, 'anova', topo_list, data_dim)
+    # 计算方差最终排名
     country_internal_rank(path, var_rank_path, 'var', topo_list, data_dim)

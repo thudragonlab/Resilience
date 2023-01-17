@@ -9,7 +9,7 @@ from ast import Lambda
 import os
 import json
 import copy
-from typing import Callable, Dict
+from other_script.my_types import *
 import numpy as np
 import time
 from mpi4py import MPI
@@ -23,7 +23,6 @@ import multiprocessing
 izip=zip
 relas = {}
 
-gl_filter_rtree:Callable
 source_path:str
 gl_incoder:Dict[str,str]
 
@@ -107,8 +106,10 @@ def graphGenerator(inFile, outFile,v2_path):
                 if len(i.split('\t')) < 3:
                     continue
                 as1,as2,_ = i.split('\t')
+                print(as1,as2)
                 numNodes = max(int(as1),numNodes)
                 numNodes = max(int(as2),numNodes)
+                
             # asns = json.load(ff)
             # asns_list = list(map(lambda x : int(x),asns))
             # numNodes = max(asns_list)
@@ -278,56 +279,77 @@ def saveAsNPZ(del_path,destinationNode, matrix):
     remove_internal_link(destinationNode,matrixCOO)
 
 def remove_internal_link(asn,m):
-    
+    '''
+    gl_incoder 
+    asn 当前路由树的as号
+    m 路由树矩阵
+    删除内部链接
+    '''
     def resolve(s):
+        '''
+        s:新的as号
+        根据新的as号找到旧的as号和所属国家并返回
+        '''
         return [s.split('-')[0], s.split('-')[1]]
     
+    # 确认存储路径
     json_path = os.path.join(source_path,'json')
     
-    broad = []
+    broad:list[str] = []
     link = list(zip(m.row, m.col))
 
         # 第一次遍历，存储边界AS代码
+        # a,b 是一个链接的左右节点
     for a, b in link:
         as1, cy1 = resolve(gl_incoder[str(a)])
         as2, cy2 = resolve(gl_incoder[str(b)])
+        # 如果两个链接的所属国家不一致，并且都有匹配的的旧的节点,就记录到broad
         if cy1 != cy2 and 'None' not in [as1, as2, cy1, cy2]:
                 # if cy1!=cy2:
             broad.append(str(a))
             broad.append(str(b))
 
+    # 倒叙遍历所有路由树连接
     for index in range(len(link) - 1, -1, -1):
         as1, cy1 = resolve(gl_incoder[str(link[index][0])])
         as2, cy2 = resolve(gl_incoder[str(link[index][1])])
+        # 如果链接的两个as都在broad中
         if str(link[index][0]) in broad and str(link[index][1]) in broad:
+            # 就替换为真实的as-country
             link[index] = [gl_incoder[str(link[index][0])], gl_incoder[str(link[index][1])]]
         else:
+            #否则丢掉
             link.pop(index)
 
+    #遍历完后link中都是在borad中的链接
+
         # 记录link列表（国家A-》国家B）：[link]
-    cc_pair_link = {}
+    cc_pair_link:Dict[str,List[str]] = {}
         # 以国家为单位，找到前向国家，后向国家
-    cc_rela = {}
+    cc_rela:Dict[COUNTRY_CODE,List[List]] = {}
     for a, b in link:
         as1, cy1 = resolve(a)
         as2, cy2 = resolve(b)
         if cy1 not in cc_rela:
-            cc_rela[cy1] = [set(), set()]
+            # [左节点，右节点]
+            cc_rela[cy1] = [[], []]
         if cy2 not in cc_rela:
-            cc_rela[cy2] = [set(), set()]
-        cc_rela[cy1][1].add(cy2)
-        cc_rela[cy2][0].add(cy1)
+            cc_rela[cy2] = [[], []]
+        cc_rela[cy1][1].append(cy2)
+        cc_rela[cy2][0].append(cy1)
 
         if cy1 + ' ' + cy2 not in cc_pair_link:
-            cc_pair_link[cy1 + ' ' + cy2] = set()
-        cc_pair_link[cy1 + ' ' + cy2].add(as1 + ' ' + as2)
+            cc_pair_link[cy1 + ' ' + cy2] = []
+        #记录cy1 cy2两个国家中所有连接的as号
+        cc_pair_link[cy1 + ' ' + cy2].append(as1 + ' ' + as2)
 
+    # 为list去重
     for key in cc_pair_link.keys():
-        cc_pair_link[key] = list(cc_pair_link[key])
+        cc_pair_link[key] = list(set(cc_pair_link[key]))
     for key in cc_rela:
-        cc_rela[key][0] = list(cc_rela[key][0])
-        cc_rela[key][1] = list(cc_rela[key][1])
-    # print(json_path)
+        cc_rela[key][0] = list(set(cc_rela[key][0]))
+        cc_rela[key][1] = list(set(cc_rela[key][1]))
+    # 写入文件
     with open(os.path.join(json_path, f'dcomplete{asn}.cc_pair_link.json'), 'w') as f:
         json.dump(cc_pair_link, f)
     with open(os.path.join(json_path, f'dcomplete{asn}.cc_rela.json'), 'w') as f:
@@ -427,7 +449,7 @@ def speedyGET(args):
     #    destinationNode = nodeList[index]
     #    routingTree = makeRoutingTree(destinationNode)  ### Calculate the routing tree for this node
 
-    # nodeList = gl_filter_rtree(nodeList, gl_asn_data)
+
     pool = multiprocessing.Pool(20)
     
     with open(args[6]) as ff:
@@ -505,9 +527,11 @@ def monitor_routingTree(as_rela_file,v2_path,dsn_path):
 
 
 
-def main(prefix,v2_path,as_rela_file,build_rtree_model_path):
+def main(prefix,v2_path,as_rela_file):
+    '''生成路由树,只生成边界as的,具体逻辑和域内的一样
+        生成路由树之后会生成这棵树所有的边缘as和国家的对应关系,存到json文件夹中
+    '''
     global relas
-    global gl_filter_rtree
     global source_path
     global gl_incoder
     
@@ -515,13 +539,15 @@ def main(prefix,v2_path,as_rela_file,build_rtree_model_path):
     json_path = os.path.join(source_path,'json')
     os.makedirs(json_path, exist_ok=True)
 
+    '''
+    读取新生成的as号json
+    {'新的as':'旧的as-所属国家'}
+    '''
     encoder_path = os.path.join(source_path,'as-country-code.json')
     with open(encoder_path, 'r') as f:
         encoder = json.load(f)
         incoder = {encoder[i]: i for i in encoder}
     gl_incoder = incoder
-    dynamic_module = import_module(build_rtree_model_path)
-    gl_filter_rtree= dynamic_module.filter_rtree
     p2 = os.path.join(prefix,'rtree/')
     old_rank_file = '/home/peizd01/for_dragon/pzd_External/public/rank_2.json'
     with open(old_rank_file, 'r') as f: temp = json.load(f)

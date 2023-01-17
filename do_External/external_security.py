@@ -62,8 +62,8 @@ def second_order(path, file, dsn_file, value):
                     try:
                         res[_cc][0].remove(cc)
                     except:
-                        print(_cc)
-                        print(cc)
+                        # print(_cc)
+                        # print(cc)
                         exit()
                 for _cc in res[cc][1]:
                     res[_cc][1].remove(cc)
@@ -150,6 +150,7 @@ def second_order(path, file, dsn_file, value):
 def anova(dict_l, dsn_path, VALUE, begin, end):
     '''
     输入L:[[],...,[]]，列表每个元素为边界AS所有的破坏性度量
+    生成AS两两比对的结果
     '''
     l = [v for _,v in dict_l.items()]
     
@@ -181,7 +182,7 @@ def anova(dict_l, dsn_path, VALUE, begin, end):
     res = []
     nums,groups = [], []
     for k, v in dict_l.items():
-        print(k,v)
+        # print(k,v)
         nums+=v
         groups += len(v)*[k]
     # print(groups,nums)
@@ -205,10 +206,16 @@ def anova(dict_l, dsn_path, VALUE, begin, end):
 
 
 def anova_sort(dsn_path, VALUE):
+    '''
+    dsn_path 排序结果存储路径
+    VALUE 排序对比维度（只决定文件名）
+    对之前生成的两两比对的结果进行最终排序
+    '''
     # with open(os.path.join(dsn_path, 'anova'+VALUE+'_multi_comparison.json'), 'r')  as f:
     #     reader = json.load(f)
     reader = set()
     res = {}
+    # 先读取所有两两对比的文件，整合成一个json
     for file in os.listdir(dsn_path):
         if file.find('multi')!=-1 and file.find(VALUE)!=-1:
             with open(os.path.join(dsn_path,file), 'r') as f:
@@ -227,10 +234,13 @@ def anova_sort(dsn_path, VALUE):
                     res[line[0]][2].append(line[1])
                     res[line[1]][0].append(line[0])
     sorted_country = [[]]
+
+    # 没有比其更好的AS排第一
     for k in res:
         if len(res[k][0])==0:
             sorted_country[-1].append(k)
     
+    # 从res中把已经记录过的连接从其他节点的比起更安全和无差异的国家列表中删掉
     while len(res):
         for cc in sorted_country[-1]:
             for _cc in res[cc][2]:
@@ -239,6 +249,7 @@ def anova_sort(dsn_path, VALUE):
                 res[_cc][1].remove(cc)
             del res[cc]
         temp = []
+        # 没有比其更好的AS排第一
         for cc in res:
             if len(res[cc][0])==0:
                 temp.append(cc)
@@ -258,7 +269,7 @@ def groud_truth_based_anova_single(path, dsn_path,value):
     l = {}
     for _dir in os.listdir(path):
         for file in os.listdir(os.path.join(path, _dir)):
-            print(begin, len(l))
+            # print(begin, len(l))
             begin += 1
             if len(l)==N:
                 anova(l, dsn_path, value, begin-N, begin)
@@ -295,6 +306,7 @@ def groud_truth_based_anova(source_path,):
     os.makedirs(dsn_path,exist_ok=True)
     file_name = os.listdir(path)
     gdp, domain, democracy = 0,1,2
+    # 每30个排一次序
     N = 30
     begin = 0
     while begin<len(file_name):
@@ -326,7 +338,13 @@ def groud_truth_based_anova(source_path,):
 
 
 def judge_var(target_list, result):
-    print(len(target_list))
+    '''
+    result 存储最终结果
+    target_list 剩余没有排名的数据
+
+    递归查找target_list中第一个元素,用levene方法计算是否有显著性差异,如果有就加入result
+    '''
+    # print(len(target_list))
     if len(target_list) == 0:
         return
     source_list = target_list[0]
@@ -352,9 +370,8 @@ def judge_var(target_list, result):
 
 def groud_truth_based_var(source_path,):
     '''
-    STEP1 通过anova分析，输入各国的全部连通性度量，看是否有显著性差异。
-    STEP2 如有，判断国家两两间差异。
-    STEP3 对国家进行排序
+    STEP1 输入各国的全部连通性度量
+    STEP2 对国家连通性度量方差进行排序
     '''
     path = os.path.join(source_path,'result','count_num')
     dsn_path = os.path.join(source_path,'result','var')
@@ -366,6 +383,7 @@ def groud_truth_based_var(source_path,):
     result:List[List[str]] = []
     N = 30
     begin = 0
+    # 整理count_num数据到字典中
     while begin<len(file_name):
         l = {}
         end = begin+N
@@ -390,22 +408,33 @@ def groud_truth_based_var(source_path,):
     # anova_sort(dsn_path, 'democracy')
     var_list = list(var_result.values())
     
+    # 区分方差是0的数据
     var_zero_list =  list(filter(lambda x:np.var(x['list']) == 0.0,var_list))
     var_no_zero_list = list(filter(lambda x:np.var(x['list']) != 0.0,var_list))
     var_no_zero_list.sort(key=lambda x: np.var(x['list']))
-    
+    # 方差为0的排在第一位
     result.append(list(map(lambda x:x['key'],var_zero_list)))
+    # 区分方差不是0的数据进行排序，结果存在var_no_zero_list
     judge_var(var_no_zero_list, result)
     with open(os.path.join(dsn_path, 'sorted_country_%s.json' % _type), 'w') as sorted_var_f:
         json.dump(result, sorted_var_f)
 
 
-def extract_connect_list(source_path,gdp_domain_democracy_path,cut_node_depth):
+def extract_connect_list(source_path,cut_node_depth):
+    '''
+    source_path 根路径
+    gdp_domain_democracy_path 权重路径
+    cut_node_depth 破坏节点数量
+    生成count_num文件夹
+    '''
     path = os.path.join(source_path,'monitor')
     dsn_path = os.path.join(source_path,'result','count_num')
     json_path = os.path.join(source_path,'json')
     os.makedirs(dsn_path,exist_ok=True)
-    def gdp_domain_democracy(line):
+    def gdp_domain_democracy(line) -> List:
+        '''
+        line 国家列表，用空格隔开
+        '''
         as_list = line.split(' ')
         res1 = 0
         res2 = 0
@@ -417,45 +446,55 @@ def extract_connect_list(source_path,gdp_domain_democracy_path,cut_node_depth):
                 res3 += country_importance[_as][2]
         return [len(as_list),res1,res2,res3]
 
-    with open(gdp_domain_democracy_path, 'r') as f:
+    # 读取权重数据
+    with open('static/gdp_domain_democracy.json', 'r') as f:
         _country_importance = json.load(f)
-    country_importance = {}
+    country_importance:Dict[COUNTRY_CODE,List] = {}
+    # 生成权重字典
     for line in _country_importance:
         country_importance[line[0]] = line[1:]
     file_name = os.listdir(path)
     json_file_list = os.listdir(json_path)
     for file in file_name:
+        # file 是.addDel文件
         if file.find('.txt')==-1: continue
         
-        asname = file.split('.')[0][9:]
-        if asname+'.json' in os.listdir(dsn_path):
-            print('exist')
+        asname:AS_CODE = file.split('.')[0][9:]
+        # if asname+'.json' in os.listdir(dsn_path):
+        #     print('exist')
             # continue
-        if file.split('.')[0]+'.cc_rela.json' not in json_file_list:
-            continue
+        # if file.split('.')[0]+'.cc_rela.json' not in json_file_list:
+        #     continue
         with open(os.path.join(json_path, file.split('.')[0]+'.cc_rela.json'), 'rU') as f_rela:
             relas = json.load(f_rela)
         with open(os.path.join(json_path, file.split('.')[0]+'.nonconnect.json'), 'rU') as f_non:
             nonconnect = json.load(f_non)
         nonconnect = ' '.join(nonconnect)
-        cclist = set()
+        cclist:Set[COUNTRY_CODE] = set()
         for k in relas:
             cclist.add(k)
             for line in relas[k]:
+                # 求ccList和line的并集并赋值给ccList
                 cclist|=set(line)
-        allinfo = gdp_domain_democracy(' '.join(cclist))
 
-        res = cut_node_depth * [[]]
+        #国家列表以及对应的权重信息    
+        allinfo = gdp_domain_democracy(' '.join(cclist))
+        print(allinfo)
+        # 生成 最多破坏节点数量 个数组
+        res = max(cut_node_depth) * [[]]
         f = open(os.path.join(path, file), 'rU')
+        # 处理破坏结果文件
         for line in f:
             
             l = line.strip('\n').split('|')
             if len(l)>1 and line[0][0]!='(' and l[0]!='':
-                if len(l[1])==0: continue
-                
+                # if len(l[1])==0: continue
+                # 破坏节点数量
                 l1 = l[0].count(' ')
                 if l1<len(res):
+                    # 通过受影响的国家和不连通的国家，计算权重数据
                     l2 = gdp_domain_democracy(l[1]+' '+nonconnect)
+                    # 当前受影响的国家权重数据/所有受影响国家的权重数据
                     l2 = [float(a)/float(b) for a,b in zip(l2, allinfo)]
                     res[l1].append(l2)
 
@@ -584,106 +623,131 @@ def external_isp():
 
 
 # mbd == Ture 用来判断as是否属于且位于这个国家
-def country_broadas_rank(file, dsn_file, user_path, encoder_file,_type, mbd=False):
+def country_broadas_rank(file, dsn_file, user_path, encoder_file,_type):
+    '''
+    file 排名数据
+    dsn_file 权重数据
+    user_path user_influence/AUR数据
+    encoder_file 新生成的asn数据
+    _type anova排名 or var排名
+
+    计算最终排名
+    '''
     os.makedirs(dsn_file,exist_ok=True)
     def get_sum(n):
         r = 0
         for i in range(1,n+1):
             r += 1/i
         return r
+    # 读取旧的排名数据
     with open('/home/peizd01/for_dragon/ccInternal/public/rank.json', 'r') as f:
         ccInternal = json.load(f)
+    # 读取新生成的as号数据，生成字典
     with open(encoder_file, 'r') as f:
         encoder = json.load(f)
     decoder = {encoder[k]:k for k in encoder}
 
+    # 读取AS地理位置数据
     with open('/home/peizd01/for_dragon/basicData/asn-iso.json', 'r') as f:
         asn_iso = json.load(f)
+    # 地区排名数据
     with open(file, 'r') as f:
-        print(file)
+        # print(file)
         sorted_broad = json.load(f)
-    cbrank = {}
+    cbrank:Dict[COUNTRY_CODE,Dict[AS_CODE,int]] = {}
+    #？？
     fenmu = get_sum(len(sorted_broad)-1)
+    # 遍历排名数据
+    # i是排名
     for i in range(len(sorted_broad)):
         for m in sorted_broad[i]:
+            # 转换为真实AS-country
             a = decoder[m]
             _as, _cc = a.split('-')
+            # country加入cbrank字典
             if _cc not in cbrank:
                 cbrank[_cc] = {}
-            # cbrank[_cc][_as] = (1/(i+1))/fenmu
+            # 生成倒序排名 比如一共5名，第一名是倒数第五名
             cbrank[_cc][_as] = len(sorted_broad)-(i+1)
+            # cbrank[_cc][_as] = i + 1
     country_mean = {}
     for _cc in cbrank:
         # print(_cc)
         if _cc+'_AUR.json' in os.listdir(user_path):
+            # 读取路由影响力数据
             with open(os.path.join(user_path, _cc+'_AUR.json'), 'r') as f:
-                aur = json.load(f)
-            k = cbrank[_cc].keys()
-            _min = 1
+                aur:Dict[AS_CODE,float] = json.load(f)
+            k:List[AS_CODE] = list(cbrank[_cc].keys())
+            # 这个没用到？
+            # _min = 1
             _sum = 0
             for _as in k:
                 if _as in aur:
-                    if mbd and asn_iso.get(_as, None) != _cc: 
-                        print(_as,asn_iso.get(_as, None) ,_cc)
-                        continue
-                    _min = min(_min, aur[_as])
+                    # # 如果 as的地理位置与所属国家不一致
+                    # if mbd and asn_iso.get(_as, None) != _cc: 
+                    #     # print(_as,asn_iso.get(_as, None) ,_cc)
+                    #     continue
+                    # _min = min(_min, aur[_as])
                     cbrank[_cc][_as] = [cbrank[_cc][_as], aur[_as]]
+                    # 对AUR的数据求和
                     _sum += cbrank[_cc][_as][-1]
             if _sum==0:
-                if _cc in ccInternal:
-                    print(_cc,'??')
+                # if _cc in ccInternal:
+                #     # print(_cc,'??')
                 continue
             country_mean[_cc] = 0
             for _as in k:
                 if isinstance(cbrank[_cc][_as], list):
-                    country_mean[_cc] += cbrank[_cc][_as][-2]*cbrank[_cc][_as][-1]/_sum
-                    # country_mean[_cc] += cbrank[_cc][_as][-2]*cbrank[_cc][_as][-1]
+                    print('cbrank[_cc][_as]',cbrank[_cc][_as])
+                    # 排名 * AUR的数据 / AUR数据总和就是最终排名
+                    # country_mean[_cc] += cbrank[_cc][_as][-2]*cbrank[_cc][_as][-1]/_sum
+                    country_mean[_cc] += cbrank[_cc][_as][-2]*cbrank[_cc][_as][-1]
     
     country_mean = list(country_mean.items())
     country_mean = sorted(country_mean, key=(lambda x: x[1]), reverse=True)
     with open(os.path.join(dsn_file,f'{_type}.json'), 'w') as f:
         json.dump(country_mean, f)
 
-def count_anova_rank_num(value):
-    user_path = '/home/peizd01/for_dragon/ccExternal/user_influence/AUR/'
-    file = '/home/peizd01/for_dragon/pzd_External/globalCountryLabel/add_hidden_link/result/v2/anova_nonconnect/sorted_country_'+value+'.json'
-    encoder_file = '/home/peizd01/for_dragon/ccExternal/globalCountryLabel/add_hidden_link/as-country-code.json'
-    with open('/home/peizd01/for_dragon/ccInternal/public/rank.json', 'r') as f:
-        ccInternal = json.load(f)
-    with open(encoder_file, 'r') as f:
-        encoder = json.load(f)
-    decoder = {encoder[k]:k for k in encoder}
+# def count_anova_rank_num(value):
+#     user_path = '/home/peizd01/for_dragon/ccExternal/user_influence/AUR/'
+#     file = '/home/peizd01/for_dragon/pzd_External/globalCountryLabel/add_hidden_link/result/v2/anova_nonconnect/sorted_country_'+value+'.json'
+#     encoder_file = '/home/peizd01/for_dragon/ccExternal/globalCountryLabel/add_hidden_link/as-country-code.json'
+#     with open('/home/peizd01/for_dragon/ccInternal/public/rank.json', 'r') as f:
+#         ccInternal = json.load(f)
+#     with open(encoder_file, 'r') as f:
+#         encoder = json.load(f)
+#     decoder = {encoder[k]:k for k in encoder}
 
-    with open('/home/peizd01/for_dragon/basicData/asn-iso.json', 'r') as f:
-        asn_iso = json.load(f)
-    with open(file, 'r') as f:
-        sorted_broad = json.load(f)
-    cbrank = {}
-    for i in range(len(sorted_broad)):
-        for m in sorted_broad[i]:
-            a = decoder[m]
-            _as, _cc = a.split('-')
-            if _cc not in cbrank:
-                cbrank[_cc] = {}
-            cbrank[_cc][_as] = i+1
-    res = {}
-    for _cc in cbrank:
-        res[_cc] = {}
-        if _cc+'_AUR.json' in os.listdir(user_path):
-            with open(os.path.join(user_path, _cc+'_AUR.json'), 'r') as f:
-                aur = json.load(f)
-            k = cbrank[_cc].keys()
-            for _as in k:
-                if _as in asn_iso and asn_iso[_as]!=_cc: continue
-                if _as in aur:
-                    if cbrank[_cc][_as] not in res[_cc]:
-                        res[_cc][cbrank[_cc][_as]] = 0
-                    # res[_cc][cbrank[_cc][_as]] += 1
-                    res[_cc][cbrank[_cc][_as]] += aur[_as]
-    # for _cc in res:
-    #     print(_cc, res[_cc][1]/sum(list(res[_cc].values())))
-    with open('/home/peizd01/for_dragon/pzd_External/globalCountryLabel/add_hidden_link/result/v2/anova_nonconnect/mbd_anova_rank_user_ratio_'+value+'.json', 'w') as f:
-        json.dump(res, f)
+#     with open('/home/peizd01/for_dragon/basicData/asn-iso.json', 'r') as f:
+#         asn_iso = json.load(f)
+#     with open(file, 'r') as f:
+#         sorted_broad = json.load(f)
+#     cbrank = {}
+#     for i in range(len(sorted_broad)):
+#         for m in sorted_broad[i]:
+#             a = decoder[m]
+#             _as, _cc = a.split('-')
+#             if _cc not in cbrank:
+#                 cbrank[_cc] = {}
+#             cbrank[_cc][_as] = i+1
+#     res = {}
+#     for _cc in cbrank:
+#         res[_cc] = {}
+#         if _cc+'_AUR.json' in os.listdir(user_path):
+#             with open(os.path.join(user_path, _cc+'_AUR.json'), 'r') as f:
+#                 aur = json.load(f)
+#             k = cbrank[_cc].keys()
+#             for _as in k:
+#                 if _as in asn_iso and asn_iso[_as]!=_cc: continue
+#                 if _as in aur:
+#                     if cbrank[_cc][_as] not in res[_cc]:
+#                         res[_cc][cbrank[_cc][_as]] = 0
+#                     # res[_cc][cbrank[_cc][_as]] += 1
+#                     res[_cc][cbrank[_cc][_as]] += aur[_as]
+#     # for _cc in res:
+#     #     print(_cc, res[_cc][1]/sum(list(res[_cc].values())))
+#     with open('/home/peizd01/for_dragon/pzd_External/globalCountryLabel/add_hidden_link/result/v2/anova_nonconnect/mbd_anova_rank_user_ratio_'+value+'.json', 'w') as f:
+#         json.dump(res, f)
 
 
 

@@ -17,7 +17,9 @@ def set_timestamp_path(path: str) -> None:
 
 
 def record_launch_time(func):
-
+    '''
+    用于记录函数执行时间
+    '''
     @wraps(func)
     def get_args(*args):
         global timestamp_path
@@ -48,7 +50,9 @@ def record_launch_time(func):
 
 
 def record_launch_time_and_param(*param_index):
-
+    '''
+    用于记录函数执行时间
+    '''
     def time_(func=None):
 
         @wraps(func)

@@ -16,13 +16,13 @@ model_map: Dict[str, str] = {
     'SORT_BY_CONE_TOP_100': 'do_Internal.create_rtree_model.sort_by_cone_top_100',
     'RANDOM_100': 'do_Internal.create_rtree_model.random_100',
 
-    'DESTROY_All': 'do_Internal.monitor_random_cut_model.destroy_all',
-    'DESTROY_TOP_10': 'do_Internal.monitor_random_cut_model.destroy_top_10',
-    'DESTROY_TOP_6_BY_TREE_NODE': 'do_Internal.monitor_random_cut_model.destroy_top_6_by_tree_node',
-    'DESTROY_TOP_10_BY_TREE_NODE': 'do_Internal.monitor_random_cut_model.destroy_top_10_by_tree_node',
+    'DESTROY_All': 'do_External.monitor_random_cut_model.destroy_all',
+    'DESTROY_TOP_10': 'do_External.monitor_random_cut_model.destroy_top_10',
+    'DESTROY_TOP_6_BY_TREE_NODE': 'do_External.monitor_random_cut_model.destroy_top_6_by_tree_node',
+    'DESTROY_TOP_10_BY_TREE_NODE': 'do_External.monitor_random_cut_model.destroy_top_10_by_tree_node',
 
-    'CUT_FULL_TREE': 'do_Internal.monitor_random_cut_model.cut_full_tree',
-    'CUT_NO_MORE_THAN_1000': 'do_Internal.monitor_random_cut_model.cut_no_more_than_1000_times',
+    'CUT_FULL_TREE': 'do_External.monitor_random_cut_model.cut_full_tree',
+    'CUT_NO_MORE_THAN_1000': 'do_External.monitor_random_cut_model.cut_no_more_than_1000_times',
 
     'CAL_RANK_SUM_RANK': 'do_Internal.cal_rank.cal_method_1',
     'CAL_RANK_SUM_RANK_AND_LINK_COUNT': 'do_Internal.cal_rank.cal_method_2',
@@ -66,8 +66,8 @@ if __name__ == '__main__':
     with open(os.path.join(source_path,'input','config.json'),'r') as cf:
         config= json.load(cf)
         rtree_node_min_cone: int = config['min_cone']
-        build_rtree_model: str = config['build_route_tree_model']
-        build_rtree_model_path = make_model_path(build_rtree_model)
+        cut_route_tree_model: str = config['cut_route_tree_model']
+        cut_route_tree_model_path = make_model_path(cut_route_tree_model)
         cc_list: List[COUNTRY_CODE] = config['cc_list']
         cut_node_depth: int = config['cut_node_depth']
 
@@ -83,27 +83,27 @@ if __name__ == '__main__':
     bar = broad_as_routingtree(dst_dir_path,cc_list,as_rela_file)
     bar.cal_rtree_code()
 
-    create_routingTree(dst_dir_path,v2_path,as_rela_file_txt,build_rtree_model_path)
-    # bar.remove_cc_internal_link(source_path)
-    _monitor_remove_as(dst_dir_path,cut_node_depth)
+    create_routingTree(dst_dir_path,v2_path,as_rela_file_txt)
+    # # # # bar.remove_cc_internal_link(source_path)
+    _monitor_remove_as(dst_dir_path,cut_node_depth,cut_route_tree_model_path)
     create_nonconnect(dst_dir_path)
-    extract_connect_list(dst_dir_path,os.path.join(source_path,'input','gdp_domain_democracy.json'),cut_node_depth)
+    extract_connect_list(dst_dir_path,cut_node_depth)
     groud_truth_based_anova(dst_dir_path)
     groud_truth_based_var(dst_dir_path)
-
+    
     # # # # groud_truth_based_anova 内部调用 anova_sort
     # # # ## anova_sort(os.path.join(source_path,'result','anova'), 'democracy')
 
 
     country_broadas_rank(os.path.join(dst_dir_path,'result/anova/sorted_country_democracy.json'),\
         os.path.join(dst_dir_path,'public'), \
-            '/home/peizd01/for_dragon/ccExternal/user_influence/AUR/', \
-        os.path.join(dst_dir_path,'as-country-code.json'),'med_rank',False)
+            'static/AUR/', \
+        os.path.join(dst_dir_path,'as-country-code.json'),'med_rank')
     
     country_broadas_rank(os.path.join(dst_dir_path,'result/var/sorted_country_democracy.json'),\
         os.path.join(dst_dir_path,'public'), \
-            '/home/peizd01/for_dragon/ccExternal/user_influence/AUR/', \
-        os.path.join(dst_dir_path,'as-country-code.json'),'var_rank',False)
+            'static/AUR/', \
+        os.path.join(dst_dir_path,'as-country-code.json'),'var_rank')
 
-    # # # # # TODO topology_external
-    # # # # # TODO create rtree
+    # # # # # # TODO topology_external
+    # # # # # # TODO create rtree

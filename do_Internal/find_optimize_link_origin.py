@@ -7,7 +7,6 @@ import json
 import os
 from do_Internal.cal_break_link import monitor_break
 from collections import Counter
-import time
 from multiprocessing import Pool
 import copy
 from do_Internal.use_monitor_data_as_weakPoint import make_weak_point
@@ -153,6 +152,8 @@ class FindOptimizeLink():
         '''
         rtpath: 存放npz的路径
         break_link: [[begin_as, end_as],...]
+        week_point : 破弱点
+        dsn_path 文件存储路径(floyer)
         '''
         self.rtpath: str = rtpath
         self.file_name = os.listdir(self.rtpath)
@@ -161,7 +162,16 @@ class FindOptimizeLink():
         self.dsn_path: str = dsn_path
 
     def break_link_begin_rtree_frequency(self, depth=None):
-        hash_dict: Dict[str, ASRelationType] = {}
+        '''
+        生成左节点的字典
+        key 是薄弱连接的左节点
+        value 是{
+        1:c2p as列表
+        2:p2p as列表
+        }
+
+        '''
+        hash_dict: Dict[AS_CODE, ASRelationType] = {}
         for begin_as, _ in self.break_link:
             if begin_as in hash_dict:
                 continue
@@ -171,9 +181,10 @@ class FindOptimizeLink():
                 cwp = cut_week_point(os.path.join(self.rtpath, 'dcomplete' + str(begin_as) + '.npz'))
             else:
                 continue
-
+            # 从npz文件中创建路由树
             cwp.from_npz_create_graph()
             print(self.week_point)
+            # 模拟破坏薄弱点
             cwp.monitor_cut_node(copy.deepcopy(self.week_point))
 
             global total
@@ -203,6 +214,7 @@ class FindOptimizeLink():
                     hash_dict[begin_as][2].append(int(_as))
                 else:
                     state = cwp.cal_state(_as)  # 计算_as在topo数据(txt)里面的所有的关系
+                    # 1对应c2p的匹配状态更多
                     if 1 in state:
                         state = 1
                     else:
@@ -210,10 +222,19 @@ class FindOptimizeLink():
                     hash_dict[begin_as][state].append(int(_as))
 
         self.begin_hash_dict = hash_dict
-        # hash_dict[begin_as][1]表示和begin_as是p2c关系的AS列表
+        # hash_dict[begin_as][1]表示和begin_as是c2p关系的AS列表
         # hash_dict[begin_as][2]表示和begin_as是p2p关系的AS列表
 
     def break_link_end_rtree_frequency(self, depth=None):
+        '''
+        生成右节点的字典
+        key 是薄弱连接的右节点
+        value 是{
+        1:p2c as列表
+        2:p2p as列表
+        }
+
+        '''
         hash_dict: Dict[str, ASRelationType] = {}
         for _, end_as in self.break_link:
             if end_as in hash_dict:
@@ -265,8 +286,8 @@ class FindOptimizeLink():
                     hash_dict[end_as][state].append(int(_as))
 
         self.end_hash_dict = hash_dict
-        # hash_dict[end_as][1]表示和begin_as是p2c关系的AS列表
-        # hash_dict[end_as][2]表示和begin_as是p2p关系的AS列表
+        # hash_dict[end_as][1]表示和end_as是p2c关系的AS列表
+        # hash_dict[end_as][2]表示和end_as是p2p关系的AS列表
 
         with open(self.dsn_path + '.begin_hash_dict.json', 'w') as f:
             json.dump(self.begin_hash_dict, f)
@@ -298,6 +319,10 @@ class FindOptimizeLink():
         '''
 
         def cal_node_value(_as) -> int:
+            '''
+            _as as节点
+            计算as的value
+            '''
             if isinstance(_as, int):
                 _as = str(_as)
             if NODE_VALUE != 'basic':
@@ -312,6 +337,14 @@ class FindOptimizeLink():
             return 0.5
 
         def cal_cost(_as, _as2, begin_state, end_state) -> int:
+            '''
+            _as 连接的左节点
+            _as2 连接的右节点
+            begin_state 左节点和薄弱点的关系
+            end_state 右节点和薄弱点的关系
+
+            计算连接_as和_as2所有需要的成本
+            '''
             global numberAsns, as_peer
             _as, _as2 = str(_as), str(_as2)
             cost = float('inf')
@@ -368,8 +401,10 @@ class FindOptimizeLink():
 
         res = []
         res.append(['', '', self.week_point, copy.deepcopy(self.break_link), 0, 0])
+        # 开始遍历薄弱点
         while self.break_link:
             max_benefit_all, opt_left_as, opt_right_as, opt_begin_state, opt_end_state = float("-inf"), '', '', '', ''
+            # 逐个遍历AS关系
             for begin_state in state:
                 for end_state in state[begin_state]:
                     benefit, left_as, right_as = 0, '', ''
@@ -378,6 +413,7 @@ class FindOptimizeLink():
                     for begin_as, _ in self.break_link:  # 遍历这个国家下所有被模拟破坏路由树的所有被破坏链接的左节点
                         if str(begin_as) not in self.begin_hash_dict:
                             continue
+                        # 计算节点价值
                         v = cal_node_value(begin_as)
                         nodes = self.begin_hash_dict[str(begin_as)][begin_state]
                         for _nodes in nodes:
@@ -415,7 +451,7 @@ class FindOptimizeLink():
                     right_max_benefit, right_as = float('-inf'), ''
                     for _as in count_dict:
                         cost = cal_cost(left_as, _as, begin_state, end_state)
-                        if '%s %s' % (left_as,_as) in as_rel:
+                        if '%s %s' % (left_as, _as) in as_rel:
                             continue
                         if right_max_benefit <= count_dict[_as] - cost:
                             right_max_benefit, right_as = count_dict[_as] - cost, _as
@@ -439,7 +475,7 @@ class FindOptimizeLink():
             if opt_right_as == '' or opt_left_as == '':
                 break
             n = len(self.break_link)
-            opt_re_link:Tuple[str,str] = []
+            opt_re_link: Tuple[str, str] = []
             for i in range(n - 1, -1, -1):
                 begin_as, end_as = self.break_link[i]
                 if str(begin_as) not in self.begin_hash_dict or str(end_as) not in self.end_hash_dict:
@@ -453,13 +489,18 @@ class FindOptimizeLink():
                     opt_re_link.append([self.break_link[i][1], self.break_link[i][0]])
                     del self.break_link[i]
 
-            res.append([[opt_left_as, opt_right_as], [opt_begin_state, opt_end_state, opt_cost], opt_re_link, n, len(self.break_link)]) 
-             #          [优化链接左节点, 优化链接右节点], [优化链接左节点连begin_as关系,优化链接右节点连end_as关系,优化成本],重新连接的链接,原来断开链接数,优化后断开链接数
+            res.append([[opt_left_as, opt_right_as], [opt_begin_state, opt_end_state, opt_cost], opt_re_link, n,
+                        len(self.break_link)])
+            #          [优化链接左节点, 优化链接右节点], [优化链接左节点连begin_as关系,优化链接右节点连end_as关系,优化成本],重新连接的链接,原来断开链接数,优化后断开链接数
         return res
 
 
 @record_launch_time_and_param(1)
-def find_optimize_link_pool(_dsn_path, cname):
+def find_optimize_link_pool(_dsn_path: OUTPUT_PATH, cname: COUNTRY_CODE):
+    '''
+    _dsn_path output路径
+    cname: country code
+    '''
     global as_rel, as_customer, as_peer, numberAsns
     # q, cname = s.split(' ')
     optimize_link_path = os.path.join(_dsn_path, 'optimize_link')
@@ -494,7 +535,7 @@ def find_optimize_link_pool(_dsn_path, cname):
 
     # week_point_and_break_link = sorted(week_point_and_break_link.items(), key=lambda d: len(d[1]), reverse=True)
     week_point_and_break_link: Tuple[str, List[Tuple[str, str]]] = list(week_point_and_break_link.items())
-    Res:Dict[str,List[AS_CODE]] = {}
+    Res: Dict[str, List[AS_CODE]] = {}
     range_num = min(50, len(week_point_and_break_link))
     for i in range(range_num):
         if isinstance(week_point_and_break_link[i][0], int):
@@ -510,11 +551,13 @@ def find_optimize_link_pool(_dsn_path, cname):
         else:
             print('第 %s组 %s len => %s' % (str(i), cname, len(break_link)))
 
+        # 开始计算优化连接
         fol = FindOptimizeLink(os.path.join(rtree_path, cname), break_link, week_point,
                                os.path.join(dsn_path, cname + '_' + str(i)))
         fol.break_link_begin_rtree_frequency()
         fol.break_link_end_rtree_frequency()
         res = fol.find_opt_link()
+        # 存储结果到本地文件
         with open(os.path.join(dsn_path, cname + '.' + str(i) + '.opt_add_link_rich.json'), 'w') as f:
             json.dump(res, f)
         for line in res:
@@ -524,7 +567,6 @@ def find_optimize_link_pool(_dsn_path, cname):
             Res[key] += line[2]
     with open(os.path.join(dsn_path, cname + '.opt_add_link_rich.json'), 'w') as f:
         json.dump(Res, f)
-    
 
 
 NODE_VALUE = 'basic'  # 'basic' 'user' 'domain'
@@ -541,7 +583,18 @@ a, b, c = 0, 0, 100
 
 
 @record_launch_time
-def find_optimize_link(txt_path:str, _dsn_path:OUTPUT_PATH,_type:TOPO_TPYE, cone_path:str, cc_list:List[COUNTRY_CODE], _as_importance_path:WEIGHT_PATH) -> None:
+def find_optimize_link(txt_path: str, _dsn_path: OUTPUT_PATH, _type: TOPO_TPYE, cone_path: str, cc_list: List[COUNTRY_CODE],_as_importance_path: WEIGHT_PATH) -> None:
+    '''
+    txt_path 原始的路由topo数据
+    _dsn_path ouput路径
+    _type topo类型
+    cone_path cone数据路径
+    cc_list 国家列表
+    _as_importance_path 权重数据路径
+
+    寻找路由树薄弱点
+    计算优化路径
+    '''
     global as_importance_path
     as_importance_path = _as_importance_path
     # input = []
@@ -579,7 +632,7 @@ def find_optimize_link(txt_path:str, _dsn_path:OUTPUT_PATH,_type:TOPO_TPYE, cone
     pool = Pool(multiprocessing.cpu_count())
     for cname in cc_list:
         pool.apply_async(find_optimize_link_pool, (
-            os.path.join(_dsn_path,_type),
+            os.path.join(_dsn_path, _type),
             cname,
         ))
     pool.close()

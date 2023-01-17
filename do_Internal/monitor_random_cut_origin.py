@@ -2,7 +2,7 @@
 # _*_ coding:utf8 _*_
 import multiprocessing
 import os
-import itertools
+# import itertools
 import copy
 import numpy as np
 import json
@@ -55,7 +55,7 @@ class monitor_cut():
 
         # print(file_path + ' monitor node')
         self.monitor_random_node_addDel()
-        self.monitor_random_link_addDel()
+        # self.monitor_random_link_addDel()
 
     def from_npz_create_graph(self):
         '''
@@ -79,6 +79,9 @@ class monitor_cut():
         
 
     def monitor_random_node_addDel(self):
+        '''
+        随机破坏节点,破坏结果存入addDel.txt
+        '''
         nodelist = set(self.row)
         tempG = len(self.graph)
         # print(self.dsn_path)
@@ -158,10 +161,10 @@ class monitor_cut():
             # print(node)
             temp = ' '.join(list(map(str, node)))
             self.res[temp] = self.monitor_cut_node(node)
-            if len(self.graph) != len(tempG):
+            # if len(self.graph) != len(tempG):
                 #self.graph = copy.deepcopy(tempG)
-                with open(self.tempgraphname, 'r') as f:
-                    self.graph = json.load(f)
+            with open(self.tempgraphname, 'r') as f:
+                self.graph = json.load(f)
 
     def monitor_random_link(self):
         linklist = list(zip(self.row, self.col))
@@ -179,6 +182,11 @@ class monitor_cut():
                     self.graph = json.load(f)
 
     def monitor_cut_node(self, queue):
+        '''
+        queue 随机破坏的节点列表
+
+        从根据路由树生成的图中计算被影响的节点
+        '''
         res = []
         for node in queue:
             for i in self.graph[node][1]:

@@ -6,11 +6,12 @@ import json
 import copy
 import matplotlib.pyplot as plt
 from collections import deque, Counter
-from typing import List, Tuple
+from other_script.my_types import *
 import time
 import numpy as np
 import itertools
 from multiprocessing import Pool
+from importlib import import_module
 from multiprocessing.pool import ThreadPool
 
 import random
@@ -22,6 +23,7 @@ import random
 '''
 
 N = 10
+gl_get_cut_num:Callable[[List[AS_CODE]],List[AS_CODE]] = None
 class user_radio_v2():
 
     def __init__(self):
@@ -254,8 +256,13 @@ STEP3 模拟断开
 
 
 class broad_as_routingtree():
-
+    
     def __init__(self,source_path,cc_list,as_rela_file):
+        '''
+        as_rela_code.txt 新生成的路由数据
+        as-country-code.json 新生成的as号
+        cal_rtree_code_v2.json 边界as
+        '''
         self.file_name = os.path.join(source_path,'as_rela_code.txt')
         self.as_country_code_path = os.path.join(source_path, 'as-country-code.json')
         self.path = os.path.join(source_path,'cc2as')
@@ -269,11 +276,14 @@ class broad_as_routingtree():
         self.make_country_code()
         self.add_internal_link()
         self.add_external_link()
-        print(self.as_country_code_path)
+        # print(self.as_country_code_path)
         with open(self.as_country_code_path, 'w') as f:
             json.dump(self.country_code, f)
 
     def make_country_code(self):
+        '''
+        重新生成as号,对应as和国家
+        '''
         cc2as = os.listdir(self.path)
         for cc_file in cc2as:
             with open(os.path.join(self.path, cc_file), 'r') as f:
@@ -284,6 +294,11 @@ class broad_as_routingtree():
                 self.code += 1
 
     def as2code(self, a):
+        '''
+        a : as-country
+        去新生成的as号字典中找对应的新的as号
+        -如果没有找到,就在后面追加一个新的as
+        '''
         if a not in self.country_code:
             a, b = a.split('-')
             with open(os.path.join(self.path, b + '.json'), 'r') as f:
@@ -299,12 +314,16 @@ class broad_as_routingtree():
         return self.country_code[a]
 
     def add_internal_link(self):
+        '''
+        读取国家对应as文件,重新生成路由txt文件
+        txt中把as号替换成新生成的as号
+        '''
         with open(os.path.join(self.as_rela_file), 'r') as f:
             # with open('/data3/lyj/shiyan_database/basicData/as_rela_from_asInfo.json', 'r') as f:
             as_rela = json.load(f)
 
         cc2as = os.listdir(self.path)
-        print(self.file_name)
+        # print(self.file_name)
         with open(self.file_name, 'a') as f_dsn:
             for cc_file in cc2as:
                 with open(os.path.join(self.path, cc_file), 'r') as f:
@@ -326,14 +345,18 @@ class broad_as_routingtree():
             f_dsn.close()
 
     def add_external_link(self):
+        '''
+        从broadPath_v2读取外部as关系,补充到路由txt中
+        txt中把as号替换成新生成的as号
+        '''
         with open(self.as_rela_file, 'r') as f:
             # with open('/data3/lyj/shiyan_database/basicData/as_rela_from_asInfo.json', 'r') as f:
             as_rela = json.load(f)
 
-        file_name = os.listdir('/home/peizd01/for_dragon/beginAsFile/broadPath_v2/')
+        file_name = os.listdir('static/broadPath_v2/')
         temp = []
         for file in file_name:
-            with open('/home/peizd01/for_dragon/beginAsFile/broadPath_v2/' + file, 'r') as ff:
+            with open('static/broadPath_v2/' + file, 'r') as ff:
                 reader = json.load(ff)
             for k in reader:
                 for i in reader[k].keys():
@@ -391,10 +414,16 @@ class broad_as_routingtree():
 
     # @staticmethod
     def cal_rtree_code(self):
+        '''
+        生成边界as
+        从broadPath_v2中读取所有国家边界as的数据
+        存到v2.json
+        '''
         with open(self.as_country_code_path, 'r') as f:
             code = json.load(f)
         res = []
         Res = []
+
         file_name = os.listdir('/home/peizd01/for_dragon/beginAsFile/broadPath_v2/')
         for file in file_name:
             with open('/home/peizd01/for_dragon/beginAsFile/broadPath_v2/' + file, 'r') as f:
@@ -421,7 +450,7 @@ class broad_as_routingtree():
         #         res.append(line['end']['AS'] + '-' + line['end']['CY'])
 
         res = list(set(res))
-        print('len(res)',len(res))
+        # print('len(res)',len(res))
         for i in res:
             Res.append(code[i])
 
@@ -515,11 +544,15 @@ class monitor_remove_as():
         self.dsn_path = dsn_path
         self.specific_country = specific_country
 
-    def remove_country_link(self, queue):
-        res = []
+    def remove_country_link(self, queue:List[COUNTRY_CODE]) -> List[COUNTRY_CODE]:
+        '''
+        '''
+        res:List[COUNTRY_CODE] = []
         # 删除边
-        tempQ = []
+        tempQ:List[COUNTRY_CODE] = []
+        #找后向点只包含queue中的国家的国家，存入tempQ
         for link in queue:
+            # 左节点 右节点
             a, b = link
             self.cc_rela[a][1].remove(b)
             self.cc_rela[b][0].remove(a)
@@ -532,6 +565,7 @@ class monitor_remove_as():
 
         # 删除点
         for node in tempQ:
+            # 删除node的后向点
             for i in self.cc_rela[node][1]:
                 self.cc_rela[i][0].remove(node)
             self.cc_rela[node][1] = []
@@ -539,8 +573,10 @@ class monitor_remove_as():
             n = tempQ.pop(0)
             res.append(n)
             if n not in self.cc_rela: continue
+            # 删除node的前向点
             for i in self.cc_rela[n][0]:
                 self.cc_rela[i][1].remove(n)
+                # 如果删除完node的前向点的后向点列表为空，那把这个点也删除
                 if len(self.cc_rela[i][1]) == 0 or self.cc_rela[i][1] == [i]: tempQ.append(i)
             del self.cc_rela[n]
         return res
@@ -560,9 +596,11 @@ class monitor_remove_as():
 
     def remove_as(self, file):
         # print(self.file_path)
-        print(file)
+        # print(file)
         with open(os.path.join(self.file_path, file), 'r') as f:
+            # 读取国家的前后向国家
             self.cc_rela = json.load(f)
+        # 读取国家的具体连接节点
         with open(os.path.join(self.file_path, file.split('.')[0] + '.cc_pair_link.json'), 'r') as f:
             self.cc_pair_link = json.load(f)
         nodelist = set()
@@ -570,6 +608,7 @@ class monitor_remove_as():
             for line in self.cc_pair_link[key]:
                 nodelist.add(line.split(' ')[0])
                 nodelist.add(line.split(' ')[1])
+        # 把所有节点存成list
         nodelist = list(nodelist)
 
         # 挑选出只有某个国家的nodelist
@@ -583,14 +622,13 @@ class monitor_remove_as():
 
         # print(len(nodelist))
 
-        if len(nodelist) < 500:
-            epoch = len(nodelist)
-        else:
-            epoch = 500
+        # 就最多破坏500次
 
-        node2link = {}
+
+        node2link:Dict[str,List[COUNTRY_CODE]] = {}
+        # 找所有cc_pair_link中和node有关的保留
         for node in nodelist:
-            remove_cc_link = []
+            remove_cc_link:List[COUNTRY_CODE] = []
             for key in self.cc_pair_link:
                 flag = 1
                 for line in self.cc_pair_link[key]:
@@ -599,36 +637,51 @@ class monitor_remove_as():
                         flag = 0
                         break
                 if flag:
+                    # 不包含node的国家加入到remove_cc_link
                     remove_cc_link.append(key.split(' '))
             if len(remove_cc_link):
                 node2link[node] = remove_cc_link
         # if len(nodelist) <= self.n_as:
         if len(nodelist) <= 0:
             return
+        
         with open(os.path.join(self.dsn_path, file.split('.')[0] + '.del.txt'), 'w') as dsn_f:
-            # for num in range(3, self.n_as):
-            for num in range(1, 2):
+            
+            # 破坏N次，每次破坏1-N个节点
+            for num in N:
+                # num += 1
                 # num = 1
                 flag = 0
-                epoch = len(nodelist) * num
-                while flag < epoch:
+                cut_times:int = gl_get_cut_num(nodelist)
+                # cut_times:int = len(nodelist) * num
+                print(cut_times,flag)
+                while flag < cut_times:
+                    # 每次破坏时最多破坏epoch次
                     flag += 1
+                    # 如果nodeList比破坏的节点数要少，就破坏nodeLis全部节点
+                    if num > len(nodelist):
+                        num = len(nodelist)
+                    # 随机破坏的节点
                     node = random.sample(nodelist, num)
                     node = list(set(list(node)))
                     node.sort()
+                    #读取cc_rela.json文件,获取国家的前向点和后向点
                     with open(os.path.join(self.file_path, file), 'r') as f:
                         self.cc_rela = json.load(f)
                     res = []
-                    linklist = []
+                    linklist:List[COUNTRY_CODE] = []
                     for _node in node:
+                        # 如果node在cc_pair_link中，表示node时连接两个国家的节点的其中一个
                         if _node in node2link:
+                            # 把和node无关的节点加入到linklist中
                             for __node in node2link[_node]:
                                 if __node not in linklist:
                                     linklist.append(__node)
                     if linklist:
-                        res = self.remove_country_link(linklist)
+                        # 受影响的节点
+                        res:List[COUNTRY_CODE] = self.remove_country_link(linklist)
                     # res = self._remove_as(node)
-                    print(node)
+                    # print(node)
                     dsn_f.write(' '.join(node) + '|' + ' '.join(res) + '\n')
                 # break
 
@@ -653,11 +706,17 @@ class monitor_remove_as():
 
 
 
-def _monitor_remove_as(source_path,cut_node_depth):
+def _monitor_remove_as(source_path,cut_node_depth,cut_rtree_model_path):
+    '''
+    模拟破坏,破坏cut_node_depth个节点
+    '''
     global N
+    global gl_get_cut_num
     N = cut_node_depth
     file_path = os.path.join(source_path,'json')
     dsn_path = os.path.join(source_path,'monitor')
+    dynamic_module_2 = import_module(cut_rtree_model_path)
+    gl_get_cut_num = dynamic_module_2.get_cut_num
     os.makedirs(file_path,exist_ok=True)
     os.makedirs(dsn_path,exist_ok=True)
 
@@ -674,9 +733,8 @@ def _monitor_remove_as(source_path,cut_node_depth):
     for file in file_name:
         if file.find('cc_rela') == -1: continue
         if file.split('.')[0] + '.cc_pair_link.json' not in file_name: continue
-        if file.split('.')[0] + '.del.txt' in os.listdir(dsn_path):
-            print(file + ' exist')
-            continue
+        
+        # file是.cc_rela.json文件
         if len(file_run[-1]) < 6:
             file_run[-1].append(file)
         else:
@@ -691,29 +749,33 @@ def _monitor_remove_as(source_path,cut_node_depth):
 
 # 计算出边界AS routingTree中本身没有通信的国家
 def create_nonconnect(source_path):
-    exist = [
-        "PG", "HN", "GP", "PR", "LU", "KG", "CG", "GG", "ST", "ME", "CN", "TT", "KY", "BV", "GR", "MQ", "VU", "IT", "UA", "EG",
-        "BS", "PK", "RE", "LR", "MF", "PM", "CW", "BN", "VA", "BD", "UG", "BT", "IL", "SN", "HK", "KW", "HT", "JM", "AT", "SC",
-        "IE", "BZ", "UY", "ES", "SZ", "RS", "AS", "GF", "NI", "JE", "MX", "AI", "WF", "BL", "BJ", "TZ", "CL", "CD", "AX", "BQ",
-        "NZ", "BE", "AU", "BW", "KH", "ZM", "TK", "PE", "JO", "ER", "NF", "GM", "CI", "MA", "NA", "CM", "NC", "RO", "KZ", "BF",
-        "SR", "GW", "AW", "SK", "AG", "DK", "ET", "GQ", "MU", "NP", "UZ", "VI", "SM", "FO", "KI", "CK", "GA", "IR", "PW", "CV",
-        "VE", "MN", "PY", "MV", "GI", "ZA", "MP", "TJ", "MS", "BM", "SB", "MM", "MH", "TO", "CA", "BB", "KN", "CF", "BH", "TD",
-        "NG", "DJ", "EE", "HU", "TR", "KR", "DO", "TG", "MG", "RU", "MW", "JP", "HR", "DM", "GU", "EC", "TC", "TW", "BO", "TV",
-        "PS", "IM", "BI", "GT", "AE", "SI", "ML", "FR", "VN", "BR", "DE", "GD", "VG", "MD", "CU", "BY", "LC", "SS", "MO", "CZ",
-        "CH", "PA", "DZ", "FJ", "SD", "US", "FI", "WS", "GY", "TH", "TL", "RW", "CR", "SO", "LV", "FM", "AR", "BA", "LT", "AL",
-        "CO", "GH", "IS", "BG", "LA", "TN", "IQ", "MZ", "LK", "LI", "PT", "LY", "ZW", "AD", "NR", "MT", "LB", "KE", "SG", "KM",
-        "TM", "PL", "AM", "GE", "OM", "AZ", "GL", "MR", "SX", "YE", "AF", "ID", "QA", "IN", "PH", "SA", "NE", "MY", "GN", "VC",
-        "NO", "NL", "GB", "FK", "LS", "MC", "SV", "SL", "KP", "NU", "SE", "CY", "MK", "AO", "PF"
-    ]
+    # 已存在的所有国家
+    exist = list(map(lambda x:x[:2],os.listdir(os.path.join(source_path,'cc2as'))))
+    # exist = [
+    #     "PG", "HN", "GP", "PR", "LU", "KG", "CG", "GG", "ST", "ME", "CN", "TT", "KY", "BV", "GR", "MQ", "VU", "IT", "UA", "EG",
+    #     "BS", "PK", "RE", "LR", "MF", "PM", "CW", "BN", "VA", "BD", "UG", "BT", "IL", "SN", "HK", "KW", "HT", "JM", "AT", "SC",
+    #     "IE", "BZ", "UY", "ES", "SZ", "RS", "AS", "GF", "NI", "JE", "MX", "AI", "WF", "BL", "BJ", "TZ", "CL", "CD", "AX", "BQ",
+    #     "NZ", "BE", "AU", "BW", "KH", "ZM", "TK", "PE", "JO", "ER", "NF", "GM", "CI", "MA", "NA", "CM", "NC", "RO", "KZ", "BF",
+    #     "SR", "GW", "AW", "SK", "AG", "DK", "ET", "GQ", "MU", "NP", "UZ", "VI", "SM", "FO", "KI", "CK", "GA", "IR", "PW", "CV",
+    #     "VE", "MN", "PY", "MV", "GI", "ZA", "MP", "TJ", "MS", "BM", "SB", "MM", "MH", "TO", "CA", "BB", "KN", "CF", "BH", "TD",
+    #     "NG", "DJ", "EE", "HU", "TR", "KR", "DO", "TG", "MG", "RU", "MW", "JP", "HR", "DM", "GU", "EC", "TC", "TW", "BO", "TV",
+    #     "PS", "IM", "BI", "GT", "AE", "SI", "ML", "FR", "VN", "BR", "DE", "GD", "VG", "MD", "CU", "BY", "LC", "SS", "MO", "CZ",
+    #     "CH", "PA", "DZ", "FJ", "SD", "US", "FI", "WS", "GY", "TH", "TL", "RW", "CR", "SO", "LV", "FM", "AR", "BA", "LT", "AL",
+    #     "CO", "GH", "IS", "BG", "LA", "TN", "IQ", "MZ", "LK", "LI", "PT", "LY", "ZW", "AD", "NR", "MT", "LB", "KE", "SG", "KM",
+    #     "TM", "PL", "AM", "GE", "OM", "AZ", "GL", "MR", "SX", "YE", "AF", "ID", "QA", "IN", "PH", "SA", "NE", "MY", "GN", "VC",
+    #     "NO", "NL", "GB", "FK", "LS", "MC", "SV", "SL", "KP", "NU", "SE", "CY", "MK", "AO", "PF"
+    # ]
     file_path = os.path.join(source_path,'json')
     dsn_path = os.path.join(source_path,'json')
     exist = set(exist)
     for file in os.listdir(file_path):
         if 'cc_rela' not in file: continue
         else:
+            # 读取cc_rela.json文件
             with open(file_path + '/' + file, 'r') as f:
                 m = json.load(f)
-            r = exist - set(m.keys())
+            # 和当前国家没有as连接的国家列表
+            r:Set[COUNTRY_CODE] = exist - set(m.keys())
             with open(file_path + '/' + file.split('.')[0] + '.nonconnect.json', 'w') as f:
                 json.dump(list(r), f)
 

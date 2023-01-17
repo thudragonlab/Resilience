@@ -367,7 +367,9 @@ class iSecutiry():
         self.sort_dsn_path = sort_dsn_path
 
     def extract_connect_list(self, begin_num=1):
-
+        '''
+        对优化后的路由树重新生成count_num
+        '''
         def basic_user_domain(line):
             as_list = line.split(' ')
             res1 = 0
@@ -458,10 +460,15 @@ def cal_anova_change_for_single_country(connect_dsn_path, old_connect_path, num,
 
 @record_launch_time
 def record_result(topo_list, output_path, type_path, _type):
-    global data_dim
     '''
+    topo_list topo类型列表
+    output_path output路径
+    type_path: anova var
+    _type : med var
     5、记录排名的变化
     '''
+    global data_dim
+    
     middle_index_dict = {'asRank': [0, 2], 'problink': [3, 5], 'toposcope': [6, 8], 'toposcope_hidden': [9, 11]}
 
     change_res = {}
@@ -747,6 +754,13 @@ def create_rela_file(relas):
 
 @record_launch_time_and_param(2, 1)
 def add_npz_and_monitor_cut_pool(output_path, m, cname):
+    '''
+    output_path output路径
+    m topo类型
+    cname: coutry code
+    重新生成 npz文件和破坏结果
+    
+    '''
     dst_path = os.path.join(output_path, m)
     new_path = os.path.join(dst_path, SUFFIX, 'new_optimize')
     floyed_path = os.path.join(dst_path, SUFFIX, 'floyed')
@@ -763,7 +777,12 @@ def add_npz_and_monitor_cut_pool(output_path, m, cname):
     add_link_file = os.path.join(floyed_path, cname + '.opt_add_link_rich.json')
 
     def add_npz_and_monitor_cut_thread(file, add_link_num):
+        '''
+        file 原来的路由树文件
+        add_link_num 要加入的优化连接数量
 
+        重新创建路由树并模拟破坏
+        '''
         old_npz_file = os.path.join(rtree_path, cname, file.split('.')[0] + '.npz')
         new_npz_path = os.path.join(new_path, cname, 'rtree', str(add_link_num) + '/')
         temp_path = os.path.join(new_npz_path, 'temp')
@@ -823,6 +842,13 @@ def cal_anova_for_single_cc_pool(m, _cc, num, output_path):
 
 @record_launch_time_and_param(1, 0, 2)
 def cal_var_for_single_cc_pool(m, _cc, num, output_path, data_dim):
+    '''
+        output_path output路径
+        m topo类型
+        _cc : country_code
+        num 优化节点数量
+        data_dim : basic|user|domain 维度列表
+    '''
     old_count_num_path = os.path.join(output_path, m, 'result/count_num/')
     new_count_num_path = os.path.join(output_path, m, SUFFIX, 'new_optimize_result', 'count_num', _cc, str(num))
     for value in data_dim:
@@ -832,6 +858,12 @@ def cal_var_for_single_cc_pool(m, _cc, num, output_path, data_dim):
 
 
 def judge_var(target_list, result):
+    '''
+    target_list 待排序的as列表
+    result 用来存储最终结果
+
+    用递归的方式，按照方差从小到大为数据排序
+    '''
     if len(target_list) == 0:
         return
     source_list = target_list[0]
@@ -853,6 +885,17 @@ def judge_var(target_list, result):
 
 
 def cal_var_change_for_single_country(new_count_num_path, old_count_num_path, _type, single_country_name, new_var_path, num):
+
+    '''
+    new_count_num_path 新生成的count_num路径
+    old_count_num_path 旧的count_num路径
+    _type : basic|user|domain 维度类型
+    single_country_name : country code
+    new_var_path 存储新数据方差排名的路径
+    num 破坏节点数量
+
+    把优化后的结果同其他没有优化的结果放在一起排序
+    '''
 
     var_result = {}
     result = []
@@ -934,7 +977,12 @@ def cal_var_change_for_single_country(new_count_num_path, old_count_num_path, _t
 
 @record_launch_time
 def part1(topo_list, output_path):
-    
+    '''
+    topo_list topo列表
+    output_path output路径
+
+    添加优化路径后重新生成npz文件,并生成破坏结果
+    '''
     pool = Pool(multiprocessing.cpu_count())
     for m in topo_list:
         
@@ -964,6 +1012,12 @@ def part1(topo_list, output_path):
 
 @record_launch_time
 def part2(output_path, topo_list):
+    '''
+    output_path output路径
+    topo_list topo列表
+
+    重新生成 count_num文件夹
+    '''
     thread_pool = ThreadPool(multiprocessing.cpu_count() * 10)
     print('Start part2')
     def make_dir_thread(m):
@@ -988,6 +1042,12 @@ def part2(output_path, topo_list):
 
 @record_launch_time
 def part3(topo_list, output_path):
+    '''
+    output_path output路径
+    topo_list topo列表
+
+    对优化的结果进行anova和方差排序
+    '''
     global data_dim
     pool = Pool(multiprocessing.cpu_count())
     for _cc in cc_list:
@@ -1016,7 +1076,20 @@ def part3(topo_list, output_path):
 
 
 def new_cal_anova_for_single_cc_pool(topo_list, _cc, output_path, data_dim):
+    '''
+    output_path output路径
+    topo_list topo列表
 
+    _cc: country code
+    data_dim : basic|user|domain维度类型列表
+
+    进行anova排序
+    
+
+    把优化后的结果同其他没有优化的结果放在一起排序
+    
+
+    '''
     value_dict = {'basic': 0, 'user': 1, 'domain': 2}
     
     for m in topo_list:
@@ -1157,6 +1230,16 @@ as_importance_path = None
 
 @record_launch_time
 def train_routing_tree(topo_list, _cc_list, output_path, _as_importance_path, optimize_link_num_list, _data_dim):
+    '''
+    topo_list topo类型
+    _cc_list 国家列表
+    output_path output路径
+    _as_importance_path 权重路径
+    optimize_link_num_list 优化连接数量列表
+    _data_dim basic|user|domain 维度类型列表
+
+    根据优化结果重新创建路由树，破坏，排序，生成排名
+    '''
     global as_importance_path
     global cc_list
     global data_dim
