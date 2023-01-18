@@ -1,7 +1,7 @@
 import sys
 
 import matplotlib.pyplot as plt
-from draw_chart.generator_rank_json import generator_rank_json_by_topo_type
+from draw_chart.generator_rank_json import generator_rank_json_by_topo_type, generator_external_rank_json_by_topo_type
 import os
 import json
 from pylab import mpl
@@ -30,6 +30,7 @@ label_font_size = 22
 table_font_size = 20
 row0_font_size = 20
 n_clusters = 6
+
 
 def make_result(path, file_name, _type, result):
     real_path = os.path.join(path, file_name)
@@ -91,6 +92,7 @@ def make_result_by_rank(path, _type):
 def make_result_by_rank_all(path):
     real_result = {}
     topo_list = c2
+
     result = generator_rank_json_by_topo_type(path, save=False)['result']
     for topo in topo_list:
         for _type in ['basic', 'user', 'domain']:
@@ -100,6 +102,19 @@ def make_result_by_rank_all(path):
                     real_result[k] = [0, 0]
                 real_result[k][0] += t[k][0]
                 real_result[k][1] += t[k][1]
+
+    return real_result
+
+
+def make_external_result_by_rank_all(path):
+    real_result = {}
+    result = generator_external_rank_json_by_topo_type(path, save=False)['result']
+    t = result['weight']
+    for k in t:
+        if k not in real_result:
+            real_result[k] = [0, 0]
+        real_result[k][0] += t[k][0]
+        real_result[k][1] += t[k][1]
 
     return real_result
 
@@ -170,13 +185,16 @@ def draw_plot(_type, path, position, title):
 
 
 def draw_plot_all(_type, path, position, title):
-
     estimator = KMeans(n_clusters=n_clusters)  # 构造聚类器
 
     result = {}
     dir_path = path
     # USE RANK
-    result = make_result_by_rank_all(dir_path)
+    if sys.argv[2] == 'e':
+        result = make_external_result_by_rank_all(dir_path)
+    else:
+        result = make_result_by_rank_all(dir_path)
+
 
     # USE WEIGHT
     # make_result(dir_path, 'med_rank.json', _type, result)
@@ -236,13 +254,13 @@ def draw_plot_all(_type, path, position, title):
 
 
 if __name__ == '__main__':
+    # fig = plt.figure(figsize=(15, 10))  # 创建画布
     fig = plt.figure(figsize=(30, 10))  # 创建画布
-    draw_plot('basic', os.path.join(sys.argv[1], 'output', 'public'), 131, 'clustering results(connectivity)')
-    print('------------')
-    draw_plot('user', os.path.join(sys.argv[1], 'output', 'public'), 132, 'clustering results(user)')
-    print('------------')
-    draw_plot('domain', os.path.join(sys.argv[1], 'output', 'public'), 133, 'clustering results(domain)')
+    # draw_plot('basic', os.path.join(sys.argv[1], 'output', 'public'), 131, 'clustering results(connectivity)')
     # print('------------')
-    # draw_plot_all('', '../public', 111, 'clustering results of Inter-region survivability')
-    # plt.tight_layout()
+    # draw_plot('user', os.path.join(sys.argv[1], 'output', 'public'), 132, 'clustering results(user)')
+    # print('------------')
+    # draw_plot('domain', os.path.join(sys.argv[1], 'output', 'public'), 133, 'clustering results(domain)')
+    # print('------------')
+    draw_plot_all('', os.path.join(sys.argv[1], 'output', 'public'), 111, 'clustering results of Inter-region survivability')
     plt.show()

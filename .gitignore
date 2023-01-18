@@ -5,3 +5,4 @@ time_stamp.txt
 *.mtx
 med.json
 var.json
+rank_files/*

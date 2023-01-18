@@ -59,13 +59,43 @@ topo_type_map = generator_type_map()
 #     return sort_list
 
 
+def make_exteral_result(path, file_name, result, __type):
+    real_path = os.path.join(path, file_name)
+
+    with open(real_path) as f:
+        all_data = json.load(f)
+        sort_dict = {}
+        print(all_data)
+        for cc in all_data:
+            for rank_value in all_data[cc]:
+                if rank_value not in sort_dict:
+                    sort_dict[rank_value] = []
+                if rank_value not in result:
+                    result[rank_value] = {}
+                sort_dict[rank_value].append([cc, all_data[cc][rank_value]])
+
+        for k in sort_dict:
+            sort_dict[k].sort(key=lambda x: x[1])
+
+            rank = 0
+            min_v = -1
+
+            for cl in sort_dict[k]:
+                if cl[0] not in result[k].keys():
+                    result[k][cl[0]] = [0, 0]
+                if min_v < cl[1]:
+                    rank += 1
+                    min_v = cl[1]
+                result[k][cl[0]][__type_map[__type]] = rank
+            # print('cc = %s,rank = %s,weight = %s,type = %s' % (cl[0], rank, cl[1], __type))
+
+
 def make_result(path, file_name, result, __type):
     real_path = os.path.join(path, file_name)
 
     with open(real_path) as f:
         all_data = json.load(f)
         sort_dict = {}
-
         for cc in all_data:
             for rank_value in all_data[cc]:
                 if rank_value not in sort_dict:
@@ -178,6 +208,18 @@ def generator_rank_json_by_topo_type(path, file_name="rank_by_topo_type", save=T
     return {'result': result,
             'name': '%s%s.json' % (file_name, suffix)}
 
+def generator_external_rank_json_by_topo_type(path, file_name="rank_by_topo_type", save=True):
+    result = {}
+    make_exteral_result(path, 'med_rank.json', result, 'med')
+    make_exteral_result(path, 'var_rank.json', result, 'var')
+    dst_path = os.path.join(os.getcwd(), 'rank_files')
+    os.makedirs(dst_path, exist_ok=True)
+    if save:
+        with open(os.path.join(dst_path, '%s%s.json' % (file_name, suffix)), 'w') as f:
+            json.dump(result, f)
+    return {'result': result,
+            'name': '%s%s.json' % (file_name, suffix)}
+
 
 def generator_rank_json_by_cc(path, file_name="rank_by_cc", save=True):
     result = {}
@@ -220,7 +262,7 @@ def generator_rank_json_by_cc_loop_cc(path, cc, file_name="rank_by_cc", save=Tru
 
 
 if __name__ == '__main__':
-    # print(sys.argv[1])
+
     '''
     运行 python3 generator_rank_json.py 运行时路径
     '''
@@ -234,4 +276,6 @@ if __name__ == '__main__':
     # cc_list = ['UA','AR','BD','RO','NL','CH','BG','CN','CZ','AT','TH','NZ','SG','CL','PH','NO','LV','MX','SK','FI','NG','CO']
     for cc2 in cc_list:
         generator_rank_json_by_cc_loop_cc(public_path, cc2)
-    # generator_rank_json_by_cc_loop_cc(public_path, 'LV')
+
+    generator_rank_json_by_cc_loop_cc(public_path, 'LV')
+    # generator_external_rank_json_by_topo_type('/Users/zdp/Desktop/resilience/test/pzd_test_external/output/public')
