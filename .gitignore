@@ -3,3 +3,5 @@ time_stamp.txt
 *.npz
 *.nodeList
 *.mtx
+med.json
+var.json
