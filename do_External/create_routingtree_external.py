@@ -257,7 +257,7 @@ def providerToCustomer(routingTree, BFS, graph, levels):
     return routingTree
 
 
-def saveAsNPZ(del_path, destinationNode, matrix):
+def saveAsNPZ(del_path, destinationNode, matrix,source_path,gl_incoder):
     matrixCOO = matrix.tocoo()
     row = matrixCOO.row
     col = matrixCOO.col
@@ -265,13 +265,14 @@ def saveAsNPZ(del_path, destinationNode, matrix):
 
     shape = matrixCOO.shape
     np.savez(os.path.join(del_path, "dcomplete" + str(destinationNode)), row=row, col=col, data=data, shape=shape)
-    remove_internal_link(destinationNode, matrixCOO)
+    remove_internal_link(destinationNode, matrixCOO,source_path,gl_incoder)
 
 
-def remove_internal_link(asn, m):
+def remove_internal_link(asn, m,source_path,gl_incoder):
     '''
     gl_incoder 
     asn 当前路由树的as号
+    source_path output路径
     m 路由树矩阵
     删除内部链接
     '''
@@ -347,7 +348,7 @@ def remove_internal_link(asn, m):
         json.dump(cc_rela, f)
 
 
-def makeRoutingTree(destinationNode, fullGraph, file_name, numNodes, del_path):
+def makeRoutingTree(destinationNode, fullGraph, file_name, numNodes, del_path,source_path,gl_incoder):
     '''
     input:
         destination AS
@@ -364,7 +365,7 @@ def makeRoutingTree(destinationNode, fullGraph, file_name, numNodes, del_path):
     stepOneRT, stepOneNodes, lvls = customerToProviderBFS(destinationNode, routingTree, fullGraph)
     stepTwoRT, stepTwoNodes, lvlsTwo = peerToPeer(stepOneRT, stepOneNodes, fullGraph, lvls)
     stepThreeRT = providerToCustomer(stepTwoRT, stepTwoNodes, fullGraph, lvlsTwo)
-    saveAsNPZ(del_path, destinationNode, stepThreeRT)
+    saveAsNPZ(del_path, destinationNode, stepThreeRT,source_path,gl_incoder)
     return stepThreeRT
 
 
@@ -381,7 +382,7 @@ def speedyGET(args):
 
     file_name = os.listdir(str(args[3]))
 
-    pool = multiprocessing.Pool(20)
+    pool = multiprocessing.Pool(int(multiprocessing.cpu_count()/2))
 
     with open(args[6]) as ff:
         asns = json.load(ff)
@@ -390,7 +391,7 @@ def speedyGET(args):
     print('max(asns_list)', numNodes)
     for index in asns_list:
         destinationNode = index
-        pool.apply_async(makeRoutingTree, (destinationNode, fullGraph, file_name, numNodes, str(args[3], )))
+        pool.apply_async(makeRoutingTree, (destinationNode, fullGraph, file_name, numNodes, str(args[3]),source_path,gl_incoder,))
     pool.close()
     pool.join()
 

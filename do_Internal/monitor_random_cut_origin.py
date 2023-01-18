@@ -196,10 +196,15 @@ def monitor_country_internal(prefix: OUTPUT_PATH, _type: TOPO_TPYE, asn_data: Di
 
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     for cc in cc_list:
-        pool.apply(do_cut_by_cc, (
+        do_cut_by_cc (
             cc,
             path,
             asn_data,
-        ))
+        )
+        # pool.apply(do_cut_by_cc, (
+        #     cc,
+        #     path,
+        #     asn_data,
+        # ))
     pool.close()
     pool.join()

@@ -1,2 +1,5 @@
 test/*
 time_stamp.txt
+*.npz
+*.nodeList
+*.mtx

@@ -77,6 +77,8 @@ def add_link_to_npz(add_link_file, old_npz_file, relas_file, dsn_npz_file, add_l
                 break
     elif isinstance(m, list):
         for line in m:
+            begin_state = line[2][2:-2]
+            end_state = line[3][1:-2]
             add_link.append([str(line[0]), str(line[1]), state[match_state[begin_state][end_state]]])
             if len(add_link) > add_link_num:
                 break
@@ -910,9 +912,8 @@ def part3(topo_list, output_path):
     对优化的结果进行anova和方差排序
     '''
     global data_dim
-    pool = Pool(multiprocessing.cpu_count())
+    pool = ThreadPool(multiprocessing.cpu_count())
     for _cc in cc_list:
-
         pool.apply_async(new_cal_anova_for_single_cc_pool, (topo_list, _cc, output_path, data_dim))
 
         for m in topo_list:

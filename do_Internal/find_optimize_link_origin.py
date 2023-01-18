@@ -601,9 +601,13 @@ def find_optimize_link(txt_path: str, _dsn_path: OUTPUT_PATH, _type: TOPO_TPYE, 
             line = fp.readline().strip()
     pool = Pool(multiprocessing.cpu_count())
     for cname in cc_list:
-        pool.apply_async(find_optimize_link_pool, (
+        # pool.apply_async(find_optimize_link_pool, (
+        #     os.path.join(_dsn_path, _type),
+        #     cname,
+        # ))
+        find_optimize_link_pool(
             os.path.join(_dsn_path, _type),
             cname,
-        ))
+        )
     pool.close()
     pool.join()

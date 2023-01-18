@@ -95,16 +95,16 @@ def extract_connect_list(path: RTREE_PATH, dsn_path: COUNT_NUM_PATH):
     cc_name: List[COUNTRY_CODE] = os.listdir(path)
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     for cc in cc_name:
-        pool.apply_async(extract_connect_list_async, (
-            cc,
-            path,
-            dsn_path,
-        ))
-        # extract_connect_list_async (
+        # pool.apply(extract_connect_list_async, (
         #     cc,
         #     path,
         #     dsn_path,
-        # )
+        # ))
+        extract_connect_list_async(
+            cc,
+            path,
+            dsn_path,
+        )
     pool.close()
     pool.join()
 
@@ -440,14 +440,19 @@ def do_groud_truth_based_anova(prefix: OUTPUT_PATH, rela: TOPO_TPYE, _cc_list: L
     count_path: COUNT_NUM_PATH = os.path.join(prefix, rela + '/result/count_num')
     anova_path: ANOVA_NUM_PATH = os.path.join(prefix, rela + '/result/anova')
     if not os.path.exists(anova_path):
-        os.mkdir(anova_path)
+        os.makedirs(anova_path, exist_ok=True)
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
     for value in ['basic', 'user', 'domain']:
-        pool.apply_async(groud_truth_based_anova, (
+        # pool.apply_async(groud_truth_based_anova, (
+        #     count_path,
+        #     anova_path,
+        #     value,
+        # ))
+        groud_truth_based_anova(
             count_path,
             anova_path,
             value,
-        ))
+        )
     pool.close()
     pool.join()
 
@@ -464,10 +469,14 @@ def do_groud_truth_based_var(prefix: OUTPUT_PATH, rela: TOPO_TPYE, _cc_list: Lis
     path: RESULT_PATH = os.path.join(prefix, rela, 'result')
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
     for value in ['basic', 'user', 'domain']:
-        pool.apply_async(groud_truth_based_var, (
+        # pool.apply_async(groud_truth_based_var, (
+        #     path,
+        #     value,
+        # ))
+        groud_truth_based_var(
             path,
             value,
-        ))
+        )
     pool.close()
     pool.join()
 
