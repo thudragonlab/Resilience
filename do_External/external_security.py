@@ -225,39 +225,6 @@ def anova_sort(dsn_path, VALUE):
         json.dump(sorted_country, f)
 
 
-def groud_truth_based_anova_single(path, dsn_path, value):
-    _dir = os.listdir(path)
-    value_dict = {'gdp': 0, 'domain': 1, 'democracy': 2}
-    N = 30
-    begin = -1
-    l = {}
-    for _dir in os.listdir(path):
-        for file in os.listdir(os.path.join(path, _dir)):
-            begin += 1
-            if len(l) == N:
-                anova(l, dsn_path, value, begin - N, begin)
-                print(begin, ' create')
-                if len(l) > 0:
-                    remove_k = list(l.keys())[:int(1 * len(l) / 5)]
-                    for _k in remove_k:
-                        l.pop(_k)
-            _l = []
-            with open(os.path.join(path, _dir, file), 'r') as f:
-                r = json.load(f)
-            for i in r:
-                _l += [_i[value_dict[value]] for _i in i]
-
-            if len(_l) > 0:
-                l[_dir + '-' + file.split('.')[0]] = _l
-            else:
-                with open('len_zero.txt', 'a+') as f:
-                    f.write(_dir + '-' + file.split('.')[0] + '\n')
-    if len(l) > 0:
-        anova(l, dsn_path, value, begin - N - len(l), begin)
-        print(begin, ' create')
-    anova_sort(dsn_path, value)
-
-
 def groud_truth_based_anova(source_path, ):
     '''
     STEP1 通过anova分析,输入各国的全部连通性度量,看是否有显著性差异。
@@ -283,7 +250,7 @@ def groud_truth_based_anova(source_path, ):
                 r = json.load(f)
             for i in r:
                 _l += [_i[democracy] for _i in i]
-
+            print('len(_l) ',len(_l))
             l[file.split('.')[0]] = _l
         anova(l, dsn_path, 'democracy', begin, end)
         begin += int(N / 2)
@@ -365,6 +332,7 @@ def groud_truth_based_var(source_path, ):
     # 方差为0的排在第一位
     result.append(list(map(lambda x: x['key'], var_zero_list)))
     # 区分方差不是0的数据进行排序，结果存在var_no_zero_list
+    print('do judge_var')
     judge_var(var_no_zero_list, result)
     with open(os.path.join(dsn_path, 'sorted_country_%s.json' % _type), 'w') as sorted_var_f:
         json.dump(result, sorted_var_f)

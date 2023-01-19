@@ -381,7 +381,7 @@ class MonitorRemoveAs():
             for num in N:
                 flag = 0
                 cut_times: int = gl_get_cut_num(nodelist)
-                print(cut_times, flag)
+                # print(cut_times, flag)
                 while flag < cut_times:
                     # 每次破坏时最多破坏epoch次
                     flag += 1

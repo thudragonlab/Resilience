@@ -109,7 +109,7 @@ def make_result_by_rank_all(path):
 def make_external_result_by_rank_all(path):
     real_result = {}
     result = generator_external_rank_json_by_topo_type(path, save=False)['result']
-    t = result['weight']
+    t = result['rank']
     for k in t:
         if k not in real_result:
             real_result[k] = [0, 0]
@@ -254,8 +254,8 @@ def draw_plot_all(_type, path, position, title):
 
 
 if __name__ == '__main__':
-    # fig = plt.figure(figsize=(15, 10))  # 创建画布
-    fig = plt.figure(figsize=(30, 10))  # 创建画布
+    fig = plt.figure(figsize=(15, 10))  # 创建画布
+    # fig = plt.figure(figsize=(30, 10))  # 创建画布
     # draw_plot('basic', os.path.join(sys.argv[1], 'output', 'public'), 131, 'clustering results(connectivity)')
     # print('------------')
     # draw_plot('user', os.path.join(sys.argv[1], 'output', 'public'), 132, 'clustering results(user)')
