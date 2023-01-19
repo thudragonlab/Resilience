@@ -1,23 +1,44 @@
-<table>
-<tr><td>main.py</td><td>计算域内抗毁性的入口程序</td></tr>  
-  <tr><td>main_external.py</td><td>计算域间抗毁性的入口程序</td></tr>  
-  <tr><td>Internal_input_example</td><td>计算域内抗毁性输入文件模版</td></tr>  
-  <tr><td>External_input_example</td><td>计算域间抗毁性输入文件模版</td></tr>  
-  <tr><td>do_Internal</td><td>计算域内抗毁性程序源码</td></tr>  
-  <tr><td>do_External</td><td>计算域间抗毁性程序源码</td></tr>  
-  <tr><td>other_script</td><td>其他辅助代码</td></tr>  
-  <tr><td>static</td><td>静态文件</td></tr>  
-</table>
+# Evaluating and Improving Regional Network Robustness from an AS TOPO Perspective
 
+Currently, regional networks are subject to various security attacks and threats, which can cause the network to fail. 
 
+We borrowed the quantitative ranking idea from the fields of statistics and proposed a ranking method for evaluating regional resilience.
 
-# 运行方式
+To improve a region’s robustness, we proposed a greedy algorithm to optimize the resilience of regions by adding key links among AS. 
+
+We selected the AS topology of 50 countries/regions for research and ranking, evaluating the topology robustness from connectivity, user, and domain influence perspectives, clustering  the  results and get typical region types, and adding  optimal links to improve the network resilience. Experimental results illustrate  that the resilience of regional networks can be greatly improved by establishing a few new connections, which demonstrates the effectiveness of the optimization method.
+
+## Quickstart
+
+1. install python dependencies
 
 ```shell
-python3 入口程序 运行目录
+pip install --user -r requirements.txt
 ```
 
-<span style="color:red">注：运行目录下要有一个input文件夹，里面存放输入文件，具体见输入文件模版 </span>
+2. run
+
+```shell
+python3 main.py <folder>
+```
+
+<span style="color:red">Tips: `folder` should have an input folder where the `input` files are stored. See the Input File Template for details. </span>
 
 
+## Structure
+
+<table>
+<tr><td>main.py</td><td>An entry program for calculating intra-region resistance </td></tr>  
+  <tr><td>main_external.py</td><td>An entry program for calculating interzone inter-region resistance</td></tr>  
+  <tr><td>Internal_input_example</td><td>An input file template for calculating the intra-region resistance</td></tr>  
+  <tr><td>External_input_example</td><td>An input file template for calculating the inter-region resistance</td></tr>  
+  <tr><td>do_Internal</td><td>The source code of the intra-region resistance</td></tr>  
+  <tr><td>do_External</td><td>The source code of the inter-region resistance</td></tr>  
+  <tr><td>other_script</td><td>Auxiliary code</td></tr>  
+  <tr><td>static</td><td>Static file</td></tr>  
+</table>
+
+## Contact
+
+You can contact us at liuyujia19.tsinghua.org.cn.
 
